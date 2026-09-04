@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
+export const instant = false;
+
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength)}…`;
