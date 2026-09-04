@@ -38,6 +38,15 @@ function isQuestionType(value: string): value is QuestionType {
   return QUESTION_TYPES.includes(value as QuestionType);
 }
 
+function initialCorrectOptionIndex(
+  options: string[],
+  correctAnswer: string | null | undefined,
+) {
+  if (!correctAnswer) return 0;
+  const index = options.findIndex((option) => option === correctAnswer);
+  return index >= 0 ? index : 0;
+}
+
 export function QuestionForm({ question, action }: QuestionFormProps) {
   const [questionText, setQuestionText] = useState(question?.question_text ?? "");
   const [category, setCategory] = useState(question?.category ?? "");
@@ -46,6 +55,12 @@ export function QuestionForm({ question, action }: QuestionFormProps) {
   );
   const [options, setOptions] = useState<string[]>(() =>
     normalizeOptions(question?.options),
+  );
+  const [correctOptionIndex, setCorrectOptionIndex] = useState(() =>
+    initialCorrectOptionIndex(
+      normalizeOptions(question?.options),
+      question?.correct_answer,
+    ),
   );
   const [correctAnswer, setCorrectAnswer] = useState(
     question?.correct_answer ?? "",
@@ -85,6 +100,10 @@ export function QuestionForm({ question, action }: QuestionFormProps) {
         setError("Please provide at least two options.");
         return;
       }
+      if (!options[correctOptionIndex]?.trim()) {
+        setError("Please select a correct option.");
+        return;
+      }
     } else if (!correctAnswer.trim()) {
       setError("Please provide a correct answer.");
       return;
@@ -100,7 +119,7 @@ export function QuestionForm({ question, action }: QuestionFormProps) {
         "options",
         JSON.stringify(options.map((option) => option.trim()).filter(Boolean)),
       );
-      formData.set("correct_answer", "");
+      formData.set("correct_answer", options[correctOptionIndex].trim());
     } else {
       formData.set("options", "");
       formData.set("correct_answer", correctAnswer.trim());
@@ -159,12 +178,20 @@ export function QuestionForm({ question, action }: QuestionFormProps) {
         <div className="flex flex-col gap-2">
           <Label>Options</Label>
           {options.map((option, index) => (
-            <Input
-              key={index}
-              value={option}
-              onChange={(event) => updateOption(index, event.target.value)}
-              placeholder={`Option ${index + 1}`}
-            />
+            <div key={index} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="correct_option"
+                checked={correctOptionIndex === index}
+                onChange={() => setCorrectOptionIndex(index)}
+                aria-label={`Mark option ${index + 1} as correct`}
+              />
+              <Input
+                value={option}
+                onChange={(event) => updateOption(index, event.target.value)}
+                placeholder={`Option ${index + 1}`}
+              />
+            </div>
           ))}
           {options.length < MAX_OPTIONS ? (
             <Button type="button" variant="outline" onClick={addOption}>

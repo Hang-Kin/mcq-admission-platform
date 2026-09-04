@@ -35,7 +35,7 @@ function parseQuestionPayload(formData: FormData): QuestionPayload {
       category,
       type,
       options,
-      correct_answer: null,
+      correct_answer: correctAnswerRaw || null,
     };
   }
 
