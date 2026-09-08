@@ -20,9 +20,14 @@ export default async function AdminQuestionsPage() {
     <main className="p-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Questions</h1>
-        <Link href="/admin/questions/new" className="underline">
-          New question
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/questions/import" className="underline">
+            Import CSV
+          </Link>
+          <Link href="/admin/questions/new" className="underline">
+            New question
+          </Link>
+        </div>
       </div>
 
       {error ? (

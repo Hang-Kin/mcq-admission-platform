@@ -5,53 +5,52 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-type QuestionType = "radio" | "numeric" | "text";
+import {
+  MAX_IMPORT_ROWS,
+  validateQuestionRow,
+  type QuestionPayload,
+} from "./questionValidation";
 
-type QuestionPayload = {
-  question_text: string;
-  category: string;
-  type: QuestionType;
-  options: string[] | null;
-  correct_answer: string | null;
-};
+export type { QuestionPayload };
 
-function parseQuestionPayload(formData: FormData): QuestionPayload {
-  const question_text = String(formData.get("question_text") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
-  const type = String(formData.get("type") ?? "").trim() as QuestionType;
-  const correctAnswerRaw = String(formData.get("correct_answer") ?? "").trim();
+function parseQuestionPayload(
+  formData: FormData,
+): ReturnType<typeof validateQuestionRow> {
+  const question_text = String(formData.get("question_text") ?? "");
+  const category = String(formData.get("category") ?? "");
+  const type = String(formData.get("type") ?? "").trim();
+  const correctAnswerRaw = String(formData.get("correct_answer") ?? "");
   const optionsRaw = String(formData.get("options") ?? "");
 
+  let options: string[] | null = null;
   if (type === "radio") {
-    let options: string[] = [];
     try {
       const parsed = JSON.parse(optionsRaw);
-      options = Array.isArray(parsed) ? parsed.map((value) => String(value)) : [];
+      options = Array.isArray(parsed)
+        ? parsed.map((value) => String(value))
+        : [];
     } catch {
       options = [];
     }
-    return {
-      question_text,
-      category,
-      type,
-      options,
-      correct_answer: correctAnswerRaw || null,
-    };
   }
 
-  return {
+  return validateQuestionRow({
     question_text,
     category,
     type,
-    options: null,
-    correct_answer: correctAnswerRaw || null,
-  };
+    options,
+    correct_answer: correctAnswerRaw,
+  });
 }
 
 export async function createQuestion(formData: FormData) {
+  const parsed = parseQuestionPayload(formData);
+  if (!parsed.ok) {
+    return { error: parsed.error };
+  }
+
   const supabase = await createClient();
-  const payload = parseQuestionPayload(formData);
-  const { error } = await supabase.from("questions").insert(payload);
+  const { error } = await supabase.from("questions").insert(parsed.payload);
 
   if (error) {
     return { error: error.message };
@@ -62,9 +61,45 @@ export async function createQuestion(formData: FormData) {
 }
 
 export async function updateQuestion(id: string, formData: FormData) {
+  const parsed = parseQuestionPayload(formData);
+  if (!parsed.ok) {
+    return { error: parsed.error };
+  }
+
   const supabase = await createClient();
-  const payload = parseQuestionPayload(formData);
-  const { error } = await supabase.from("questions").update(payload).eq("id", id);
+  const { error } = await supabase
+    .from("questions")
+    .update(parsed.payload)
+    .eq("id", id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/questions");
+  redirect("/admin/questions");
+}
+
+export async function bulkImportQuestions(rows: QuestionPayload[]) {
+  if (rows.length === 0) {
+    return { error: "CSV has no data rows." };
+  }
+
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return {
+      error: `CSV files are limited to ${MAX_IMPORT_ROWS} questions. This import has ${rows.length} data rows.`,
+    };
+  }
+
+  for (const row of rows) {
+    const result = validateQuestionRow(row);
+    if (!result.ok) {
+      return { error: result.error };
+    }
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("questions").insert(rows);
 
   if (error) {
     return { error: error.message };
