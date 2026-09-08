@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const MAX_OPTIONS = 6;
-const QUESTION_TYPES = ["radio", "numeric", "text"] as const;
+import {
+  MAX_OPTIONS,
+  isQuestionType,
+  validateQuestionRow,
+  type QuestionType,
+} from "./questionValidation";
 
-export type QuestionType = (typeof QUESTION_TYPES)[number];
+export type { QuestionType };
 
 export type QuestionFormValues = {
   question_text: string;
@@ -32,10 +36,6 @@ function normalizeOptions(options: unknown): string[] {
     values.push("");
   }
   return values.slice(0, MAX_OPTIONS);
-}
-
-function isQuestionType(value: string): value is QuestionType {
-  return QUESTION_TYPES.includes(value as QuestionType);
 }
 
 function initialCorrectOptionIndex(
@@ -86,43 +86,33 @@ export function QuestionForm({ question, action }: QuestionFormProps) {
     event.preventDefault();
     setError(null);
 
-    const trimmedText = questionText.trim();
-    const trimmedCategory = category.trim();
+    const validated = validateQuestionRow({
+      question_text: questionText,
+      category,
+      type,
+      options: type === "radio" ? options : null,
+      correct_answer:
+        type === "radio"
+          ? (options[correctOptionIndex] ?? "")
+          : correctAnswer,
+    });
 
-    if (!trimmedText || !trimmedCategory || !type) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    if (type === "radio") {
-      const filledOptions = options.map((option) => option.trim()).filter(Boolean);
-      if (filledOptions.length < 2) {
-        setError("Please provide at least two options.");
-        return;
-      }
-      if (!options[correctOptionIndex]?.trim()) {
-        setError("Please select a correct option.");
-        return;
-      }
-    } else if (!correctAnswer.trim()) {
-      setError("Please provide a correct answer.");
+    if (!validated.ok) {
+      setError(validated.error);
       return;
     }
 
     const formData = new FormData();
-    formData.set("question_text", trimmedText);
-    formData.set("category", trimmedCategory);
-    formData.set("type", type);
+    formData.set("question_text", validated.payload.question_text);
+    formData.set("category", validated.payload.category);
+    formData.set("type", validated.payload.type);
 
-    if (type === "radio") {
-      formData.set(
-        "options",
-        JSON.stringify(options.map((option) => option.trim()).filter(Boolean)),
-      );
-      formData.set("correct_answer", options[correctOptionIndex].trim());
+    if (validated.payload.type === "radio") {
+      formData.set("options", JSON.stringify(validated.payload.options ?? []));
+      formData.set("correct_answer", validated.payload.correct_answer ?? "");
     } else {
       formData.set("options", "");
-      formData.set("correct_answer", correctAnswer.trim());
+      formData.set("correct_answer", validated.payload.correct_answer ?? "");
     }
 
     setIsSubmitting(true);
