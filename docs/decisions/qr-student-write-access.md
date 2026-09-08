@@ -104,3 +104,47 @@ teacher confirms or overrides `is_correct`, which flips `needs_review` to
 `false` and sets `graded_by = 'manual'` on override. Until this screen
 exists, no test instance with a text-type question can be safely
 finalized.
+
+## Amendment (2026-09-08): Advisor Security Cleanup
+
+After applying Phase A/B, `get_advisors` flagged two pre-existing
+functions unrelated to this feature: `handle_new_user()` (the
+`on_auth_user_created` trigger on `auth.users`, which seeds a `profiles`
+row with role `'pending'`) and `rls_auto_enable()` (an event trigger that
+auto-enables RLS on newly created tables in `public`). Both were exposed
+as directly callable via `/rest/v1/rpc/...` for `anon` and
+`authenticated`, and `handle_new_user` also had a mutable `search_path`.
+
+### Fix Applied
+- `alter function handle_new_user() set search_path = public, pg_temp;`
+  — pins the search path.
+- Revoked `EXECUTE` on both functions from `anon` and `authenticated`.
+  Note: revoking from `PUBLIC` alone was not sufficient — both functions
+  had *explicit* per-role grants in their ACL (visible via
+  `pg_proc.proacl`), not just the implicit default-PUBLIC grant. Each
+  role's `EXECUTE` had to be revoked individually.
+- This is safe because both are trigger functions (a regular row trigger
+  and an event trigger). Trigger execution runs with the function
+  owner's privileges, not the invoking session's — removing EXECUTE from
+  `anon`/`authenticated` does not stop either trigger from firing
+  normally on `INSERT INTO auth.users` / `CREATE TABLE`. It only closes
+  the direct-RPC-call exposure.
+- Verified via `get_advisors` after each step: both functions no longer
+  appear in either the anon or authenticated `security_definer_function_executable`
+  findings, and the `function_search_path_mutable` finding is gone.
+
+### Still Open (Not Fixable via SQL)
+`auth_leaked_password_protection` remains WARN. This is an Auth-service
+config toggle, not a database object — it must be enabled manually in the
+Supabase Dashboard under Authentication > Auth settings > Password
+Security (enable "leaked password protection" / HaveIBeenPwned check).
+No connector tool in this project currently exposes an Auth-config API to
+set this programmatically.
+
+### Remaining Known Warnings (Intentional, Not Gaps)
+`start_session`, `submit_answer`, and `submit_exam` still show as
+`anon`-executable `SECURITY DEFINER` functions. This is by design —
+students are not Supabase Auth users and must reach these functions via
+the anon key; the `access_token`/`session_id` check inside each function
+is the actual authorization boundary, not role membership. Do not revoke
+`anon` execute on these three.
