@@ -133,13 +133,21 @@ as directly callable via `/rest/v1/rpc/...` for `anon` and
   appear in either the anon or authenticated `security_definer_function_executable`
   findings, and the `function_search_path_mutable` finding is gone.
 
-### Still Open (Not Fixable via SQL)
-`auth_leaked_password_protection` remains WARN. This is an Auth-service
-config toggle, not a database object — it must be enabled manually in the
-Supabase Dashboard under Authentication > Auth settings > Password
-Security (enable "leaked password protection" / HaveIBeenPwned check).
-No connector tool in this project currently exposes an Auth-config API to
-set this programmatically.
+### Leaked Password Protection: Accepted Free-Tier Limitation
+`auth_leaked_password_protection` remains WARN and will stay WARN for now.
+The toggle lives in Supabase Dashboard > Authentication > Sign In / Providers
+> Email > "Prevent use of leaked passwords" (checks HaveIBeenPwned.org via
+the Pwned Passwords API on signup/password change). Checked on 2026-09-08:
+the toggle is greyed out because the KH Studio organization is on the
+Supabase **Free** plan — this feature requires **Pro plan or above**
+(confirmed via `get_organization`: plan = "free"). No connector tool can
+bypass this; it is a billing-tier restriction, not a config or code fix.
+
+Decision: accept this as a known limitation rather than upgrading solely
+for this warning. It only affects the staff/admin email+password login
+flow (Supabase Auth) — it does NOT affect the student QR/token flow, which
+never touches Supabase Auth at all. Revisit if/when the project upgrades
+to Pro for other reasons (e.g. daily backups, log retention).
 
 ### Remaining Known Warnings (Intentional, Not Gaps)
 `start_session`, `submit_answer`, and `submit_exam` still show as
