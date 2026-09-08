@@ -156,3 +156,67 @@ students are not Supabase Auth users and must reach these functions via
 the anon key; the `access_token`/`session_id` check inside each function
 is the actual authorization boundary, not role membership. Do not revoke
 `anon` execute on these three.
+
+## Amendment (2026-09-08): migration_001_role_rls Reviewed and Applied
+
+`migration_001_role_rls.sql` (the role/RLS tightening migration flagged in
+HANDOFF-3.md as "NEEDS FRIEND'S REVIEW — not yet applied") was reviewed,
+corrected, and applied to production tonight.
+
+### Issues Found in the Original Draft
+1. **Missing `SET search_path`** on `is_admin()`, `is_staff()`,
+   `set_user_role()`, and this migration's own `handle_new_user()`. Same
+   vulnerability class as the earlier advisor cleanup — without a pinned
+   search path, a `SECURITY DEFINER` function resolves unqualified table
+   names using the *caller's* search_path. Applying the draft unpatched
+   would have silently reverted the `handle_new_user()` fix from earlier
+   tonight.
+2. **Dropped the `ON CONFLICT (id) DO NOTHING` guard** on `handle_new_user()`
+   that the live version already had. Without it, any user who already has
+   a `profiles` row (retry, manual backfill) would hit a duplicate-key
+   error on signup.
+3. **No explicit grant lockdown** on `is_admin()`, `is_staff()`,
+   `set_user_role()` — defaulted to `PUBLIC`-executable like every new
+   Postgres function, meaning `anon` could call them (low practical risk
+   since `set_user_role` still gates on `is_admin()` internally, but
+   inconsistent with the hardening pattern established earlier tonight).
+
+### Fix Applied Before Applying
+All three issues corrected: added `SET search_path = public` to all four
+functions, restored the `ON CONFLICT (id) DO NOTHING` guard, and added
+`REVOKE EXECUTE ... FROM anon` on the three new functions. Confirmed RLS
+was already enabled on all seven affected tables (`profiles`, `questions`,
+`test_instances`, `students`, `exams`, `responses`, `grades`) via
+`list_tables` before applying.
+
+### Grant Gotcha (Same as Earlier Tonight)
+After applying, `get_advisors` still showed `is_admin()`, `is_staff()`,
+and `set_user_role()` as `anon`-executable — the `REVOKE ... FROM anon`
+didn't close it because the default `PUBLIC` grant (not a per-role grant)
+was the actual source of `anon`'s access, same root cause as the
+`handle_new_user`/`rls_auto_enable` fix earlier. Fixed by revoking
+`EXECUTE` from `PUBLIC` on all three, then explicitly granting `EXECUTE`
+to `authenticated` only (required — RLS policies on `questions`,
+`test_instances`, `students`, `exams`, `responses`, and `grades` all call
+`is_admin()`/`is_staff()` and need `authenticated` to retain access to
+evaluate those policies).
+
+### Resulting Access Model (Verified Live)
+- `profiles`: authenticated users read their own row; admins read all
+  rows via `is_admin()`. `UPDATE` revoked from `authenticated` entirely —
+  the only way to change a role is `set_user_role()`, which itself checks
+  `is_admin()` before allowing the change.
+- `questions`, `test_instances`: staff (admin + teacher) can
+  read/insert/update; only admin can delete.
+- `students`, `exams`, `responses`, `grades`: staff can read; only admin
+  can insert/update/delete (teacher is read-only on these four, per the
+  Week 1 "FIX 2" note in the draft).
+- No `anon` policy exists on any of the seven tables — students never
+  touch them directly; all student reads/writes go exclusively through
+  `start_session`/`submit_answer`/`submit_exam`.
+
+Final advisor state after this amendment: only the three student RPCs
+remain anon-executable (intentional, documented above), `is_admin`/
+`is_staff`/`set_user_role` remain authenticated-executable (required for
+RLS policy evaluation, not a gap), and leaked password protection remains
+an accepted Free-tier limitation. No unexplained warnings remain.
