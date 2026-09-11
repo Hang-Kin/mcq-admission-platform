@@ -12,6 +12,9 @@ export default function AdminHome() {
         <Link href="/admin/exams" className="underline">
           Exams / QR codes
         </Link>
+        <Link href="/admin/review" className="underline">
+          Review queue
+        </Link>
       </nav>
     </main>
   );
