@@ -66,3 +66,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .qr-no-print {
+    display: none !important;
+  }
+
+  .qr-sheet {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
