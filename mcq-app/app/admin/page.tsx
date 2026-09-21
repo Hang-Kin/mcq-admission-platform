@@ -6,6 +6,9 @@ export default function AdminHome() {
       <h1 className="text-2xl font-bold">Admin dashboard</h1>
       <p className="mt-2">Admin placeholder page – only admins should be able to see this.</p>
       <nav className="mt-6 flex flex-col gap-2">
+        <Link href="/admin/students" className="underline">
+          Students
+        </Link>
         <Link href="/admin/questions" className="underline">
           Questions
         </Link>
