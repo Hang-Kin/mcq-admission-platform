@@ -1,5 +1,7 @@
--- migration_007_exams_staff_override_update.sql
+-- migration_008_exams_staff_override_update.sql
 -- Proposed. Do not apply until reviewed.
+-- Renamed from migration_007_exams_staff_override_update.sql because
+-- migration_007_students_insert_staff.sql is already applied.
 --
 -- Why: exams UPDATE is admin-only today (teachers are read-only on exams).
 -- Teachers must be able to set exams.active_timeslot_override from the
