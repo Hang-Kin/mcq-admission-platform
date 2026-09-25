@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 
 import { QrGeneratorClient } from "../../QrGeneratorClient";
@@ -66,6 +68,15 @@ export default async function ExamQrPage({
       ) : (
         <>
           <header className="mb-8">
+            <p className="mb-2 text-sm">
+              <Link href="/admin/exams" className="underline">
+                Exams
+              </Link>
+              {" · "}
+              <Link href={`/admin/exams/${exam.id}/timeslots`} className="underline">
+                Timeslots
+              </Link>
+            </p>
             <h1 className="text-2xl font-bold">{exam.name}</h1>
             <p className="text-muted-foreground">
               {exam.duration_minutes} minute{exam.duration_minutes === 1 ? "" : "s"}
