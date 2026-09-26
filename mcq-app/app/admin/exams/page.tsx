@@ -25,7 +25,8 @@ export default async function ExamsPage() {
               <th className="border-b py-2 pr-4">Exam</th>
               <th className="border-b py-2 pr-4">Duration</th>
               <th className="border-b py-2 pr-4">QR codes</th>
-              <th className="border-b py-2">Timeslots</th>
+              <th className="border-b py-2 pr-4">Timeslots</th>
+              <th className="border-b py-2">Grades</th>
             </tr>
           </thead>
           <tbody>
@@ -40,12 +41,20 @@ export default async function ExamsPage() {
                     Generate QR
                   </Link>
                 </td>
-                <td className="border-b py-2">
+                <td className="border-b py-2 pr-4">
                   <Link
                     href={`/admin/exams/${exam.id}/timeslots`}
                     className="underline"
                   >
                     Timeslots
+                  </Link>
+                </td>
+                <td className="border-b py-2">
+                  <Link
+                    href={`/admin/exams/${exam.id}/grades`}
+                    className="underline"
+                  >
+                    Grades
                   </Link>
                 </td>
               </tr>
