@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
+import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
+
 type QuestionType = "radio" | "numeric" | "text";
 
 type SessionQuestion = {
@@ -24,6 +26,7 @@ type SessionQuestion = {
   options: unknown;
   category: string;
   question_set: string;
+  image_url?: string | null;
 };
 
 type RpcErrorCode =
@@ -469,6 +472,15 @@ export function SessionExam({ token }: { token: string }) {
           ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
+          {question.image_url && publicQuestionImagePath(question.image_url) ? (
+            // Public bucket URL from start_session. Loaded directly so it does not need a Next image host.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={question.image_url}
+              alt=""
+              className="max-h-96 w-full rounded-md object-contain"
+            />
+          ) : null}
           {question.type === "radio" ? (
             <fieldset className="space-y-2">
               <legend className="sr-only">Choose an answer</legend>

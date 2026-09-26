@@ -56,6 +56,8 @@ function mapCsvRow(row: Record<string, string>) {
     type,
     options,
     correct_answer: String(row.correct_answer ?? ""),
+    question_set:
+      row.question_set == null ? undefined : String(row.question_set),
   });
 }
 
@@ -173,9 +175,13 @@ export function ImportForm() {
             trimming.
           </li>
           <li>
-            For <code>numeric</code> or <code>text</code>: leave{" "}
-            <code>options</code> blank; put the value in{" "}
-            <code>correct_answer</code>.
+            For <code>numeric</code>: leave <code>options</code> blank and put
+            the value in <code>correct_answer</code>. For <code>text</code>,{" "}
+            <code>correct_answer</code> is optional.
+          </li>
+          <li>
+            Optional <code>question_set</code> column. Leave it blank to import
+            the row with no set.
           </li>
           <li>Maximum {MAX_IMPORT_ROWS} data rows (after the header).</li>
         </ul>

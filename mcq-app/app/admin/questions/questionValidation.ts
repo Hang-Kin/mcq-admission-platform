@@ -10,6 +10,7 @@ export type QuestionPayload = {
   type: QuestionType;
   options: string[] | null;
   correct_answer: string | null;
+  question_set: string | null;
 };
 
 export type QuestionRowInput = {
@@ -18,6 +19,8 @@ export type QuestionRowInput = {
   type: string;
   options: string[] | null;
   correct_answer: string | null;
+  question_set?: string | null;
+  requireQuestionSet?: boolean;
 };
 
 export type QuestionValidationResult =
@@ -28,6 +31,22 @@ export function isQuestionType(value: string): value is QuestionType {
   return (QUESTION_TYPES as readonly string[]).includes(value);
 }
 
+function resolveQuestionSet(
+  input: QuestionRowInput,
+): { ok: true; question_set: string | null } | { ok: false; error: string } {
+  const raw = input.question_set;
+  const question_set = raw == null ? "" : String(raw).trim();
+
+  if (input.requireQuestionSet) {
+    if (!question_set) {
+      return { ok: false, error: "Please assign a question set." };
+    }
+    return { ok: true, question_set };
+  }
+
+  return { ok: true, question_set: question_set || null };
+}
+
 export function validateQuestionRow(
   input: QuestionRowInput,
 ): QuestionValidationResult {
@@ -35,6 +54,9 @@ export function validateQuestionRow(
   const category = input.category.trim();
   const type = input.type.trim();
   const correct_answer = (input.correct_answer ?? "").trim();
+  const setResult = resolveQuestionSet(input);
+
+  if (!setResult.ok) return setResult;
 
   if (!question_text || !category || !type) {
     return { ok: false, error: "Please fill in all required fields." };
@@ -76,6 +98,7 @@ export function validateQuestionRow(
         type,
         options,
         correct_answer,
+        question_set: setResult.question_set,
       },
     };
   }
@@ -91,7 +114,7 @@ export function validateQuestionRow(
     };
   }
 
-  if (!correct_answer) {
+  if (type === "numeric" && !correct_answer) {
     return { ok: false, error: "Please provide a correct answer." };
   }
 
@@ -102,7 +125,8 @@ export function validateQuestionRow(
       category,
       type,
       options: null,
-      correct_answer,
+      correct_answer: correct_answer || null,
+      question_set: setResult.question_set,
     },
   };
 }
