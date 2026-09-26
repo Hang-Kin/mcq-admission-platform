@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
-import { scoreResponses } from "../../gradeScore";
+import { assignedCountOf, scoreResponses } from "../../gradeScore";
 
 export type GradeActionState = { error?: string; message?: string } | null;
 
@@ -91,7 +91,7 @@ export async function finalizeGrade(
 
   const { data: instance, error: instanceError } = await auth.supabase
     .from("test_instances")
-    .select("id, student_id, exam_id, status")
+    .select("id, student_id, exam_id, status, assigned_question_ids")
     .eq("id", instanceId)
     .eq("exam_id", examId)
     .single();
@@ -112,7 +112,10 @@ export async function finalizeGrade(
     return { error: "Could not load responses. Try again." };
   }
 
-  const score = scoreResponses(responses ?? []);
+  const score = scoreResponses(
+    responses ?? [],
+    assignedCountOf(instance.assigned_question_ids),
+  );
 
   if (score.pendingReview > 0) {
     return {
@@ -120,7 +123,7 @@ export async function finalizeGrade(
     };
   }
   if (score.percent === null) {
-    return { error: "This student has no responses to grade." };
+    return { error: "This student has no questions to grade." };
   }
 
   const { error: upsertError } = await auth.supabase.from("grades").upsert(

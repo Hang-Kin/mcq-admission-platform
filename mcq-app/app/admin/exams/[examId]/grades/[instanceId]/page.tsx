@@ -11,7 +11,12 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 
-import { isGradeStale, orderByAssigned, scoreResponses } from "../../../gradeScore";
+import {
+  assignedCountOf,
+  isGradeStale,
+  orderByAssigned,
+  scoreResponses,
+} from "../../../gradeScore";
 import { CorrectionActions, FinalizeGradeButton } from "./GradeControls";
 
 export const instant = false;
@@ -121,11 +126,12 @@ export default async function StudentGradePage({
     instance.assigned_question_ids,
   );
 
-  const score = scoreResponses(responses);
+  const score = scoreResponses(
+    responses,
+    assignedCountOf(instance.assigned_question_ids),
+  );
   const stale = grade ? isGradeStale(grade.final_grade, score) : false;
-  const assignedCount = Array.isArray(instance.assigned_question_ids)
-    ? instance.assigned_question_ids.length
-    : null;
+  const unanswered = Math.max(0, score.total - responses.length);
 
   return (
     <main className="p-8">
@@ -147,7 +153,7 @@ export default async function StudentGradePage({
         <CardHeader>
           <CardTitle>Grade</CardTitle>
           <CardDescription>
-            Final grade is the percentage of responses marked correct.
+            Final grade is the percentage of assigned questions marked correct.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -155,10 +161,10 @@ export default async function StudentGradePage({
             {score.correct}/{score.total} correct
             {score.percent !== null ? ` (${score.percent}%)` : ""}
           </p>
-          {assignedCount !== null && assignedCount !== score.total ? (
+          {unanswered > 0 ? (
             <p className="text-sm text-muted-foreground">
-              {score.total} of {assignedCount} assigned questions were answered.
-              Unanswered questions have no response and are not counted.
+              {unanswered} assigned question{unanswered === 1 ? " was" : "s were"}{" "}
+              not answered and count{unanswered === 1 ? "s" : ""} as incorrect.
             </p>
           ) : null}
           {score.pendingReview > 0 ? (

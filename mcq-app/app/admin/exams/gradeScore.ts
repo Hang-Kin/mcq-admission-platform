@@ -10,8 +10,20 @@ export type GradeScore = {
   percent: number | null;
 };
 
-export function scoreResponses(responses: ScoredResponse[]): GradeScore {
-  const total = responses.length;
+export function assignedCountOf(assignedIds: unknown): number | undefined {
+  return Array.isArray(assignedIds) ? assignedIds.length : undefined;
+}
+
+// Unanswered assigned questions have no response row; they count as not
+// correct and stay in the denominator.
+export function scoreResponses(
+  responses: ScoredResponse[],
+  assignedCount?: number,
+): GradeScore {
+  const total =
+    assignedCount !== undefined && assignedCount > 0
+      ? assignedCount
+      : responses.length;
   const correct = responses.filter((r) => r.is_correct === true).length;
   const pendingReview = responses.filter((r) => r.needs_review === true).length;
   const percent =

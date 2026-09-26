@@ -3,7 +3,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 
-import { isGradeStale, scoreResponses } from "../../gradeScore";
+import {
+  assignedCountOf,
+  isGradeStale,
+  scoreResponses,
+} from "../../gradeScore";
 
 export const instant = false;
 
@@ -35,6 +39,7 @@ export default async function ExamGradesPage({
       id,
       student_id,
       submitted_at,
+      assigned_question_ids,
       students!inner ( name, application_number ),
       responses ( is_correct, needs_review )
     `,
@@ -54,7 +59,10 @@ export default async function ExamGradesPage({
   const rows = (instanceRows ?? [])
     .map((instance) => {
       const student = asSingle(instance.students);
-      const score = scoreResponses(instance.responses ?? []);
+      const score = scoreResponses(
+        instance.responses ?? [],
+        assignedCountOf(instance.assigned_question_ids),
+      );
       const grade = gradeByStudent.get(instance.student_id) ?? null;
       return {
         id: instance.id,

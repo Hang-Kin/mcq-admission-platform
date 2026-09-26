@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isGradeStale, orderByAssigned, scoreResponses } from "./gradeScore.ts";
+import {
+  assignedCountOf,
+  isGradeStale,
+  orderByAssigned,
+  scoreResponses,
+} from "./gradeScore.ts";
 
 test("percent is correct over all responses, one decimal", () => {
   const responses = [
@@ -27,7 +32,38 @@ test("null is_correct counts as not correct; pending review is counted", () => {
   assert.equal(score.percent, 50);
 });
 
-test("no responses has no percent", () => {
+test("unanswered assigned questions count as incorrect in the denominator", () => {
+  const score = scoreResponses([{ is_correct: true }], 21);
+  assert.equal(score.correct, 1);
+  assert.equal(score.total, 21);
+  assert.equal(score.percent, 4.8);
+});
+
+test("no answers out of assigned questions scores zero", () => {
+  const score = scoreResponses([], 5);
+  assert.equal(score.total, 5);
+  assert.equal(score.percent, 0);
+});
+
+test("pending review still counts only existing response rows", () => {
+  const score = scoreResponses(
+    [
+      { is_correct: null, needs_review: true },
+      { is_correct: true, needs_review: false },
+    ],
+    10,
+  );
+  assert.equal(score.pendingReview, 1);
+  assert.equal(score.percent, 10);
+});
+
+test("falls back to response count without assigned ids", () => {
+  assert.equal(assignedCountOf(null), undefined);
+  assert.equal(assignedCountOf(["a", "b"]), 2);
+  assert.equal(scoreResponses([{ is_correct: true }], undefined).percent, 100);
+});
+
+test("no responses and no assigned questions has no percent", () => {
   assert.equal(scoreResponses([]).percent, null);
 });
 
