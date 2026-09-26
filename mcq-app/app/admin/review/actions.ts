@@ -22,11 +22,21 @@ export async function reviewResponse(
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You are not signed in. Refresh and log in again." };
+  }
+
   const { data, error } = await supabase
     .from("responses")
     .update({
       is_correct: verdict === "correct",
+      graded_by: "manual",
       needs_review: false,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user.id,
     })
     .eq("id", id)
     .eq("needs_review", true)
