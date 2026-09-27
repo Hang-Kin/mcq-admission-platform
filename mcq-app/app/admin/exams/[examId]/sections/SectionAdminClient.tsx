@@ -13,7 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { validateSectionFields } from "../../sectionValidation";
+import {
+  positionsAreContiguous,
+  validateSectionFields,
+} from "../../sectionValidation";
 import type { SectionActionResult } from "./actions";
 
 export type SectionRow = {
@@ -34,6 +37,7 @@ type SectionAdminClientProps = {
   updateSection: (formData: FormData) => Promise<SectionActionResult>;
   deleteSection: (formData: FormData) => Promise<SectionActionResult>;
   moveSection: (formData: FormData) => Promise<SectionActionResult>;
+  renumberSections: (formData: FormData) => Promise<SectionActionResult>;
 };
 
 export function SectionAdminClient({
@@ -46,7 +50,12 @@ export function SectionAdminClient({
   updateSection,
   deleteSection,
   moveSection,
+  renumberSections,
 }: SectionAdminClientProps) {
+  const hasPositionGap = !positionsAreContiguous(
+    sections.map((section) => section.position),
+  );
+
   return (
     <div className="space-y-8">
       <Card>
@@ -73,6 +82,18 @@ export function SectionAdminClient({
           <CardTitle>Sections</CardTitle>
         </CardHeader>
         <CardContent>
+          {hasPositionGap ? (
+            <div className="mb-6 space-y-3">
+              <p className="text-sm text-destructive">
+                These sections are not in a continuous order. Students cannot
+                start this exam until the numbering has no gaps.
+              </p>
+              <RenumberSectionsButton
+                examId={examId}
+                action={renumberSections}
+              />
+            </div>
+          ) : null}
           {loadError ? (
             <p className="text-sm text-destructive">{loadError}</p>
           ) : sections.length === 0 ? (
@@ -240,6 +261,41 @@ function SectionForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function RenumberSectionsButton({
+  examId,
+  action,
+}: {
+  examId: string;
+  action: (formData: FormData) => Promise<SectionActionResult>;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleRenumber() {
+    setError(null);
+    const formData = new FormData();
+    formData.set("exam_id", examId);
+    setIsSubmitting(true);
+    const result = await action(formData);
+    setIsSubmitting(false);
+    if (result?.error) setError(result.error);
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="outline"
+        disabled={isSubmitting}
+        onClick={() => void handleRenumber()}
+      >
+        {isSubmitting ? "Renumbering…" : "Renumber sections"}
+      </Button>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
   );
 }
 

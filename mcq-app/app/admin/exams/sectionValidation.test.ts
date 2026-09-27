@@ -5,6 +5,7 @@ import {
   compactedPositions,
   deletionBlockMessage,
   nextSectionPosition,
+  positionsAreContiguous,
   swapWithNeighbor,
   validateSectionFields,
 } from "./sectionValidation.ts";
@@ -48,18 +49,18 @@ test("first section is position 0 and later sections append", () => {
   assert.equal(nextSectionPosition([0, 2]), 3);
 });
 
-test("deletion is allowed when nobody has reached the section", () => {
-  assert.equal(deletionBlockMessage([], 0), null);
-  assert.equal(deletionBlockMessage([0], 1), null);
+test("deletion is allowed when nobody has started", () => {
+  assert.equal(deletionBlockMessage(0), null);
 });
 
-test("deletion is blocked once a started student is at or past the section", () => {
-  assert.match(deletionBlockMessage([0], 0) ?? "", /already reached/);
-  assert.match(deletionBlockMessage([0, 2], 1) ?? "", /already reached/);
+test("deletion is blocked once any student has started", () => {
+  assert.match(deletionBlockMessage(1) ?? "", /already started/);
 });
 
-test("deletion is blocked when a started index is missing", () => {
-  assert.match(deletionBlockMessage([null], 2) ?? "", /already started/);
+test("positions must be a contiguous 0-based sequence", () => {
+  assert.equal(positionsAreContiguous([]), true);
+  assert.equal(positionsAreContiguous([0, 1, 2]), true);
+  assert.equal(positionsAreContiguous([0, 2]), false);
 });
 
 test("move swaps position with the visual neighbor", () => {

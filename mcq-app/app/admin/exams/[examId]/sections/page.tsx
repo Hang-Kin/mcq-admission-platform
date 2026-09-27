@@ -6,6 +6,7 @@ import {
   createSection,
   deleteSection,
   moveSection,
+  renumberSections,
   updateSection,
 } from "./actions";
 import { SectionAdminClient, type SectionRow } from "./SectionAdminClient";
@@ -97,6 +98,7 @@ export default async function ExamSectionsPage({
             updateSection={updateSection}
             deleteSection={deleteSection}
             moveSection={moveSection}
+            renumberSections={renumberSections}
           />
         </>
       )}

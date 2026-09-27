@@ -61,6 +61,28 @@ test("finish confirmation uses the section label verbatim", () => {
   );
 });
 
+test("section.is_last does not finish the exam", () => {
+  const result = interpretAdvancePayload(
+    {
+      ok: true,
+      is_last: false,
+      status: "in_progress",
+      section: {
+        index: 1,
+        position: 1,
+        label: "Section B",
+        is_last: true,
+        ends_at: "2026-09-27T11:00:00.000Z",
+      },
+      questions: [{ id: "q-b", question_set: "B" }],
+    },
+    null,
+  );
+  assert.equal(result.type, "section");
+  if (result.type !== "section") return;
+  assert.equal(result.section.label, "Section B");
+});
+
 test("is_last shows completion even if a section object is also present", () => {
   const result = interpretAdvancePayload(
     {

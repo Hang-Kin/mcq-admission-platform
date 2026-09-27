@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   compactedPositions,
   deletionBlockMessage,
-  nextSectionPosition,
+  STARTED_EXAM_DELETE_MESSAGE,
   swapWithNeighbor,
   validateSectionFields,
   type SectionPosition,
@@ -51,6 +51,35 @@ function fieldsFromForm(formData: FormData) {
 function uniqueSectionError(error: { code?: string; message?: string }) {
   if (error.code === "23505") return true;
   return /duplicate key/i.test(error.message ?? "");
+}
+
+function sectionDeleteBlocked(error: {
+  message?: string;
+  details?: string;
+  hint?: string;
+}) {
+  const blob = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`;
+  return /section_delete_blocked/i.test(blob);
+}
+
+async function compactExamSections(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  examId: string,
+) {
+  const { data, error } = await supabase
+    .from("exam_sections")
+    .select("id, position")
+    .eq("exam_id", examId);
+
+  if (error || !data) {
+    return "Could not update section order. You may not have permission.";
+  }
+
+  return writePositions(
+    supabase,
+    examId,
+    compactedPositions(data as SectionPosition[]),
+  );
 }
 
 async function writePositions(
@@ -117,16 +146,21 @@ export async function createSection(
 
   const { data: existing, error: existingError } = await supabase
     .from("exam_sections")
-    .select("position")
+    .select("id, position")
     .eq("exam_id", examId);
 
   if (existingError) {
     return { error: "Could not create this section. You may not have permission." };
   }
 
-  const position = nextSectionPosition(
-    (existing ?? []).map((row: { position: number }) => row.position),
+  const compactError = await writePositions(
+    supabase,
+    examId,
+    compactedPositions((existing ?? []) as SectionPosition[]),
   );
+  if (compactError) return { error: compactError };
+
+  const position = (existing ?? []).length;
 
   const { error } = await supabase.from("exam_sections").insert({
     exam_id: examId,
@@ -246,9 +280,9 @@ export async function deleteSection(
     return { error: "This section was not found." };
   }
 
-  const { data: started, error: startedError } = await supabase
+  const { count: startedCount, error: startedError } = await supabase
     .from("test_instances")
-    .select("current_section_index")
+    .select("id", { count: "exact", head: true })
     .eq("exam_id", examId)
     .not("started_at", "is", null);
 
@@ -259,13 +293,7 @@ export async function deleteSection(
     };
   }
 
-  const block = deletionBlockMessage(
-    (started ?? []).map(
-      (row: { current_section_index: number | null }) =>
-        row.current_section_index,
-    ),
-    section.position,
-  );
+  const block = deletionBlockMessage(startedCount ?? 0);
   if (block) return { error: block };
 
   const { error } = await supabase
@@ -275,6 +303,9 @@ export async function deleteSection(
     .eq("exam_id", examId);
 
   if (error) {
+    if (sectionDeleteBlocked(error)) {
+      return { error: STARTED_EXAM_DELETE_MESSAGE };
+    }
     return { error: "Could not delete this section. You may not have permission." };
   }
 
@@ -300,6 +331,23 @@ export async function deleteSection(
     revalidateExamSections(examId);
     return { error: writeError };
   }
+
+  revalidateExamSections(examId);
+}
+
+export async function renumberSections(
+  formData: FormData,
+): Promise<SectionActionResult> {
+  const examId = String(formData.get("exam_id") ?? "").trim();
+  if (!examId) return { error: "Missing exam." };
+
+  const { supabase, user } = await requireUser();
+  if (!user) {
+    return { error: "You are not signed in. Refresh and log in again." };
+  }
+
+  const writeError = await compactExamSections(supabase, examId);
+  if (writeError) return { error: writeError };
 
   revalidateExamSections(examId);
 }

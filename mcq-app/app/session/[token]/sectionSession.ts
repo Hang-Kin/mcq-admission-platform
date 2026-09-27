@@ -231,6 +231,8 @@ export function interpretAdvancePayload(
     return { type: "soft", message: ADVANCE_FAILED_MESSAGE };
   }
 
+  // Top-level is_last means this call submitted the exam.
+  // section.is_last only means the section on screen has no successor.
   if (parsed.record.is_last === true || parsed.record.status === "submitted") {
     return { type: "submitted" };
   }

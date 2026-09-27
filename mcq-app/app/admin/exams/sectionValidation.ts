@@ -59,32 +59,17 @@ export function nextSectionPosition(positions: number[]): number {
   return Math.max(...positions) + 1;
 }
 
-export function deletionBlockMessage(
-  startedSectionIndexes: Array<number | null>,
-  position: number,
-): string | null {
-  if (startedSectionIndexes.length === 0) return null;
+export const STARTED_EXAM_DELETE_MESSAGE =
+  "A student has already started this exam, so sections can’t be deleted.";
 
-  let reached = false;
-  let uncertain = false;
-
-  for (const index of startedSectionIndexes) {
-    if (index === null || !Number.isInteger(index)) {
-      uncertain = true;
-      continue;
-    }
-    if (index >= position) reached = true;
-  }
-
-  if (uncertain) {
-    return "A student has already started this exam, so this section can’t be deleted.";
-  }
-
-  if (reached) {
-    return "A student has already reached this section, so it can’t be deleted.";
-  }
-
+export function deletionBlockMessage(startedSittingCount: number): string | null {
+  if (startedSittingCount > 0) return STARTED_EXAM_DELETE_MESSAGE;
   return null;
+}
+
+export function positionsAreContiguous(positions: number[]): boolean {
+  const sorted = [...positions].sort((a, b) => a - b);
+  return sorted.every((position, index) => position === index);
 }
 
 export function swapWithNeighbor(

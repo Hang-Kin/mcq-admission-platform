@@ -52,6 +52,7 @@ type RpcErrorCode =
   | "not_in_progress"
   | "question_not_assigned"
   | "invalid_session_id"
+  | "invalid_sections"
   | "unknown";
 
 type StartSessionSuccess = {
@@ -102,6 +103,10 @@ const ERROR_COPY: Record<RpcErrorCode, { title: string; body: string }> = {
     title: "This session is no longer valid",
     body: "The exam sitting on this device does not match the server. Ask a teacher before trying again.",
   },
+  invalid_sections: {
+    title: "This exam isn’t ready",
+    body: "The sections for this exam are not in a continuous order. Ask a teacher to fix them before you start.",
+  },
   unknown: {
     title: "Something went wrong",
     body: "The exam could not continue. Ask a teacher for help.",
@@ -117,6 +122,7 @@ function classifyError(code: string | undefined): RpcErrorCode {
     case "not_in_progress":
     case "question_not_assigned":
     case "invalid_session_id":
+    case "invalid_sections":
       return code;
     default:
       return "unknown";
@@ -149,7 +155,7 @@ function extractErrorCode(
   if (payload?.error) return payload.error;
   const blob = `${rpcError?.message ?? ""} ${rpcError?.details ?? ""}`;
   const match = blob.match(
-    /invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
+    /invalid_sections|invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
   );
   return match?.[0];
 }
@@ -554,6 +560,11 @@ export function SessionExam({ token }: { token: string }) {
             setSectionNotice(SECTION_LOCKED_MESSAGE);
             setAutosave("idle");
             void resyncSession();
+            return;
+          }
+          if (rawCode === "expired" && sectionIndexRef.current !== null) {
+            setSubmitted(true);
+            setAutosave("idle");
             return;
           }
           const code = classifyError(rawCode);
