@@ -7,8 +7,8 @@ export const instant = false;
 interface GenerateInstanceRequest {
   examId: string;
   studentIds: string[];
-  questionSetNames: string[];
-  questionCount: number;
+  questionSetNames?: string[];
+  questionCount?: number;
 }
 
 interface CreatedInstance {
@@ -32,12 +32,6 @@ export async function POST(request: NextRequest) {
   }
   if (!Array.isArray(studentIds) || studentIds.length === 0) {
     return NextResponse.json({ error: "no_students_selected" }, { status: 400 });
-  }
-  if (!Array.isArray(questionSetNames) || questionSetNames.length === 0) {
-    return NextResponse.json({ error: "no_question_sets_selected" }, { status: 400 });
-  }
-  if (!Number.isInteger(questionCount) || questionCount <= 0) {
-    return NextResponse.json({ error: "invalid_question_count" }, { status: 400 });
   }
 
   // ── 2. Confirm there's a real logged-in user ────────────────────────────
@@ -64,30 +58,58 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "exam_not_found" }, { status: 404 });
   }
 
-  // ── 4. Fetch candidate questions from the selected question set(s) ──────
-  const { data: candidateQuestions, error: questionsError } = await supabase
-    .from("questions")
-    .select("id")
-    .in("question_set", questionSetNames);
+  // Sectioned exams draw questions in start_session from exam_sections.
+  // The QR pre-draw is ignored there, so do not write one.
+  const { count: sectionCount, error: sectionError } = await supabase
+    .from("exam_sections")
+    .select("id", { count: "exact", head: true })
+    .eq("exam_id", examId);
 
-  if (questionsError) {
-    console.error("generate-instance: failed to fetch questions", questionsError);
+  if (sectionError) {
+    console.error("generate-instance: failed to check sections", sectionError);
     return NextResponse.json({ error: "question_fetch_failed" }, { status: 500 });
   }
 
-  if (!candidateQuestions || candidateQuestions.length < questionCount) {
-    return NextResponse.json(
-      { error: "not_enough_questions_in_selected_sets" },
-      { status: 400 }
-    );
-  }
+  const usesSections = (sectionCount ?? 0) > 0;
+  let assignedQuestionIds: string[] = [];
 
-  // ── 5. Randomly draw the question subset ONCE for the whole batch ───────
-  // This is the "same subset for every student in one sitting" fairness
-  // rule locked in during Week 1 planning — do not move this inside the
-  // per-student loop below, or every student will get a different draw.
-  const shuffled = [...candidateQuestions].sort(() => Math.random() - 0.5);
-  const assignedQuestionIds = shuffled.slice(0, questionCount).map((q) => q.id);
+  if (!usesSections) {
+    if (!Array.isArray(questionSetNames) || questionSetNames.length === 0) {
+      return NextResponse.json({ error: "no_question_sets_selected" }, { status: 400 });
+    }
+    if (
+      questionCount === undefined ||
+      !Number.isInteger(questionCount) ||
+      questionCount <= 0
+    ) {
+      return NextResponse.json({ error: "invalid_question_count" }, { status: 400 });
+    }
+
+    // ── 4. Fetch candidate questions from the selected question set(s) ────
+    const { data: candidateQuestions, error: questionsError } = await supabase
+      .from("questions")
+      .select("id")
+      .in("question_set", questionSetNames);
+
+    if (questionsError) {
+      console.error("generate-instance: failed to fetch questions", questionsError);
+      return NextResponse.json({ error: "question_fetch_failed" }, { status: 500 });
+    }
+
+    if (!candidateQuestions || candidateQuestions.length < questionCount) {
+      return NextResponse.json(
+        { error: "not_enough_questions_in_selected_sets" },
+        { status: 400 }
+      );
+    }
+
+    // ── 5. Randomly draw the question subset ONCE for the whole batch ─────
+    // This is the "same subset for every student in one sitting" fairness
+    // rule locked in during Week 1 planning — do not move this inside the
+    // per-student loop below, or every student will get a different draw.
+    const shuffled = [...candidateQuestions].sort(() => Math.random() - 0.5);
+    assignedQuestionIds = shuffled.slice(0, questionCount).map((q) => q.id);
+  }
 
   const expiresAt = new Date(
     Date.now() + exam.duration_minutes * 60 * 1000

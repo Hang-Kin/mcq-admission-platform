@@ -3,6 +3,7 @@ export type GeneratePickerInput = {
   questionSetNames: string[];
   questionCount: number;
   availableQuestionCount: number;
+  usesSections?: boolean;
 };
 
 export type GeneratePickerResult =
@@ -14,6 +15,10 @@ export function validateGeneratePicker(
 ): GeneratePickerResult {
   if (input.studentIds.length === 0) {
     return { ok: false, error: "Select at least one student." };
+  }
+
+  if (input.usesSections) {
+    return { ok: true };
   }
 
   if (input.questionSetNames.length === 0) {
