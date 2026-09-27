@@ -35,9 +35,16 @@ export default async function ExamQrPage({
     .select("student_id, status")
     .eq("exam_id", examId);
 
-  const { data: questionRows } = await supabase
-    .from("questions")
-    .select("question_set");
+  const { count: sectionCount, error: sectionError } = await supabase
+    .from("exam_sections")
+    .select("id", { count: "exact", head: true })
+    .eq("exam_id", examId);
+
+  const usesSections = !sectionError && (sectionCount ?? 0) > 0;
+
+  const { data: questionRows } = usesSections
+    ? { data: [] }
+    : await supabase.from("questions").select("question_set");
 
   const statusByStudent = new Map<string, string>();
   for (const instance of instanceRows ?? []) {
@@ -86,6 +93,7 @@ export default async function ExamQrPage({
             examId={exam.id}
             students={students}
             questionSets={questionSets}
+            usesSections={usesSections}
           />
         </>
       )}

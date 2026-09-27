@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 
 import { Button } from "@/components/ui/button";
@@ -54,10 +55,12 @@ export function QrGeneratorClient({
   examId,
   students,
   questionSets,
+  usesSections = false,
 }: {
   examId: string;
   students: QrStudent[];
   questionSets: QuestionSetOption[];
+  usesSections?: boolean;
 }) {
   const studentsById = useMemo(() => {
     return new Map(students.map((student) => [student.id, student]));
@@ -103,6 +106,7 @@ export function QrGeneratorClient({
       questionSetNames: selectedSets,
       questionCount: parsedCount,
       availableQuestionCount,
+      usesSections,
     });
     if (!validation.ok) {
       setError(validation.error);
@@ -114,12 +118,19 @@ export function QrGeneratorClient({
       const response = await fetch("/api/admin/generate-instance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          examId,
-          studentIds: selectedStudentIds,
-          questionSetNames: selectedSets,
-          questionCount: parsedCount,
-        }),
+        body: JSON.stringify(
+          usesSections
+            ? {
+                examId,
+                studentIds: selectedStudentIds,
+              }
+            : {
+                examId,
+                studentIds: selectedStudentIds,
+                questionSetNames: selectedSets,
+                questionCount: parsedCount,
+              },
+        ),
       });
       const payload = (await response.json().catch(() => null)) as
         | {
@@ -202,53 +213,74 @@ export function QrGeneratorClient({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Question draw</CardTitle>
-            <CardDescription>
-              {availableQuestionCount} question
-              {availableQuestionCount === 1 ? "" : "s"} in the selected set(s).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {questionSets.length === 0 ? (
-              <p>No question sets found.</p>
-            ) : (
-              <ul className="space-y-3">
-                {questionSets.map((set) => {
-                  const id = `set-${set.name}`;
-                  return (
-                    <li key={set.name} className="flex items-center gap-3">
-                      <Checkbox
-                        id={id}
-                        checked={selectedSets.includes(set.name)}
-                        onCheckedChange={(value) =>
-                          toggleSet(set.name, value === true)
-                        }
-                      />
-                      <Label htmlFor={id} className="font-normal">
-                        {set.name} ({set.count})
-                      </Label>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <div className="max-w-xs space-y-2">
-              <Label htmlFor="question-count">Questions per student</Label>
-              <Input
-                id="question-count"
-                inputMode="numeric"
-                value={questionCount}
-                onChange={(event) => setQuestionCount(event.target.value)}
-              />
-            </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button type="button" disabled={isGenerating} onClick={() => void generate()}>
-              {isGenerating ? "Generating…" : "Generate QR codes"}
-            </Button>
-          </CardContent>
-        </Card>
+        {usesSections ? (
+          <Card>
+            <CardContent className="space-y-4">
+              <p>
+                This exam uses sections — question sets are configured on the{" "}
+                <Link
+                  href={`/admin/exams/${examId}/sections`}
+                  className="underline"
+                >
+                  Sections page
+                </Link>
+                .
+              </p>
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <Button type="button" disabled={isGenerating} onClick={() => void generate()}>
+                {isGenerating ? "Generating…" : "Generate QR codes"}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Question draw</CardTitle>
+              <CardDescription>
+                {availableQuestionCount} question
+                {availableQuestionCount === 1 ? "" : "s"} in the selected set(s).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {questionSets.length === 0 ? (
+                <p>No question sets found.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {questionSets.map((set) => {
+                    const id = `set-${set.name}`;
+                    return (
+                      <li key={set.name} className="flex items-center gap-3">
+                        <Checkbox
+                          id={id}
+                          checked={selectedSets.includes(set.name)}
+                          onCheckedChange={(value) =>
+                            toggleSet(set.name, value === true)
+                          }
+                        />
+                        <Label htmlFor={id} className="font-normal">
+                          {set.name} ({set.count})
+                        </Label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="max-w-xs space-y-2">
+                <Label htmlFor="question-count">Questions per student</Label>
+                <Input
+                  id="question-count"
+                  inputMode="numeric"
+                  value={questionCount}
+                  onChange={(event) => setQuestionCount(event.target.value)}
+                />
+              </div>
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <Button type="button" disabled={isGenerating} onClick={() => void generate()}>
+                {isGenerating ? "Generating…" : "Generate QR codes"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {created !== null && skipped !== null ? (
