@@ -8,12 +8,17 @@ export default async function ExamsPage() {
   const supabase = await createClient();
   const { data: exams, error } = await supabase
     .from("exams")
-    .select("id, name, duration_minutes, schedule_time")
+    .select("id, name, duration_minutes, created_at")
     .order("created_at", { ascending: false });
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold">Exams</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Exams</h1>
+        <Link href="/admin/exams/new" className="underline">
+          New exam
+        </Link>
+      </div>
       {error ? (
         <p className="mt-4">Failed to load exams.</p>
       ) : !exams || exams.length === 0 ? (
@@ -24,6 +29,7 @@ export default async function ExamsPage() {
             <tr>
               <th className="border-b py-2 pr-4">Exam</th>
               <th className="border-b py-2 pr-4">Duration</th>
+              <th className="border-b py-2 pr-4">Created</th>
               <th className="border-b py-2 pr-4">QR codes</th>
               <th className="border-b py-2 pr-4">Timeslots</th>
               <th className="border-b py-2 pr-4">Sections</th>
@@ -36,6 +42,11 @@ export default async function ExamsPage() {
                 <td className="border-b py-2 pr-4">{exam.name}</td>
                 <td className="border-b py-2 pr-4">
                   {exam.duration_minutes} min
+                </td>
+                <td className="border-b py-2 pr-4">
+                  {exam.created_at
+                    ? new Date(exam.created_at).toLocaleString()
+                    : ""}
                 </td>
                 <td className="border-b py-2 pr-4">
                   <Link href={`/admin/exams/${exam.id}/qr`} className="underline">
