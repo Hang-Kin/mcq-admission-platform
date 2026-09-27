@@ -17,6 +17,21 @@ import { createClient } from "@/lib/supabase/client";
 
 import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
 
+import {
+  countdownEndsAtMs,
+  finishSectionButtonLabel,
+  finishSectionConfirmCopy,
+  interpretAdvancePayload,
+  questionsAfterAdvance,
+  sectionFromIndex,
+  sectionFromPayload,
+  sectionKey,
+  shouldAutoAdvance,
+  shouldAutoSubmitExam,
+  SECTION_LOCKED_MESSAGE,
+  type ExamSectionState,
+} from "./sectionSession";
+
 type QuestionType = "radio" | "numeric" | "text";
 
 type SessionQuestion = {
@@ -37,6 +52,7 @@ type RpcErrorCode =
   | "not_in_progress"
   | "question_not_assigned"
   | "invalid_session_id"
+  | "invalid_sections"
   | "unknown";
 
 type StartSessionSuccess = {
@@ -47,6 +63,8 @@ type StartSessionSuccess = {
   status: string;
   session_id: string;
   questions: SessionQuestion[];
+  section?: unknown;
+  is_last?: boolean;
 };
 
 type RpcFailure = {
@@ -85,6 +103,10 @@ const ERROR_COPY: Record<RpcErrorCode, { title: string; body: string }> = {
     title: "This session is no longer valid",
     body: "The exam sitting on this device does not match the server. Ask a teacher before trying again.",
   },
+  invalid_sections: {
+    title: "This exam isn’t ready",
+    body: "The sections for this exam are not in a continuous order. Ask a teacher to fix them before you start.",
+  },
   unknown: {
     title: "Something went wrong",
     body: "The exam could not continue. Ask a teacher for help.",
@@ -100,6 +122,7 @@ function classifyError(code: string | undefined): RpcErrorCode {
     case "not_in_progress":
     case "question_not_assigned":
     case "invalid_session_id":
+    case "invalid_sections":
       return code;
     default:
       return "unknown";
@@ -132,7 +155,7 @@ function extractErrorCode(
   if (payload?.error) return payload.error;
   const blob = `${rpcError?.message ?? ""} ${rpcError?.details ?? ""}`;
   const match = blob.match(
-    /invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id/,
+    /invalid_sections|invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
   );
   return match?.[0];
 }
@@ -204,6 +227,10 @@ export function SessionExam({ token }: { token: string }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submittingRef = useRef(false);
   const examStoppedRef = useRef(false);
+  const advancingRef = useRef(false);
+  const sectionKeyRef = useRef<string | null>(null);
+  const sectionIndexRef = useRef<number | null>(null);
+  const autoAdvanceKeyRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [blockingError, setBlockingError] = useState<RpcErrorCode | null>(null);
@@ -211,12 +238,18 @@ export function SessionExam({ token }: { token: string }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null);
+  const [currentSection, setCurrentSection] = useState<ExamSectionState | null>(
+    null,
+  );
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [autosave, setAutosave] = useState<AutosaveState>("idle");
   const [submitted, setSubmitted] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
+  const [advanceBusy, setAdvanceBusy] = useState(false);
+  const [sectionNotice, setSectionNotice] = useState<string | null>(null);
 
   const stopExam = useCallback((code: RpcErrorCode) => {
     examStoppedRef.current = true;
@@ -226,10 +259,33 @@ export function SessionExam({ token }: { token: string }) {
     }
     setBlockingError(code);
     setConfirmOpen(false);
+    setFinishConfirmOpen(false);
   }, []);
 
+  const timerEndsAtMs = countdownEndsAtMs(currentSection, expiresAtMs);
   const remainingMs =
-    expiresAtMs === null ? null : expiresAtMs - (nowMs + clockOffsetMs);
+    timerEndsAtMs === null ? null : timerEndsAtMs - (nowMs + clockOffsetMs);
+
+  const adoptServerSection = useCallback(
+    (section: ExamSectionState, incoming: SessionQuestion[] | undefined) => {
+      const nextKey = sectionKey(section);
+      const changed = sectionKeyRef.current !== nextKey;
+      sectionKeyRef.current = nextKey;
+      sectionIndexRef.current = sectionFromIndex(section);
+      setCurrentSection(section);
+      setExpiresAtMs(null);
+      setQuestions((current) =>
+        questionsAfterAdvance(current, incoming, section),
+      );
+      if (changed) {
+        setIndex(0);
+        setAutosave("idle");
+      }
+      setFinishConfirmOpen(false);
+      setNowMs(Date.now());
+    },
+    [],
+  );
 
   useEffect(() => {
     answersRef.current = answers;
@@ -263,8 +319,16 @@ export function SessionExam({ token }: { token: string }) {
       }
 
       sessionIdRef.current = payload.session_id;
-      setQuestions(payload.questions ?? []);
-      setExpiresAtMs(new Date(payload.expires_at).getTime());
+      const startedSection = sectionFromPayload(payload);
+      if (startedSection) {
+        adoptServerSection(startedSection, payload.questions ?? []);
+      } else {
+        sectionKeyRef.current = null;
+        sectionIndexRef.current = null;
+        setCurrentSection(null);
+        setQuestions(payload.questions ?? []);
+        setExpiresAtMs(new Date(payload.expires_at).getTime());
+      }
       setClockOffsetMs(offset);
       setNowMs(Date.now());
       setLoading(false);
@@ -275,15 +339,15 @@ export function SessionExam({ token }: { token: string }) {
     return () => {
       cancelled = true;
     };
-  }, [stopExam, supabase, token]);
+  }, [adoptServerSection, stopExam, supabase, token]);
 
   useEffect(() => {
-    if (loading || blockingError || submitted || expiresAtMs === null) return;
+    if (loading || blockingError || submitted || timerEndsAtMs === null) return;
     const id = window.setInterval(() => {
       setNowMs(Date.now());
     }, 250);
     return () => window.clearInterval(id);
-  }, [blockingError, expiresAtMs, loading, submitted]);
+  }, [blockingError, loading, submitted, timerEndsAtMs]);
 
   const submitExam = useCallback(
     async () => {
@@ -327,10 +391,146 @@ export function SessionExam({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    if (remainingMs === null || remainingMs > 0) return;
+    if (!shouldAutoSubmitExam(currentSection, remainingMs)) return;
     if (loading || blockingError || submitted) return;
     void submitExam();
-  }, [blockingError, loading, remainingMs, submitExam, submitted]);
+  }, [blockingError, currentSection, loading, remainingMs, submitExam, submitted]);
+
+  const resyncSession = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    if (!sessionId || examStoppedRef.current) return;
+
+    const { data, error } = await supabase.rpc("start_session", {
+      p_token: token,
+      p_session_id: sessionId,
+    });
+    if (examStoppedRef.current) return;
+
+    const payload = parseRpcPayload(data);
+    if (payload && payload.ok === true) {
+      if (payload.status === "submitted" || payload.is_last === true) {
+        setSubmitted(true);
+        return;
+      }
+      const nextSection = sectionFromPayload(payload);
+      if (nextSection) {
+        adoptServerSection(nextSection, payload.questions ?? []);
+        return;
+      }
+      sectionKeyRef.current = null;
+      sectionIndexRef.current = null;
+      setCurrentSection(null);
+      setQuestions(payload.questions ?? []);
+      setExpiresAtMs(new Date(payload.expires_at).getTime());
+      setNowMs(Date.now());
+      return;
+    }
+
+    const code = extractErrorCode(
+      payload && payload.ok === false ? payload : null,
+      error,
+    );
+    if (code === "already_submitted") {
+      setSubmitted(true);
+      return;
+    }
+    if (code === "section_locked") return;
+    const classified = classifyError(code);
+    if (classified !== "unknown") stopExam(classified);
+  }, [adoptServerSection, stopExam, supabase, token]);
+
+  const advanceSection = useCallback(async () => {
+    if (
+      advancingRef.current ||
+      submittingRef.current ||
+      examStoppedRef.current ||
+      submitted
+    ) {
+      return;
+    }
+    const sessionId = sessionIdRef.current;
+    const fromIndex = sectionIndexRef.current;
+    if (!sessionId || fromIndex === null) return;
+
+    advancingRef.current = true;
+    setAdvanceBusy(true);
+    setFinishConfirmOpen(false);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const { data, error } = await supabase.rpc("advance_section", {
+      p_token: token,
+      p_session_id: sessionId,
+      p_from_index: fromIndex,
+    });
+
+    if (examStoppedRef.current) {
+      advancingRef.current = false;
+      setAdvanceBusy(false);
+      return;
+    }
+
+    const interpreted = interpretAdvancePayload(data, error);
+    if (interpreted.type === "submitted") {
+      setSubmitted(true);
+      setConfirmOpen(false);
+      setFinishConfirmOpen(false);
+      advancingRef.current = false;
+      setAdvanceBusy(false);
+      return;
+    }
+
+    if (interpreted.type === "section") {
+      const incoming = Array.isArray(interpreted.questions)
+        ? interpreted.questions.filter(
+            (item): item is SessionQuestion =>
+              Boolean(item) &&
+              typeof item === "object" &&
+              typeof (item as SessionQuestion).id === "string",
+          )
+        : undefined;
+      adoptServerSection(interpreted.section, incoming);
+      advancingRef.current = false;
+      setAdvanceBusy(false);
+      return;
+    }
+
+    if (interpreted.type === "blocked") {
+      stopExam(interpreted.code);
+      advancingRef.current = false;
+      setAdvanceBusy(false);
+      return;
+    }
+
+    if (interpreted.type === "resync") {
+      advancingRef.current = false;
+      setAdvanceBusy(false);
+      await resyncSession();
+      return;
+    }
+
+    setSectionNotice(interpreted.message);
+    advancingRef.current = false;
+    setAdvanceBusy(false);
+  }, [adoptServerSection, resyncSession, stopExam, submitted, supabase, token]);
+
+  useEffect(() => {
+    if (!shouldAutoAdvance(currentSection, remainingMs)) return;
+    if (loading || blockingError || submitted || !currentSection) return;
+    const key = `${sectionKey(currentSection)}:${currentSection.endsAtMs}`;
+    if (autoAdvanceKeyRef.current === key) return;
+    autoAdvanceKeyRef.current = key;
+    void advanceSection();
+  }, [
+    advanceSection,
+    blockingError,
+    currentSection,
+    loading,
+    remainingMs,
+    submitted,
+  ]);
 
   const saveAnswer = useCallback(
     (questionId: string, value: string) => {
@@ -352,12 +552,22 @@ export function SessionExam({ token }: { token: string }) {
         const payload = parseRpcPayload(data);
         if (examStoppedRef.current) return;
         if (error || !payload || payload.ok === false) {
-          const code = classifyError(
-            extractErrorCode(
-              payload && payload.ok === false ? payload : null,
-              error,
-            ),
+          const rawCode = extractErrorCode(
+            payload && payload.ok === false ? payload : null,
+            error,
           );
+          if (rawCode === "section_locked") {
+            setSectionNotice(SECTION_LOCKED_MESSAGE);
+            setAutosave("idle");
+            void resyncSession();
+            return;
+          }
+          if (rawCode === "expired" && sectionIndexRef.current !== null) {
+            setSubmitted(true);
+            setAutosave("idle");
+            return;
+          }
+          const code = classifyError(rawCode);
           if (
             code === "invalid_token" ||
             code === "expired" ||
@@ -373,10 +583,11 @@ export function SessionExam({ token }: { token: string }) {
           setAutosave("error");
           return;
         }
+        setSectionNotice(null);
         setAutosave("saved");
       }, 800);
     },
-    [stopExam, submitted, supabase, token],
+    [resyncSession, stopExam, submitted, supabase, token],
   );
 
   function updateAnswer(questionId: string, value: string) {
@@ -453,14 +664,26 @@ export function SessionExam({ token }: { token: string }) {
   return (
     <main className="mx-auto min-h-svh max-w-2xl p-6">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          Question {index + 1} of {total}
-        </p>
+        {currentSection ? (
+          <div>
+            <p className="text-sm font-medium">{currentSection.label}</p>
+            <p className="text-sm text-muted-foreground">
+              Question {index + 1} of {total}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Question {index + 1} of {total}
+          </p>
+        )}
         <p className="font-mono text-lg tabular-nums">
           {remainingMs === null ? "--:--" : formatRemaining(remainingMs)}
         </p>
       </div>
       <p className="mb-4 min-h-5 text-sm text-muted-foreground">{autosaveLabel}</p>
+      {sectionNotice ? (
+        <p className="mb-4 text-sm text-muted-foreground">{sectionNotice}</p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -494,6 +717,7 @@ export function SessionExam({ token }: { token: string }) {
                       name={question.id}
                       value={option}
                       checked={value === option}
+                      disabled={advanceBusy}
                       onChange={() => updateAnswer(question.id, option)}
                       className="size-4"
                     />
@@ -514,6 +738,7 @@ export function SessionExam({ token }: { token: string }) {
                 inputMode="decimal"
                 autoComplete="off"
                 value={value}
+                disabled={advanceBusy}
                 onChange={(event) =>
                   updateAnswer(question.id, sanitizeNumeric(event.target.value))
                 }
@@ -527,6 +752,7 @@ export function SessionExam({ token }: { token: string }) {
               <textarea
                 id="text-answer"
                 value={value}
+                disabled={advanceBusy}
                 onChange={(event) => updateAnswer(question.id, event.target.value)}
                 className="min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
@@ -538,7 +764,7 @@ export function SessionExam({ token }: { token: string }) {
             <Button
               type="button"
               variant="outline"
-              disabled={index === 0}
+              disabled={index === 0 || advanceBusy}
               onClick={() => setIndex((current) => Math.max(0, current - 1))}
             >
               Back
@@ -546,15 +772,25 @@ export function SessionExam({ token }: { token: string }) {
             <Button
               type="button"
               variant="outline"
-              disabled={index >= total - 1}
+              disabled={index >= total - 1 || advanceBusy}
               onClick={() => setIndex((current) => Math.min(total - 1, current + 1))}
             >
               Next
             </Button>
           </div>
-          <Button type="button" onClick={() => setConfirmOpen(true)}>
-            Submit exam
-          </Button>
+          {currentSection ? (
+            <Button
+              type="button"
+              disabled={advanceBusy}
+              onClick={() => setFinishConfirmOpen(true)}
+            >
+              {finishSectionButtonLabel(currentSection.label)}
+            </Button>
+          ) : (
+            <Button type="button" onClick={() => setConfirmOpen(true)}>
+              Submit exam
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -582,6 +818,36 @@ export function SessionExam({ token }: { token: string }) {
                 onClick={() => void submitExam()}
               >
                 {submitBusy ? "Submitting…" : "Submit"}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      ) : null}
+
+      {finishConfirmOpen && currentSection ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Finish this section?</CardTitle>
+              <CardDescription>
+                {finishSectionConfirmCopy(currentSection.label)}
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={advanceBusy}
+                onClick={() => setFinishConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={advanceBusy}
+                onClick={() => void advanceSection()}
+              >
+                {advanceBusy ? "Finishing…" : "Finish"}
               </Button>
             </CardFooter>
           </Card>
