@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { connection } from "next/server";
 
-export default function AdminHome() {
+export const instant = false;
+
+export default async function AdminHome() {
+  await connection();
+
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold">Admin dashboard</h1>
