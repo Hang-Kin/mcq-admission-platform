@@ -3,13 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { isStaffRole } from "@/lib/staffRole";
 import { createClient } from "@/lib/supabase/server";
 
 import { validateExamFields } from "./examValidation";
 
 export type CreateExamResult = { error?: string } | void;
-
-const STAFF_ROLES = ["admin", "teacher"];
 
 async function requireStaff() {
   const supabase = await createClient();
@@ -28,8 +27,7 @@ async function requireStaff() {
     .eq("id", user.id)
     .single();
 
-  const role = profile?.role ?? "";
-  if (!STAFF_ROLES.includes(role)) {
+  if (!isStaffRole(profile?.role)) {
     return { error: "You do not have permission to create exams." } as const;
   }
 

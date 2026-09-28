@@ -1,3 +1,4 @@
+import { isStaffRole } from "@/lib/staffRole";
 import { updateSession } from "@/lib/supabase/proxy";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -29,8 +30,7 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const allowedRoles = ["admin", "teacher"];
-    if (!allowedRoles.includes(profile?.role ?? "")) {
+    if (!isStaffRole(profile?.role)) {
       return NextResponse.redirect(new URL("/protected", request.url));
     }
   }
