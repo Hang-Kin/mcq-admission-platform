@@ -1,11 +1,15 @@
 import Link from "next/link";
 
+import { connection } from "next/server";
+
 import { createExam } from "../actions";
 import { ExamForm } from "../ExamForm";
 
 export const instant = false;
 
-export default function NewExamPage() {
+export default async function NewExamPage() {
+  await connection();
+
   return (
     <main className="p-8">
       <p className="mb-2 text-sm">
