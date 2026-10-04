@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { Suspense } from "react";
 
-import { Nav, NavFallback } from "@/components/nav";
+import { Nav } from "@/components/nav";
 
 import "./globals.css";
 
@@ -31,9 +30,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistSans.className} font-sans antialiased`}>
         <div className="flex min-h-svh flex-col bg-background text-foreground">
-          <Suspense fallback={<NavFallback />}>
-            <Nav />
-          </Suspense>
+          <Nav />
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
             {children}
           </div>
