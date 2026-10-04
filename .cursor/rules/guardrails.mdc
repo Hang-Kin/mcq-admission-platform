@@ -1,0 +1,28 @@
+---
+description: Hard safety guardrails for this repo
+alwaysApply: true
+---
+
+# Guardrails (always apply)
+
+## Git
+- Never push to or merge into main. Work only on feature/<short-description> branches.
+- Never merge a PR. Open it and stop; the maintainer (Hang-Kin) reviews and merges.
+
+## Protected files - do NOT edit, rename, move or delete
+- mcq-app/proxy.ts (auth/route gate)
+- Any .env, .env.local, .env.* file; never print or commit secrets
+- rls_setup.sql, supabase_schema.sql, and everything under migrations/
+
+## Database
+- No schema changes, migrations, RLS policy changes, or destructive SQL.
+- Do not change Supabase queries, API routes (mcq-app/app/api), auth logic, or grading/session logic.
+
+## Scope for UI work
+- Allowed: CSS/Tailwind styling, layout components, navigation components, page markup/className changes.
+- Do not change behavior: keep form actions, handlers, timers, props and data fetching intact.
+- If a task seems to need a protected file, stop and ask.
+
+## Design system
+- Clean and minimal. White background, dark tone Pantone 295 (approx #002C5F).
+- Use CSS variables from app/globals.css; no hard-coded colors in components.
