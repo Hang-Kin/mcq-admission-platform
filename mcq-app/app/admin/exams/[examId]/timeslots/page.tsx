@@ -5,9 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import {
   createTimeslot,
   deleteTimeslot,
+  saveSectionTimeslotQuestionSets,
   setTimeslotOverride,
   updateTimeslot,
 } from "./actions";
+import { SectionTimeslotMatrix } from "./SectionTimeslotMatrix";
 import { TimeslotAdminClient } from "./TimeslotAdminClient";
 
 export const instant = false;
@@ -44,6 +46,17 @@ export default async function ExamTimeslotsPage({
     .eq("exam_id", examId)
     .order("starts_at", { ascending: true });
 
+  const { data: sectionRows, error: sectionError } = await supabase
+    .from("exam_sections")
+    .select("id, label, question_set, position")
+    .eq("exam_id", examId)
+    .order("position", { ascending: true });
+
+  const { data: overrideRows, error: overrideError } = await supabase
+    .from("section_timeslot_question_sets")
+    .select("timeslot_id, section_id, question_set")
+    .eq("exam_id", examId);
+
   const { data: questionRows } = await supabase
     .from("questions")
     .select("question_set");
@@ -75,6 +88,33 @@ export default async function ExamTimeslotsPage({
             <h1 className="text-2xl font-bold">{exam.name}</h1>
             <p className="text-muted-foreground">Timeslots</p>
           </header>
+          {sectionError ? (
+            <p className="mb-8 text-sm text-destructive">
+              Could not load sections for this exam.
+            </p>
+          ) : (sectionRows ?? []).length > 0 ? (
+            <SectionTimeslotMatrix
+              examId={exam.id}
+              timeslots={(timeslotRows ?? []).map((slot) => ({
+                id: slot.id,
+                label: slot.label,
+              }))}
+              sections={(sectionRows ?? []).map((section) => ({
+                id: section.id,
+                label: section.label,
+                question_set: section.question_set,
+              }))}
+              overrides={overrideError ? [] : (overrideRows ?? [])}
+              questionSetNames={questionSetNames}
+              canClear={profile?.role === "admin"}
+              loadError={
+                overrideError
+                  ? "Could not load section question sets. Apply migration 016 if that table is not set up yet."
+                  : null
+              }
+              action={saveSectionTimeslotQuestionSets}
+            />
+          ) : null}
           <TimeslotAdminClient
             examId={exam.id}
             examName={exam.name}
@@ -82,6 +122,7 @@ export default async function ExamTimeslotsPage({
             questionSetNames={questionSetNames}
             activeTimeslotOverride={exam.active_timeslot_override}
             canDelete={profile?.role === "admin"}
+            hasSections={(sectionRows ?? []).length > 0}
             createTimeslot={createTimeslot}
             updateTimeslot={updateTimeslot}
             deleteTimeslot={deleteTimeslot}
