@@ -88,6 +88,7 @@ export function QuestionForm({
   );
   const [removeImage, setRemoveImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const existingImage =
     question?.image_url && publicQuestionImagePath(question.image_url)
@@ -119,9 +120,20 @@ export function QuestionForm({
     });
   }
 
+  function resetForAnotherQuestion() {
+    setQuestionText("");
+    setOptions(normalizeOptions(undefined));
+    setCorrectOptionIndex(0);
+    setCorrectAnswer("");
+    if (imageRef.current) {
+      imageRef.current.value = "";
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
 
     const image = imageRef.current?.files?.[0];
     if (image && image.size > 0) {
@@ -170,9 +182,20 @@ export function QuestionForm({
     }
 
     setIsSubmitting(true);
-    const result = await action(formData);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await action(formData);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+
+      // Create stays on this page (same signal as the student roster: no error).
+      // Edit still redirects, so this branch is only reached when authoring.
+      if (!question) {
+        resetForAnotherQuestion();
+        setSuccess("Question added.");
+      }
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -333,6 +356,7 @@ export function QuestionForm({
       )}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Saving…" : "Save"}

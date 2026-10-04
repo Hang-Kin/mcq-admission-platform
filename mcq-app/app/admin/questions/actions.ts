@@ -149,7 +149,9 @@ async function resolveImageUrl(
   return { url: currentUrl, replaced: false };
 }
 
-export async function createQuestion(formData: FormData) {
+export async function createQuestion(
+  formData: FormData,
+): Promise<{ error?: string } | void> {
   const parsed = parseQuestionPayload(formData);
   if (!parsed.ok) {
     return { error: parsed.error };
@@ -172,7 +174,6 @@ export async function createQuestion(formData: FormData) {
   }
 
   revalidatePath("/admin/questions");
-  redirect("/admin/questions");
 }
 
 export async function updateQuestion(id: string, formData: FormData) {
