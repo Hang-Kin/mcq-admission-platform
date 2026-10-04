@@ -49,6 +49,7 @@ type TimeslotAdminClientProps = {
   questionSetNames: string[];
   activeTimeslotOverride: string | null;
   canDelete: boolean;
+  hasSections: boolean;
   createTimeslot: (formData: FormData) => Promise<TimeslotActionResult>;
   updateTimeslot: (formData: FormData) => Promise<TimeslotActionResult>;
   deleteTimeslot: (formData: FormData) => Promise<TimeslotActionResult>;
@@ -62,6 +63,7 @@ export function TimeslotAdminClient({
   questionSetNames,
   activeTimeslotOverride,
   canDelete,
+  hasSections,
   createTimeslot,
   updateTimeslot,
   deleteTimeslot,
@@ -130,8 +132,12 @@ export function TimeslotAdminClient({
           <CardTitle>Create timeslot</CardTitle>
           <CardDescription>
             Question set must match a value already used on questions
-            (free text, not a fixed list). Overlapping windows are allowed,
-            but start_session assumes they do not overlap in practice.
+            (free text, not a fixed list).
+            {hasSections
+              ? " This exam has sections, so students draw from Section question sets, not from this timeslot set."
+              : ""}{" "}
+            Overlapping windows are allowed, but start_session assumes they
+            do not overlap in practice.
           </CardDescription>
         </CardHeader>
         <CardContent>
