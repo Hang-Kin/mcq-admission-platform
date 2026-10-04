@@ -59,18 +59,24 @@ export default async function ReviewQueuePage() {
   });
 
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Review queue</h1>
-      <p className="mt-2 text-muted-foreground">
-        Text answers waiting for a human to mark correct or incorrect.
-      </p>
+    <main className="space-y-8">
+      <div className="max-w-2xl space-y-2">
+        <h1 className="text-2xl">Review queue</h1>
+        <p className="text-sm text-muted-foreground">
+          Text answers waiting for a human to mark correct or incorrect.
+        </p>
+      </div>
 
       {error ? (
-        <p className="mt-6">Failed to load responses waiting for review.</p>
+        <p className="text-sm text-destructive">
+          Failed to load responses waiting for review.
+        </p>
       ) : rows.length === 0 ? (
-        <p className="mt-6">No responses waiting for review</p>
+        <p className="text-sm text-muted-foreground">
+          No responses waiting for review
+        </p>
       ) : (
-        <ul className="mt-6 space-y-6">
+        <ul className="space-y-6">
           {rows.map((row) => (
             <li key={row.id}>
               <Card>

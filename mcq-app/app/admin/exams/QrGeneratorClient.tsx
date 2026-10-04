@@ -181,7 +181,7 @@ export function QrGeneratorClient({
               Select all pending for this exam
             </Button>
             {students.length === 0 ? (
-              <p>No students in the roster yet.</p>
+              <p className="text-sm text-muted-foreground">No students in the roster yet.</p>
             ) : (
               <ul className="space-y-3">
                 {students.map((student) => {
@@ -220,7 +220,7 @@ export function QrGeneratorClient({
                 This exam uses sections — question sets are configured on the{" "}
                 <Link
                   href={`/admin/exams/${examId}/sections`}
-                  className="underline"
+                  className="hover:underline"
                 >
                   Sections page
                 </Link>

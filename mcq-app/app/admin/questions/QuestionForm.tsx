@@ -231,7 +231,7 @@ export function QuestionForm({
           required
           value={questionText}
           onChange={(event) => setQuestionText(event.target.value)}
-          className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
         />
         <p className="text-sm text-muted-foreground">
           Required even when you attach an image. Use it as the instruction or caption.
@@ -288,7 +288,7 @@ export function QuestionForm({
           required
           value={type}
           onChange={(event) => setType(event.target.value as QuestionType)}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
         >
           {typeChoices.map((choice) => (
             <option key={choice} value={choice}>

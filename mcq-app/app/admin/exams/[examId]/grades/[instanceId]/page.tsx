@@ -75,8 +75,8 @@ export default async function StudentGradePage({
 
   if (instanceError || !instance) {
     return (
-      <main className="p-8">
-        <h1 className="text-2xl font-bold">Student sitting not found</h1>
+      <main className="space-y-8">
+        <h1 className="text-2xl">Student sitting not found</h1>
       </main>
     );
   }
@@ -134,22 +134,22 @@ export default async function StudentGradePage({
   const unanswered = Math.max(0, score.total - responses.length);
 
   return (
-    <main className="p-8">
-      <header className="mb-8">
-        <p className="mb-2 text-sm">
-          <Link href={`/admin/exams/${examId}/grades`} className="underline">
+    <main className="space-y-8">
+      <header className="space-y-2">
+        <p className="text-sm">
+          <Link href={`/admin/exams/${examId}/grades`} className="hover:underline">
             Back to grades
           </Link>
         </p>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl">
           {student?.name?.trim() || student?.application_number || "Student"}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {student?.application_number} · {exam?.name ?? "Exam"}
         </p>
       </header>
 
-      <Card className="mb-8">
+      <Card>
         <CardHeader>
           <CardTitle>Grade</CardTitle>
           <CardDescription>
@@ -202,9 +202,11 @@ export default async function StudentGradePage({
       </Card>
 
       {responsesError ? (
-        <p>Failed to load responses.</p>
+        <p className="text-sm text-destructive">Failed to load responses.</p>
       ) : responses.length === 0 ? (
-        <p>No responses recorded for this sitting.</p>
+        <p className="text-sm text-muted-foreground">
+          No responses recorded for this sitting.
+        </p>
       ) : (
         <ul className="space-y-6">
           {responses.map((response, index) => (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
 import { deleteQuestion } from "./actions";
@@ -55,21 +56,26 @@ export default async function AdminQuestionsPage({
     : "/admin/questions/new";
 
   return (
-    <main className="p-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Questions</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/admin/questions/import" className="underline">
-            Import CSV
-          </Link>
-          <Link href={newQuestionHref} className="underline">
-            New question
-          </Link>
+    <main className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl">Questions</h1>
+          <p className="text-sm text-muted-foreground">
+            Group questions into sets, then edit or import more.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button asChild variant="outline">
+            <Link href="/admin/questions/import">Import CSV</Link>
+          </Button>
+          <Button asChild>
+            <Link href={newQuestionHref}>New question</Link>
+          </Button>
         </div>
       </div>
 
       {error ? (
-        <p className="mt-4">
+        <p className="text-sm text-destructive">
           Failed to load questions.
           {error.message.includes("image_url")
             ? " Apply migration 012 before using image questions."
@@ -77,19 +83,20 @@ export default async function AdminQuestionsPage({
         </p>
       ) : (
         <>
-          <h2 className="mt-8 text-lg font-semibold">Question sets</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="text-lg">Question sets</h2>
+          <p className="text-sm text-muted-foreground">
             A set is every question that shares the same question_set tag.
           </p>
           {summaries.length === 0 ? (
-            <p className="mt-4">No questions yet</p>
+            <p className="text-sm text-muted-foreground">No questions yet</p>
           ) : (
-            <table className="mt-4 w-full max-w-xl border-collapse text-left">
+            <div className="overflow-x-auto">
+            <table className="w-full max-w-xl border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-2 pr-4">Set</th>
-                  <th className="border-b py-2 pr-4">Questions</th>
-                  <th className="border-b py-2">View</th>
+                  <th className="border-b py-3 pr-4">Set</th>
+                  <th className="border-b py-3 pr-4">Questions</th>
+                  <th className="border-b py-3">View</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,17 +106,17 @@ export default async function AdminQuestionsPage({
                     (summary.name !== null && summary.name === activeSet);
                   return (
                     <tr key={summary.name ?? "__none__"}>
-                      <td className="border-b py-2 pr-4">
+                      <td className="border-b py-3 pr-4">
                         {summary.name ?? "No set"}
                       </td>
-                      <td className="border-b py-2 pr-4">{summary.count}</td>
-                      <td className="border-b py-2">
+                      <td className="border-b py-3 pr-4">{summary.count}</td>
+                      <td className="border-b py-3">
                         {selected ? (
-                          <Link href="/admin/questions" className="underline">
+                          <Link href="/admin/questions" className="hover:underline">
                             Show all
                           </Link>
                         ) : (
-                          <Link href={setHref(summary.name)} className="underline">
+                          <Link href={setHref(summary.name)} className="hover:underline">
                             View
                           </Link>
                         )}
@@ -119,9 +126,10 @@ export default async function AdminQuestionsPage({
                 })}
               </tbody>
             </table>
+            </div>
           )}
 
-          <h2 className="mt-8 text-lg font-semibold">
+          <h2 className="text-lg">
             {filteringUnset
               ? "No set"
               : activeSet
@@ -129,44 +137,45 @@ export default async function AdminQuestionsPage({
                 : "All questions"}
           </h2>
           {visible.length === 0 ? (
-            <p className="mt-4">No questions in this view</p>
+            <p className="text-sm text-muted-foreground">No questions in this view</p>
           ) : (
-            <table className="mt-4 w-full border-collapse text-left">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-2 pr-4">Question</th>
-                  <th className="border-b py-2 pr-4">Set</th>
-                  <th className="border-b py-2 pr-4">Category</th>
-                  <th className="border-b py-2 pr-4">Type</th>
-                  <th className="border-b py-2 pr-4">Image</th>
-                  <th className="border-b py-2 pr-4">Created</th>
-                  <th className="border-b py-2">Edit</th>
+                  <th className="border-b py-3 pr-4">Question</th>
+                  <th className="border-b py-3 pr-4">Set</th>
+                  <th className="border-b py-3 pr-4">Category</th>
+                  <th className="border-b py-3 pr-4">Type</th>
+                  <th className="border-b py-3 pr-4">Image</th>
+                  <th className="border-b py-3 pr-4">Created</th>
+                  <th className="border-b py-3">Edit</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((question) => (
                   <tr key={question.id}>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       {truncate(question.question_text, 60)}
                     </td>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       {question.question_set?.trim() || "No set"}
                     </td>
-                    <td className="border-b py-2 pr-4">{question.category}</td>
-                    <td className="border-b py-2 pr-4">{question.type}</td>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">{question.category}</td>
+                    <td className="border-b py-3 pr-4">{question.type}</td>
+                    <td className="border-b py-3 pr-4">
                       {question.image_url ? "Yes" : ""}
                     </td>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       {question.created_at
                         ? new Date(question.created_at).toLocaleString()
                         : ""}
                     </td>
-                    <td className="border-b py-2">
+                    <td className="border-b py-3">
                       <div className="flex items-center gap-3">
                         <Link
                           href={`/admin/questions/${question.id}/edit`}
-                          className="underline"
+                          className="hover:underline"
                         >
                           Edit
                         </Link>
@@ -182,6 +191,7 @@ export default async function AdminQuestionsPage({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </>
       )}
