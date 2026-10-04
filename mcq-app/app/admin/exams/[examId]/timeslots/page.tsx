@@ -70,23 +70,23 @@ export default async function ExamTimeslotsPage({
   ].sort((a, b) => a.localeCompare(b));
 
   return (
-    <main className="p-8">
+    <main className="space-y-8">
       {examError || !exam ? (
-        <h1 className="text-2xl font-bold">Exam not found</h1>
+        <h1 className="text-2xl">Exam not found</h1>
       ) : (
         <>
-          <header className="mb-8">
-            <p className="mb-2 text-sm">
-              <Link href="/admin/exams" className="underline">
+          <header className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              <Link href="/admin/exams" className="hover:underline">
                 Exams
               </Link>
               {" · "}
-              <Link href={`/admin/exams/${exam.id}/qr`} className="underline">
+              <Link href={`/admin/exams/${exam.id}/qr`} className="hover:underline">
                 QR codes
               </Link>
             </p>
-            <h1 className="text-2xl font-bold">{exam.name}</h1>
-            <p className="text-muted-foreground">Timeslots</p>
+            <h1 className="text-2xl">{exam.name}</h1>
+            <p className="text-sm text-muted-foreground">Timeslots</p>
           </header>
           {sectionError ? (
             <p className="mb-8 text-sm text-destructive">

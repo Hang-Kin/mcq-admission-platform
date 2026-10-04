@@ -600,8 +600,8 @@ export function SessionExam({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-6">
-        <p className="text-muted-foreground">Opening your exam…</p>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-16">
+        <p className="text-sm text-muted-foreground">Opening your exam…</p>
       </main>
     );
   }
@@ -609,7 +609,7 @@ export function SessionExam({ token }: { token: string }) {
   if (blockingError) {
     const copy = ERROR_COPY[blockingError];
     return (
-      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
         <Card className="w-full">
           <CardHeader>
             <CardTitle>{copy.title}</CardTitle>
@@ -622,7 +622,7 @@ export function SessionExam({ token }: { token: string }) {
 
   if (submitted) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Exam submitted</CardTitle>
@@ -637,7 +637,7 @@ export function SessionExam({ token }: { token: string }) {
 
   if (!question || total === 0) {
     return (
-      <main className="mx-auto flex min-h-svh max-w-2xl items-center justify-center p-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
         <Card className="w-full">
           <CardHeader>
             <CardTitle>No questions assigned</CardTitle>
@@ -662,11 +662,11 @@ export function SessionExam({ token }: { token: string }) {
           : "";
 
   return (
-    <main className="mx-auto min-h-svh max-w-2xl p-6">
-      <div className="mb-4 flex items-center justify-between gap-4">
+    <main className="mx-auto w-full max-w-2xl">
+      <div className="sticky top-14 z-20 mb-6 flex items-center justify-between gap-4 border-b border-border bg-background py-4">
         {currentSection ? (
           <div>
-            <p className="text-sm font-medium">{currentSection.label}</p>
+            <p className="text-sm font-medium text-primary">{currentSection.label}</p>
             <p className="text-sm text-muted-foreground">
               Question {index + 1} of {total}
             </p>
@@ -676,7 +676,7 @@ export function SessionExam({ token }: { token: string }) {
             Question {index + 1} of {total}
           </p>
         )}
-        <p className="font-mono text-lg tabular-nums">
+        <p className="text-2xl font-medium tabular-nums text-primary">
           {remainingMs === null ? "--:--" : formatRemaining(remainingMs)}
         </p>
       </div>
@@ -705,12 +705,15 @@ export function SessionExam({ token }: { token: string }) {
             />
           ) : null}
           {question.type === "radio" ? (
-            <fieldset className="space-y-2">
+            <fieldset className="space-y-3">
               <legend className="sr-only">Choose an answer</legend>
               {options.map((option) => {
                 const id = `${question.id}-${option}`;
                 return (
-                  <div key={option} className="flex items-center gap-3">
+                  <div
+                    key={option}
+                    className="flex min-h-11 items-center gap-3 rounded-md border border-border px-3"
+                  >
                     <input
                       id={id}
                       type="radio"
@@ -719,9 +722,9 @@ export function SessionExam({ token }: { token: string }) {
                       checked={value === option}
                       disabled={advanceBusy}
                       onChange={() => updateAnswer(question.id, option)}
-                      className="size-4"
+                      className="size-4 shrink-0"
                     />
-                    <Label htmlFor={id} className="text-base font-normal">
+                    <Label htmlFor={id} className="flex-1 py-3 text-base font-normal">
                       {option}
                     </Label>
                   </div>
@@ -754,16 +757,17 @@ export function SessionExam({ token }: { token: string }) {
                 value={value}
                 disabled={advanceBusy}
                 onChange={(event) => updateAnswer(question.id, event.target.value)}
-                className="min-h-32 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
           ) : null}
         </CardContent>
-        <CardFooter className="flex flex-wrap justify-between gap-2">
-          <div className="flex gap-2">
+        <CardFooter className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
             <Button
               type="button"
               variant="outline"
+              className="w-full sm:w-auto"
               disabled={index === 0 || advanceBusy}
               onClick={() => setIndex((current) => Math.max(0, current - 1))}
             >
@@ -772,6 +776,7 @@ export function SessionExam({ token }: { token: string }) {
             <Button
               type="button"
               variant="outline"
+              className="w-full sm:w-auto"
               disabled={index >= total - 1 || advanceBusy}
               onClick={() => setIndex((current) => Math.min(total - 1, current + 1))}
             >
@@ -781,13 +786,18 @@ export function SessionExam({ token }: { token: string }) {
           {currentSection ? (
             <Button
               type="button"
+              className="w-full sm:w-auto"
               disabled={advanceBusy}
               onClick={() => setFinishConfirmOpen(true)}
             >
               {finishSectionButtonLabel(currentSection.label)}
             </Button>
           ) : (
-            <Button type="button" onClick={() => setConfirmOpen(true)}>
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              onClick={() => setConfirmOpen(true)}
+            >
               Submit exam
             </Button>
           )}

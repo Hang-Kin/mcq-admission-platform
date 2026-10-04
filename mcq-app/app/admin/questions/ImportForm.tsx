@@ -160,7 +160,7 @@ export function ImportForm() {
     <div className="mt-6 flex max-w-4xl flex-col gap-4">
       <div className="text-sm">
         <p>CSV format (header row required):</p>
-        <p className="mt-1 font-mono text-xs">
+        <p className="mt-1 text-sm">
           question_text,category,type,options,correct_answer
         </p>
         <ul className="mt-2 list-disc pl-5">
@@ -188,7 +188,11 @@ export function ImportForm() {
       </div>
 
       <div>
-        <button type="button" className="underline" onClick={downloadTemplate}>
+        <button
+          type="button"
+          className="text-sm text-primary underline-offset-4 hover:underline"
+          onClick={downloadTemplate}
+        >
           Download template
         </button>
       </div>
@@ -202,30 +206,32 @@ export function ImportForm() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {preview.length > 0 ? (
-        <table className="w-full border-collapse text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
           <thead>
             <tr>
-              <th className="border-b py-2 pr-4">Question</th>
-              <th className="border-b py-2 pr-4">Category</th>
-              <th className="border-b py-2 pr-4">Type</th>
-              <th className="border-b py-2">Status</th>
+              <th className="border-b py-3 pr-4">Question</th>
+              <th className="border-b py-3 pr-4">Category</th>
+              <th className="border-b py-3 pr-4">Type</th>
+              <th className="border-b py-3">Status</th>
             </tr>
           </thead>
           <tbody>
             {preview.map((row, index) => (
               <tr key={index}>
-                <td className="border-b py-2 pr-4">
+                <td className="border-b py-3 pr-4">
                   {truncate(row.question_text, 60)}
                 </td>
-                <td className="border-b py-2 pr-4">{row.category}</td>
-                <td className="border-b py-2 pr-4">{row.type}</td>
-                <td className="border-b py-2">
+                <td className="border-b py-3 pr-4">{row.category}</td>
+                <td className="border-b py-3 pr-4">{row.type}</td>
+                <td className="border-b py-3">
                   {row.error ? row.error : "✓"}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
 
       <Button type="button" disabled={!canImport || isImporting} onClick={handleImport}>

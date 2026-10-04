@@ -76,56 +76,61 @@ export default async function ExamGradesPage({
     .sort((a, b) => a.application_number.localeCompare(b.application_number));
 
   return (
-    <main className="p-8">
+    <main className="space-y-8">
       {examError || !exam ? (
-        <h1 className="text-2xl font-bold">Exam not found</h1>
+        <h1 className="text-2xl">Exam not found</h1>
       ) : (
         <>
-          <header className="mb-8">
-            <p className="mb-2 text-sm">
-              <Link href="/admin/exams" className="underline">
+          <header className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              <Link href="/admin/exams" className="hover:underline">
                 Exams
               </Link>
             </p>
-            <h1 className="text-2xl font-bold">{exam.name}</h1>
-            <p className="text-muted-foreground">Grades</p>
+            <h1 className="text-2xl">{exam.name}</h1>
+            <p className="text-sm text-muted-foreground">Grades</p>
           </header>
 
           {instancesError ? (
-            <p>Failed to load submitted exams.</p>
+            <p className="text-sm text-destructive">
+              Failed to load submitted exams.
+            </p>
           ) : rows.length === 0 ? (
-            <p>No students have submitted this exam yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No students have submitted this exam yet.
+            </p>
           ) : (
-            <table className="w-full border-collapse text-left">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-2 pr-4">Student</th>
-                  <th className="border-b py-2 pr-4">Application number</th>
-                  <th className="border-b py-2 pr-4">Score</th>
-                  <th className="border-b py-2">Grade</th>
+                  <th className="border-b py-3 pr-4">Student</th>
+                  <th className="border-b py-3 pr-4">Application number</th>
+                  <th className="border-b py-3 pr-4">Score</th>
+                  <th className="border-b py-3">Grade</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       <Link
                         href={`/admin/exams/${exam.id}/grades/${row.id}`}
-                        className="underline"
+                        className="hover:underline"
                       >
                         {row.name?.trim() || row.application_number}
                       </Link>
                     </td>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       {row.application_number}
                     </td>
-                    <td className="border-b py-2 pr-4">
+                    <td className="border-b py-3 pr-4">
                       {row.score.correct}/{row.score.total} correct
                       {row.score.pendingReview > 0
                         ? ` · ${row.score.pendingReview} to review`
                         : ""}
                     </td>
-                    <td className="border-b py-2">
+                    <td className="border-b py-3">
                       <div className="flex flex-wrap gap-2">
                         {row.grade ? (
                           <Badge>Finalized {Number(row.grade.final_grade)}%</Badge>
@@ -141,6 +146,7 @@ export default async function ExamGradesPage({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </>
       )}

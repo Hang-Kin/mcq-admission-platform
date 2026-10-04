@@ -18,13 +18,15 @@ export default async function NewQuestionPage({
   const { data: rows } = await supabase.from("questions").select("question_set");
 
   return (
-    <main className="p-8">
-      <p className="mb-2 text-sm">
-        <Link href="/admin/questions" className="underline">
-          Questions
-        </Link>
-      </p>
-      <h1 className="text-2xl font-bold">New question</h1>
+    <main className="space-y-8">
+      <div className="space-y-2">
+        <p className="text-sm">
+          <Link href="/admin/questions" className="hover:underline">
+            Questions
+          </Link>
+        </p>
+        <h1 className="text-2xl">New question</h1>
+      </div>
       <QuestionForm
         action={createQuestion}
         questionSetNames={questionSetNames((rows ?? []).map((row) => row.question_set))}
