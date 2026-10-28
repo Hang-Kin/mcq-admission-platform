@@ -8,13 +8,34 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 
+import { SettingsBody } from "../settings/SettingsBody";
 import { WaitingNote } from "./BankTrail";
+import { QuestionTabs } from "./QuestionTabs";
 import { isMissingSchema } from "./schemaError";
 import { SUBJECTS } from "./subjects";
 
 export const instant = false;
 
-export default async function QuestionBankPage() {
+export default async function QuestionBankPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const settings = tab === "settings";
+
+  return (
+    <main className="space-y-8">
+      <div className="max-w-2xl space-y-4">
+        <h1 className="text-2xl">Questions</h1>
+        <QuestionTabs settings={settings} />
+      </div>
+      {settings ? <SettingsTab /> : <QuestionsTab />}
+    </main>
+  );
+}
+
+async function QuestionsTab() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("questions")
@@ -31,13 +52,10 @@ export default async function QuestionBankPage() {
   }
 
   return (
-    <main className="space-y-8">
-      <div className="max-w-2xl space-y-2">
-        <h1 className="text-2xl">Question bank</h1>
-        <p className="text-sm text-muted-foreground">
-          Choose Math or Chinese, then open a topic to add questions.
-        </p>
-      </div>
+    <>
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        Choose Math or Chinese, then open a topic to add questions.
+      </p>
       {missing ? <WaitingNote /> : null}
       {error && !missing ? (
         <p className="text-sm text-destructive">Could not load the question bank.</p>
@@ -68,6 +86,18 @@ export default async function QuestionBankPage() {
           );
         })}
       </div>
-    </main>
+    </>
+  );
+}
+
+function SettingsTab() {
+  return (
+    <>
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        Choose how many questions come from each topic, and how many minutes
+        students get.
+      </p>
+      <SettingsBody />
+    </>
   );
 }
