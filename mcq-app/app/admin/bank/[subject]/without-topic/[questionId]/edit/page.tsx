@@ -39,7 +39,7 @@ export default async function EditUnfiledQuestionPage({
       <div className="max-w-2xl space-y-2">
         <BankTrail
           items={[
-            { href: "/admin/bank", label: "Question bank" },
+            { href: "/admin/bank", label: "Questions" },
             { href: `/admin/bank/${subject}`, label: info.title },
             { href: returnTo, label: "No topic yet" },
             { label: "Edit" },

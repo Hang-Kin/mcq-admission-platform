@@ -81,7 +81,7 @@ export default async function AdminQuestionsPage({
     <main className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl">Questions</h1>
+          <h1 className="text-2xl">Older question list</h1>
           <p className="text-sm text-muted-foreground">
             Group questions into sets, then edit or import more.
           </p>
