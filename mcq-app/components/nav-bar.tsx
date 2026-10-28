@@ -7,18 +7,9 @@ import { Menu, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type NavLink = {
-  href: string;
-  label: string;
-  exact?: boolean;
-};
+import { isNavActive, type NavLink } from "./nav-links";
 
-function isActive(pathname: string, link: NavLink) {
-  if (link.exact || link.href === "/") {
-    return pathname === link.href;
-  }
-  return pathname === link.href || pathname.startsWith(`${link.href}/`);
-}
+export type { NavLink };
 
 function LinkList({
   links,
@@ -34,13 +25,16 @@ function LinkList({
   return (
     <nav className={className} aria-label="Primary">
       {links.map((link) => {
-        const active = isActive(pathname, link);
+        const active = isNavActive(pathname, link);
         return (
           <Link
             key={link.href}
             href={link.href}
             aria-current={active ? "page" : undefined}
-            className={cn(itemClassName, active && "font-medium text-primary-foreground underline underline-offset-4")}
+            className={cn(
+              itemClassName,
+              active && "font-medium text-primary-foreground underline underline-offset-4",
+            )}
           >
             {link.label}
           </Link>
@@ -68,9 +62,9 @@ export function NavBar({
 
   return (
     <header className="sticky top-0 z-40 border-b border-primary bg-primary text-primary-foreground">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+      <div className="mx-auto flex h-14 w-full max-w-6xl flex-nowrap items-center justify-between gap-3 px-5 sm:px-8">
         <Link
-          href="/"
+          href="/admin"
           className="shrink-0 text-base font-semibold tracking-tight text-primary-foreground hover:no-underline"
         >
           MCQ Admission
@@ -79,15 +73,15 @@ export function NavBar({
         <LinkList
           links={links}
           pathname={pathname}
-          className="hidden items-center gap-5 lg:flex"
-          itemClassName="text-sm text-primary-foreground/80 hover:text-primary-foreground hover:no-underline"
+          className="hidden min-w-0 flex-nowrap items-center gap-4 md:flex lg:gap-5"
+          itemClassName="shrink-0 whitespace-nowrap text-sm text-primary-foreground/80 hover:text-primary-foreground hover:no-underline"
         />
 
-        <div className="hidden items-center lg:flex">{session}</div>
+        <div className="hidden shrink-0 items-center md:flex">{session}</div>
 
         <button
           type="button"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-primary-foreground lg:hidden"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-primary-foreground md:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -100,7 +94,7 @@ export function NavBar({
       {open ? (
         <div
           id="mobile-nav"
-          className="border-t border-primary-foreground/20 px-5 py-4 lg:hidden"
+          className="border-t border-primary-foreground/20 px-5 py-4 md:hidden"
         >
           <LinkList
             links={links}
