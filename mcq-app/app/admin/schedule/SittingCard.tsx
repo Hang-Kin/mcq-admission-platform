@@ -24,6 +24,7 @@ export function SittingCard({
   startsAt,
   endsAt,
   status,
+  startWarning = false,
   unavailable = false,
   children,
 }: {
@@ -33,6 +34,7 @@ export function SittingCard({
   startsAt: string | null;
   endsAt: string | null;
   status: SittingStatus;
+  startWarning?: boolean;
   unavailable?: boolean;
   children?: ReactNode;
 }) {
@@ -66,6 +68,9 @@ export function SittingCard({
           <Badge variant={status === "Prepared" ? "default" : status === "Locked" ? "outline" : "secondary"}>
             {status}
           </Badge>
+          {startWarning ? (
+            <Badge variant="destructive">Within 24 hours</Badge>
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground" suppressHydrationWarning>
           {examName}

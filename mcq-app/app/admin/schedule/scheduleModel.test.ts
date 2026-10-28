@@ -6,6 +6,7 @@ import {
   groupDrawPreview,
   sittingButton,
   sittingStatus,
+  unpreparedStartWarning,
 } from "./scheduleModel.ts";
 
 test("a started student locks the sitting even when questions were prepared", () => {
@@ -44,6 +45,27 @@ test("preview groups subjects, then numbered topics, then the rest", () => {
     ["Equations", "Fractions", "Decimals"],
   );
   assert.deepEqual(groups[1]?.topics[0]?.questions, ["First idiom", "Second idiom"]);
+});
+
+test("an unprepared sitting warns only when its start is within 24 hours", () => {
+  const now = Date.parse("2026-10-28T12:00:00.000Z");
+  const hours = (count: number) => new Date(now + count * 60 * 60 * 1000).toISOString();
+
+  assert.equal(unpreparedStartWarning("Not prepared", hours(0), now), true);
+  assert.equal(unpreparedStartWarning("Not prepared", hours(24), now), true);
+  assert.equal(unpreparedStartWarning("Not prepared", hours(-24), now), true);
+  assert.equal(
+    unpreparedStartWarning("Not prepared", new Date(now + 24 * 60 * 60 * 1000 + 1).toISOString(), now),
+    false,
+  );
+  assert.equal(
+    unpreparedStartWarning("Not prepared", new Date(now - 24 * 60 * 60 * 1000 - 1).toISOString(), now),
+    false,
+  );
+  assert.equal(unpreparedStartWarning("Prepared", hours(1), now), false);
+  assert.equal(unpreparedStartWarning("Locked", hours(1), now), false);
+  assert.equal(unpreparedStartWarning("Not prepared", null, now), false);
+  assert.equal(unpreparedStartWarning("Not prepared", "not-a-time", now), false);
 });
 
 test("prepare errors stay in plain language", () => {

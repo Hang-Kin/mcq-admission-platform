@@ -26,6 +26,19 @@ export function sittingStatus(prepared: boolean, locked: boolean): SittingStatus
   return "Not prepared";
 }
 
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+export function unpreparedStartWarning(
+  status: SittingStatus,
+  startsAt: string | null,
+  nowMs: number,
+): boolean {
+  if (status !== "Not prepared" || !startsAt) return false;
+  const startMs = Date.parse(startsAt);
+  if (Number.isNaN(startMs)) return false;
+  return Math.abs(startMs - nowMs) <= TWENTY_FOUR_HOURS_MS;
+}
+
 export function sittingButton(status: SittingStatus): {
   label: string;
   disabled: boolean;
