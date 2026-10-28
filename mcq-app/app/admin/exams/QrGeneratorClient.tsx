@@ -25,7 +25,21 @@ function studentLabel(student: QrStudent) {
   return student.name?.trim() || student.application_number;
 }
 
-function statusLabel(status: QrStudent["instanceStatus"]) {
+function statusLabel(status: QrStudent["instanceStatus"], plainLanguage: boolean) {
+  if (plainLanguage) {
+    switch (status) {
+      case "none":
+        return "no code yet";
+      case "pending":
+        return "code ready";
+      case "in_progress":
+        return "already started";
+      case "submitted":
+        return "finished";
+      default:
+        return status;
+    }
+  }
   switch (status) {
     case "none":
       return "no sitting yet";
@@ -44,6 +58,12 @@ function isPendingForExam(student: QrStudent) {
   return student.instanceStatus === "none" || student.instanceStatus === "pending";
 }
 
+function mergeCodes(existing: CreatedRow[], fresh: CreatedRow[] | null): CreatedRow[] {
+  if (!fresh) return existing;
+  const replaced = new Set(fresh.map((row) => row.studentId));
+  return [...fresh, ...existing.filter((row) => !replaced.has(row.studentId))];
+}
+
 function sessionUrl(token: string) {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   const origin =
@@ -56,11 +76,17 @@ export function QrGeneratorClient({
   students,
   questionSets,
   usesSections = false,
+  plainLanguage = false,
+  primaryAction = "create",
+  existingCodes = [],
 }: {
   examId: string;
   students: QrStudent[];
   questionSets: QuestionSetOption[];
   usesSections?: boolean;
+  plainLanguage?: boolean;
+  primaryAction?: "create" | "print" | "none";
+  existingCodes?: CreatedRow[];
 }) {
   const studentsById = useMemo(() => {
     return new Map(students.map((student) => [student.id, student]));
@@ -157,7 +183,7 @@ export function QrGeneratorClient({
     }
   }
 
-  const createdCards = (created ?? [])
+  const createdCards = mergeCodes(existingCodes, created)
     .map((row) => {
       const student = studentsById.get(row.studentId);
       if (!student) return null;
@@ -201,7 +227,7 @@ export function QrGeneratorClient({
                         <span className="block text-sm text-muted-foreground">
                           {student.application_number}
                           {" · "}
-                          {statusLabel(student.instanceStatus)}
+                          {statusLabel(student.instanceStatus, plainLanguage)}
                           {blocked ? " — generate will skip this student" : ""}
                         </span>
                       </Label>
@@ -216,19 +242,35 @@ export function QrGeneratorClient({
         {usesSections ? (
           <Card>
             <CardContent className="space-y-4">
-              <p>
-                This exam uses sections — question sets are configured on the{" "}
-                <Link
-                  href={`/admin/exams/${examId}/sections`}
-                  className="hover:underline"
-                >
-                  Sections page
-                </Link>
-                .
-              </p>
+              {plainLanguage ? (
+                <p>Math and Chinese are already set. Choose the students, then create the codes.</p>
+              ) : (
+                <p>
+                  This exam uses sections — question sets are configured on the{" "}
+                  <Link
+                    href={`/admin/exams/${examId}/sections`}
+                    className="hover:underline"
+                  >
+                    Sections page
+                  </Link>
+                  .
+                </p>
+              )}
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button type="button" disabled={isGenerating} onClick={() => void generate()}>
-                {isGenerating ? "Generating…" : "Generate QR codes"}
+              <Button
+                type="button"
+                variant={!plainLanguage || primaryAction === "create" ? "default" : "outline"}
+                className={plainLanguage ? "h-12 px-5 text-base" : undefined}
+                disabled={isGenerating}
+                onClick={() => void generate()}
+              >
+                {isGenerating
+                  ? plainLanguage
+                    ? "Creating…"
+                    : "Generating…"
+                  : plainLanguage
+                    ? "Create QR codes"
+                    : "Generate QR codes"}
               </Button>
             </CardContent>
           </Card>
@@ -283,22 +325,27 @@ export function QrGeneratorClient({
         )}
       </div>
 
-      {created !== null && skipped !== null ? (
+      {createdCards.length > 0 || (created !== null && skipped !== null) ? (
         <section className="space-y-6">
           <div className="qr-no-print flex items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold">Results</h2>
+            <h2 className="text-xl font-semibold">{plainLanguage ? "Codes" : "Results"}</h2>
             {createdCards.length > 0 ? (
-              <Button type="button" variant="outline" onClick={() => window.print()}>
-                Print QR sheets
+              <Button
+                type="button"
+                variant={plainLanguage && primaryAction === "print" ? "default" : "outline"}
+                className={plainLanguage ? "h-12 px-5 text-base" : undefined}
+                onClick={() => window.print()}
+              >
+                {plainLanguage ? "Print" : "Print QR sheets"}
               </Button>
             ) : null}
           </div>
 
-          {createdCards.length === 0 && skipped.length === 0 ? (
+          {created !== null && skipped !== null && createdCards.length === 0 && skipped.length === 0 ? (
             <p>No QR codes were created.</p>
           ) : null}
 
-          {skipped.length > 0 ? (
+          {skipped !== null && skipped.length > 0 ? (
             <div className="qr-no-print">
               <h3 className="font-medium">Skipped</h3>
               <p className="mb-2 text-sm text-muted-foreground">
@@ -312,7 +359,7 @@ export function QrGeneratorClient({
                     <li key={studentId}>
                       {student ? studentLabel(student) : studentId}
                       {student
-                        ? ` (${statusLabel(student.instanceStatus)})`
+                        ? ` (${statusLabel(student.instanceStatus, plainLanguage)})`
                         : ""}
                     </li>
                   );
