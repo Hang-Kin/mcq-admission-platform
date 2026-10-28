@@ -8,6 +8,8 @@ import { NavBar, type NavLink } from "./nav-bar";
 const links: NavLink[] = [
   { href: "/", label: "Home", exact: true },
   { href: "/admin", label: "Dashboard", exact: true },
+  { href: "/admin/bank", label: "Question bank" },
+  { href: "/admin/settings", label: "Subject settings" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/students", label: "Students" },
   { href: "/admin/exams", label: "Exams" },

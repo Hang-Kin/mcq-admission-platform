@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { createClient } from "@/lib/supabase/server";
 
 import { deleteQuestion, updateQuestion } from "../../actions";
@@ -23,13 +24,27 @@ export default async function EditQuestionPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null };
 
-  const { data: question, error } = await supabase
+  const withSubject = await supabase
     .from("questions")
     .select(
-      "id, question_text, category, type, options, correct_answer, question_set, image_url",
+      "id, question_text, category, type, options, correct_answer, question_set, image_url, subject",
     )
     .eq("id", id)
     .single();
+  const loaded =
+    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
+      ? await supabase
+          .from("questions")
+          .select(
+            "id, question_text, category, type, options, correct_answer, question_set, image_url",
+          )
+          .eq("id", id)
+          .single()
+      : withSubject;
+  const question = loaded.data
+    ? { ...loaded.data, subject: readQuestionSubject(loaded.data) }
+    : null;
+  const error = loaded.error;
 
   const { data: rows } = await supabase.from("questions").select("question_set");
 
