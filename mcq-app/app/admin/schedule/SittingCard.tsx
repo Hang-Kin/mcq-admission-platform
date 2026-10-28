@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { prepareSitting } from "./actions";
 import { sittingButton, type SittingStatus } from "./scheduleModel";
+import { deleteSittingTime } from "./sittingsActions";
 
 function formatWhen(starts: string | null, ends: string | null) {
   if (!starts || !ends) return "";
@@ -26,6 +27,9 @@ export function SittingCard({
   status,
   startWarning = false,
   unavailable = false,
+  prominent = false,
+  canDelete = false,
+  examId,
   children,
 }: {
   sittingId: string;
@@ -36,6 +40,9 @@ export function SittingCard({
   status: SittingStatus;
   startWarning?: boolean;
   unavailable?: boolean;
+  prominent?: boolean;
+  canDelete?: boolean;
+  examId?: string;
   children?: ReactNode;
 }) {
   const button = sittingButton(status);
@@ -43,10 +50,12 @@ export function SittingCard({
   const cannotRun = button.disabled || unavailable;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (cannotRun) return;
+    if (button.force && !window.confirm(`Replace the questions for ${title}?`)) return;
     setError(null);
     setIsSubmitting(true);
     const formData = new FormData();
@@ -57,6 +66,22 @@ export function SittingCard({
       if (result?.error) setError(result.error);
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!canDelete || !examId) return;
+    if (!window.confirm(`Delete ${title}?`)) return;
+    setError(null);
+    setIsDeleting(true);
+    const formData = new FormData();
+    formData.set("exam_id", examId);
+    formData.set("sitting_id", sittingId);
+    try {
+      const result = await deleteSittingTime(formData);
+      if (result?.error) setError(result.error);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -79,14 +104,27 @@ export function SittingCard({
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit}>
-          <Button
-            type="submit"
-            variant={cannotRun ? "outline" : "default"}
-            className="h-12 px-5 text-base"
-            disabled={cannotRun || isSubmitting}
-          >
-            {isSubmitting ? "Preparing…" : button.label}
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="submit"
+              variant={prominent && !cannotRun ? "default" : "outline"}
+              className="h-12 px-5 text-base"
+              disabled={cannotRun || isSubmitting}
+            >
+              {isSubmitting ? "Preparing…" : button.label}
+            </Button>
+            {canDelete && examId ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-5 text-base"
+                disabled={isDeleting}
+                onClick={() => void handleDelete()}
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </Button>
+            ) : null}
+          </div>
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {children}
