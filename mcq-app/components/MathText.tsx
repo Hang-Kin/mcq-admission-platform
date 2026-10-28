@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { isMathQuestion, parseMathText } from "./mathText";
+import { mathDisplayPieces } from "./mathText";
 
 type MathTextProps = {
   text: string;
@@ -26,12 +26,12 @@ function StackedFraction({
 }
 
 export function MathText({ text, subject, category, className }: MathTextProps) {
-  if (!isMathQuestion({ subject, category })) {
+  const pieces = mathDisplayPieces(text, { subject, category });
+  if (!pieces) {
     if (!className) return text;
     return <span className={className}>{text}</span>;
   }
 
-  const pieces = parseMathText(text);
   return (
     <span className={cn("whitespace-pre-wrap", className)}>
       <span className="sr-only">{text}</span>

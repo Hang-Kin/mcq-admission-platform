@@ -17,7 +17,6 @@ import { createClient } from "@/lib/supabase/client";
 
 import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
 import { MathText } from "@/components/MathText";
-import { isMissingSubjectColumn } from "@/components/mathText";
 
 import { FractionAnswerFields } from "./FractionAnswerFields";
 import { fractionAnswer, readFractionParts } from "./fractionAnswer";
@@ -44,6 +43,8 @@ type SessionQuestion = {
   type: QuestionType | string;
   options: unknown;
   category: string;
+  // From the start_session payload. A blank subject still uses the legacy
+  // Math/math category inside MathText. question_text stays as stored.
   subject?: string | null;
   question_set: string;
   image_url?: string | null;
@@ -242,7 +243,6 @@ export function SessionExam({ token }: { token: string }) {
   const sectionKeyRef = useRef<string | null>(null);
   const sectionIndexRef = useRef<number | null>(null);
   const autoAdvanceKeyRef = useRef<string | null>(null);
-  const subjectLookupFailedRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [blockingError, setBlockingError] = useState<RpcErrorCode | null>(null);
@@ -305,55 +305,6 @@ export function SessionExam({ token }: { token: string }) {
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
-
-  useEffect(() => {
-    if (subjectLookupFailedRef.current || questions.length === 0) return;
-    if (questions.every((question) => question.subject !== undefined)) return;
-    const ids = [
-      ...new Set(questions.map((question) => question.id).filter(Boolean)),
-    ];
-    if (ids.length === 0) return;
-    let cancelled = false;
-
-    // Display only. The exam still runs if this lookup fails.
-    void (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("questions")
-          .select("id, subject")
-          .in("id", ids);
-        if (cancelled) return;
-        if (error || !data) {
-          if (isMissingSubjectColumn(error?.message)) {
-            subjectLookupFailedRef.current = true;
-          }
-          return;
-        }
-        const subjects = new Map(
-          data.map((row) => [String(row.id), row.subject ?? null]),
-        );
-        setQuestions((current) =>
-          current.map((question) => {
-            if (!subjects.has(question.id)) {
-              return question.subject === undefined
-                ? { ...question, subject: null }
-                : question;
-            }
-            return {
-              ...question,
-              subject: subjects.get(question.id) ?? null,
-            };
-          }),
-        );
-      } catch {
-        return;
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [questions, supabase]);
 
   useEffect(() => {
     let cancelled = false;

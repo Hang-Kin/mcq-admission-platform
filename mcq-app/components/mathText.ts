@@ -14,6 +14,16 @@ export function isMathQuestion(question: {
   return (question.category ?? "").trim().toLowerCase() === "math";
 }
 
+// Null means the question is not math. Callers then show the stored text
+// unchanged. A blank subject still uses the legacy Math/math category.
+export function mathDisplayPieces(
+  text: string,
+  question: { subject?: string | null; category?: string | null },
+): MathPiece[] | null {
+  if (!isMathQuestion(question)) return null;
+  return parseMathText(text);
+}
+
 export function readQuestionSubject(value: object): string | null {
   if (!("subject" in value)) return null;
   return typeof value.subject === "string" ? value.subject : null;
