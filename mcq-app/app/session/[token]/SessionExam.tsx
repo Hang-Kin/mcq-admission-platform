@@ -275,7 +275,7 @@ export function SessionExam({ token }: { token: string }) {
       setCurrentSection(section);
       setExpiresAtMs(null);
       setQuestions((current) =>
-        questionsAfterAdvance(current, incoming, section),
+        questionsAfterAdvance(current, incoming),
       );
       if (changed) {
         setIndex(0);
@@ -690,9 +690,6 @@ export function SessionExam({ token }: { token: string }) {
           <CardTitle className="text-base font-medium leading-relaxed">
             {question.question_text}
           </CardTitle>
-          {question.category ? (
-            <CardDescription>Category {question.category}</CardDescription>
-          ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
           {question.image_url && publicQuestionImagePath(question.image_url) ? (

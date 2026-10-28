@@ -77,18 +77,11 @@ export function shouldAutoSubmitExam(
   return !(remainingMs > 0);
 }
 
-export function questionsAfterAdvance<T extends { question_set: string }>(
+export function questionsAfterAdvance<T>(
   current: T[],
   incoming: T[] | undefined,
-  section: ExamSectionState,
 ): T[] {
   if (incoming) return incoming;
-  if (section.questionSet) {
-    const filtered = current.filter(
-      (question) => question.question_set === section.questionSet,
-    );
-    if (filtered.length > 0) return filtered;
-  }
   return current;
 }
 

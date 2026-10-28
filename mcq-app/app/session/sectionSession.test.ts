@@ -187,35 +187,24 @@ test("invalid session still blocks the exam", () => {
   );
 });
 
-test("missing questions on advance filters by the server question set", () => {
-  const section = readSection({
-    label: "Section B",
-    question_set: "B",
-    ends_at: "2026-09-27T11:00:00.000Z",
-  });
-  assert.ok(section);
+test("missing questions on advance keeps questions from every set", () => {
   const next = questionsAfterAdvance(
     [
       { id: "1", question_set: "A" },
       { id: "2", question_set: "B" },
     ],
     undefined,
-    section,
   );
-  assert.deepEqual(next, [{ id: "2", question_set: "B" }]);
+  assert.deepEqual(next, [
+    { id: "1", question_set: "A" },
+    { id: "2", question_set: "B" },
+  ]);
 });
 
 test("an explicit question list replaces the previous section", () => {
-  const section = readSection({
-    label: "Section B",
-    question_set: "B",
-    ends_at: "2026-09-27T11:00:00.000Z",
-  });
-  assert.ok(section);
   const next = questionsAfterAdvance(
     [{ id: "1", question_set: "A" }],
     [],
-    section,
   );
   assert.deepEqual(next, []);
 });
