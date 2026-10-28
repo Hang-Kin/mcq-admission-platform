@@ -1,3 +1,5 @@
+import { MathText } from "@/components/MathText";
+import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -22,7 +24,7 @@ function asSingle<T>(value: Nested<T>): T | null {
 
 export default async function ReviewQueuePage() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const withSubject = await supabase
     .from("responses")
     .select(
       `
@@ -35,11 +37,34 @@ export default async function ReviewQueuePage() {
         students!inner ( name, application_number ),
         exams!inner ( name )
       ),
-      questions!inner ( question_text )
+      questions!inner ( question_text, category, subject )
     `,
     )
     .eq("needs_review", true)
     .order("created_at", { ascending: true });
+  const loaded =
+    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
+      ? await supabase
+          .from("responses")
+          .select(
+            `
+      id,
+      student_answer,
+      is_correct,
+      needs_review,
+      created_at,
+      test_instances!inner (
+        students!inner ( name, application_number ),
+        exams!inner ( name )
+      ),
+      questions!inner ( question_text, category )
+    `,
+          )
+          .eq("needs_review", true)
+          .order("created_at", { ascending: true })
+      : withSubject;
+  const data = loaded.data;
+  const error = loaded.error;
 
   const rows = (data ?? []).map((row) => {
     const instance = asSingle(row.test_instances);
@@ -55,6 +80,8 @@ export default async function ReviewQueuePage() {
       application_number: student?.application_number ?? "unknown",
       exam_name: exam?.name ?? "Unknown exam",
       question_text: question?.question_text ?? "Unknown question",
+      category: question?.category ?? "",
+      subject: question ? readQuestionSubject(question) : null,
     };
   });
 
@@ -89,7 +116,13 @@ export default async function ReviewQueuePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="leading-relaxed">{row.question_text}</p>
+                  <p className="leading-relaxed">
+                    <MathText
+                      text={row.question_text}
+                      subject={row.subject}
+                      category={row.category}
+                    />
+                  </p>
                   <p className="whitespace-pre-wrap rounded-md border bg-muted/40 p-4 text-base">
                     {row.student_answer?.trim()
                       ? row.student_answer

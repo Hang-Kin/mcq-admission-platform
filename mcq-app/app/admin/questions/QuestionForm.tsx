@@ -2,6 +2,8 @@
 
 import { useRef, useState, type FormEvent } from "react";
 
+import { MathText } from "@/components/MathText";
+import { isMathQuestion } from "@/components/mathText";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +26,7 @@ export type QuestionFormValues = {
   correct_answer: string | null;
   question_set: string | null;
   image_url: string | null;
+  subject?: string | null;
 };
 
 type QuestionFormProps = {
@@ -279,6 +282,20 @@ export function QuestionForm({
           onChange={(event) => setCategory(event.target.value)}
         />
       </div>
+
+      {isMathQuestion({ subject: question?.subject, category }) &&
+      questionText.trim() ? (
+        <div className="rounded-md border border-border bg-background px-3 py-3">
+          <p className="mb-2 text-sm text-muted-foreground">Preview</p>
+          <div className="text-base leading-relaxed">
+            <MathText
+              text={questionText}
+              subject={question?.subject}
+              category={category}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="type">Type</Label>
