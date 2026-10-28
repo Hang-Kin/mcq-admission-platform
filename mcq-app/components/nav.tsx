@@ -10,6 +10,7 @@ const links: NavLink[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/bank", label: "Question bank" },
   { href: "/admin/settings", label: "Subject settings" },
+  { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/students", label: "Students" },
   { href: "/admin/exams", label: "Exams" },
   { href: "/admin/review", label: "Review" },

@@ -12,7 +12,7 @@ export const instant = false;
 
 const links = [
   {
-href: "/admin/bank",
+    href: "/admin/bank",
     title: "Question bank",
     description: "Add and edit Math and Chinese questions by topic.",
   },
@@ -20,6 +20,11 @@ href: "/admin/bank",
     href: "/admin/settings",
     title: "Subject settings",
     description: "Set questions per topic and the minutes for Math and Chinese.",
+  },
+  {
+    href: "/admin/schedule",
+    title: "Schedule",
+    description: "Prepare the questions for each sitting.",
   },
   {
     href: "/admin/students",
