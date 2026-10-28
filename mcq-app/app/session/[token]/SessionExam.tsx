@@ -19,6 +19,8 @@ import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
 import { MathText } from "@/components/MathText";
 import { isMissingSubjectColumn } from "@/components/mathText";
 
+import { FractionAnswerFields } from "./FractionAnswerFields";
+import { fractionAnswer, readFractionParts } from "./fractionAnswer";
 import {
   countdownEndsAtMs,
   finishSectionButtonLabel,
@@ -34,7 +36,7 @@ import {
   type ExamSectionState,
 } from "./sectionSession";
 
-type QuestionType = "radio" | "numeric" | "text";
+type QuestionType = "radio" | "numeric" | "text" | "fraction";
 
 type SessionQuestion = {
   id: string;
@@ -241,6 +243,9 @@ export function SessionExam({ token }: { token: string }) {
   const [questions, setQuestions] = useState<SessionQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [fractionDrafts, setFractionDrafts] = useState<
+    Record<string, { numerator: string; denominator: string }>
+  >({});
   const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null);
   const [currentSection, setCurrentSection] = useState<ExamSectionState | null>(
     null,
@@ -705,6 +710,37 @@ export function SessionExam({ token }: { token: string }) {
 
   const options = optionList(question.options);
   const value = answers[question.id] ?? "";
+  const fractionParts =
+    fractionDrafts[question.id] ?? readFractionParts(value);
+  const fractionCheck =
+    question.type === "fraction"
+      ? fractionAnswer(fractionParts.numerator, fractionParts.denominator)
+      : null;
+
+  function changeFraction(part: "numerator" | "denominator", next: string) {
+    const numerator = part === "numerator" ? next : fractionParts.numerator;
+    const denominator = part === "denominator" ? next : fractionParts.denominator;
+    setFractionDrafts((current) => ({
+      ...current,
+      [question.id]: { numerator, denominator },
+    }));
+    const result = fractionAnswer(numerator, denominator);
+    if (result.ok) {
+      const saved = readFractionParts(result.answer);
+      setFractionDrafts((current) => ({
+        ...current,
+        [question.id]: saved,
+      }));
+      setAnswers((current) => ({ ...current, [question.id]: result.answer }));
+      saveAnswer(question.id, result.answer);
+      return;
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    setAutosave("idle");
+  }
   const autosaveLabel =
     autosave === "saving"
       ? "Saving…"
@@ -805,6 +841,17 @@ export function SessionExam({ token }: { token: string }) {
                 }
               />
             </div>
+          ) : null}
+
+          {question.type === "fraction" ? (
+            <FractionAnswerFields
+              numerator={fractionParts.numerator}
+              denominator={fractionParts.denominator}
+              message={fractionCheck && !fractionCheck.ok ? fractionCheck.message : null}
+              disabled={advanceBusy}
+              onNumeratorChange={(next) => changeFraction("numerator", next)}
+              onDenominatorChange={(next) => changeFraction("denominator", next)}
+            />
           ) : null}
 
           {question.type === "text" ? (
