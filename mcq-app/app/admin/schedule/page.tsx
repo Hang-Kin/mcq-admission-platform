@@ -6,6 +6,7 @@ import {
   groupDrawPreview,
   isMissingSchema,
   sittingStatus,
+  unpreparedStartWarning,
   type DrawRow,
   type TopicOrder,
 } from "./scheduleModel";
@@ -78,6 +79,7 @@ export default async function SchedulePage() {
 
   const missing = isMissingSchema(drawsResult.error);
   const checkFailed = Boolean(startedResult.error) && !isMissingSchema(startedResult.error);
+  const nowMs = Date.now();
 
   return (
     <main className="space-y-8">
@@ -138,6 +140,7 @@ export default async function SchedulePage() {
                   startsAt={slot.starts_at}
                   endsAt={slot.ends_at}
                   status={status}
+                  startWarning={unpreparedStartWarning(status, slot.starts_at, nowMs)}
                   unavailable={checkFailed && !locked}
                 >
                   <DrawPreview groups={groupDrawPreview(rows, orders)} />

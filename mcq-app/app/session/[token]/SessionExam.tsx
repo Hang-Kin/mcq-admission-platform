@@ -58,6 +58,7 @@ type RpcErrorCode =
   | "question_not_assigned"
   | "invalid_session_id"
   | "invalid_sections"
+  | "not_prepared"
   | "unknown";
 
 type StartSessionSuccess = {
@@ -112,6 +113,10 @@ const ERROR_COPY: Record<RpcErrorCode, { title: string; body: string }> = {
     title: "This exam isn’t ready",
     body: "The sections for this exam are not in a continuous order. Ask a teacher to fix them before you start.",
   },
+  not_prepared: {
+    title: "This sitting is not ready yet. Please ask a teacher.",
+    body: "",
+  },
   unknown: {
     title: "Something went wrong",
     body: "The exam could not continue. Ask a teacher for help.",
@@ -128,6 +133,7 @@ function classifyError(code: string | undefined): RpcErrorCode {
     case "question_not_assigned":
     case "invalid_session_id":
     case "invalid_sections":
+    case "not_prepared":
       return code;
     default:
       return "unknown";
@@ -160,7 +166,7 @@ function extractErrorCode(
   if (payload?.error) return payload.error;
   const blob = `${rpcError?.message ?? ""} ${rpcError?.details ?? ""}`;
   const match = blob.match(
-    /invalid_sections|invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
+    /not_prepared|invalid_sections|invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
   );
   return match?.[0];
 }
@@ -670,8 +676,10 @@ export function SessionExam({ token }: { token: string }) {
       <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>{copy.title}</CardTitle>
-            <CardDescription>{copy.body}</CardDescription>
+            <CardTitle className={copy.body ? undefined : "leading-normal"}>
+              {copy.title}
+            </CardTitle>
+            {copy.body ? <CardDescription>{copy.body}</CardDescription> : null}
           </CardHeader>
         </Card>
       </main>
