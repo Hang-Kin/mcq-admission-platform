@@ -12,34 +12,29 @@ export const instant = false;
 
 const links = [
   {
+    href: "/admin/settings",
+    title: "Subject settings",
+    description: "Set questions per topic and the minutes for Math and Chinese.",
+  },
+  {
     href: "/admin/students",
     title: "Students",
     description: "Add names and application numbers to the roster.",
   },
   {
-    href: "/admin/questions",
-    title: "Questions",
-    description: "Review the bank and open a question to edit it.",
-  },
-  {
-    href: "/admin/questions/import",
-    title: "Question import",
-    description: "Upload questions from a CSV file.",
-  },
-  {
     href: "/admin/exams",
     title: "Exams",
-    description: "QR codes, timeslots, sections, and grades for each exam.",
-  },
-  {
-    href: "/admin/exams/new",
-    title: "Create exam",
-    description: "Start a new exam with a name and duration.",
+    description: "QR codes and grades for each exam.",
   },
   {
     href: "/admin/review",
     title: "Review queue",
-    description: "Mark text answers that are waiting for a teacher.",
+    description: "Mark written answers that are waiting for a teacher.",
+  },
+  {
+    href: "/admin/advanced",
+    title: "Advanced",
+    description: "Create an exam and open the older setup screens.",
   },
 ];
 
@@ -62,7 +57,7 @@ export default async function AdminHome() {
             href={link.href}
             className="block h-full rounded-lg text-foreground hover:no-underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
-            <Card className="h-full hover:border-primary">
+            <Card className="h-full min-h-28 hover:border-primary">
               <CardHeader>
                 <CardTitle className="text-base">{link.title}</CardTitle>
                 <CardDescription className="leading-6">
