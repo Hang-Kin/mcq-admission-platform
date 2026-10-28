@@ -3,26 +3,22 @@ import { Suspense } from "react";
 import { AuthButton } from "@/components/auth-button";
 import { hasEnvVars } from "@/lib/utils";
 
-import { NavBar, type NavLink } from "./nav-bar";
+import { NavBar } from "./nav-bar";
+import { type NavLink } from "./nav-links";
 
 const links: NavLink[] = [
-  { href: "/", label: "Home", exact: true },
-  { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/bank", label: "Question bank" },
-  { href: "/admin/settings", label: "Subject settings" },
-  { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin", label: "Home", exact: true },
+  { href: "/admin/bank", label: "Questions" },
+  { href: "/admin/schedule", label: "Sittings" },
   { href: "/admin/students", label: "Students" },
-  { href: "/admin/exams", label: "Exams" },
-  { href: "/admin/review", label: "Review" },
-  { href: "/admin/advanced", label: "Advanced" },
-  { href: "/protected", label: "Account" },
+  { href: "/admin/review", label: "Results", matchGrades: true },
 ];
 
-function SessionControls() {
+function SessionControls({ layout }: { layout: "menu" | "list" }) {
   if (!hasEnvVars) return null;
   return (
     <Suspense fallback={null}>
-      <AuthButton />
+      <AuthButton layout={layout} />
     </Suspense>
   );
 }
@@ -31,8 +27,8 @@ export function Nav() {
   return (
     <NavBar
       links={links}
-      session={<SessionControls />}
-      mobileSession={<SessionControls />}
+      session={<SessionControls layout="menu" />}
+      mobileSession={<SessionControls layout="list" />}
     />
   );
 }
