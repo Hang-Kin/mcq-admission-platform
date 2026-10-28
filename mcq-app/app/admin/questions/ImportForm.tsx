@@ -3,6 +3,8 @@
 import { useState, type ChangeEvent } from "react";
 import Papa from "papaparse";
 
+import { MathText } from "@/components/MathText";
+import { isMathQuestion } from "@/components/mathText";
 import { Button } from "@/components/ui/button";
 
 import { bulkImportQuestions } from "./actions";
@@ -220,7 +222,11 @@ export function ImportForm() {
             {preview.map((row, index) => (
               <tr key={index}>
                 <td className="border-b py-3 pr-4">
-                  {truncate(row.question_text, 60)}
+                  {isMathQuestion({ category: row.category }) ? (
+                    <MathText text={row.question_text} category={row.category} />
+                  ) : (
+                    truncate(row.question_text, 60)
+                  )}
                 </td>
                 <td className="border-b py-3 pr-4">{row.category}</td>
                 <td className="border-b py-3 pr-4">{row.type}</td>

@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+import { MathText } from "@/components/MathText";
+import {
+  isMathQuestion,
+  isMissingSubjectColumn,
+  readQuestionSubject,
+} from "@/components/mathText";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,10 +44,26 @@ export default async function AdminQuestionsPage({
     : { data: null };
   const isAdmin = profile?.role === "admin";
 
-  const { data: questions, error } = await supabase
+  const withSubject = await supabase
     .from("questions")
-    .select("id, question_text, category, type, question_set, image_url, created_at")
+    .select(
+      "id, question_text, category, type, question_set, image_url, created_at, subject",
+    )
     .order("created_at", { ascending: false });
+  const loaded =
+    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
+      ? await supabase
+          .from("questions")
+          .select(
+            "id, question_text, category, type, question_set, image_url, created_at",
+          )
+          .order("created_at", { ascending: false })
+      : withSubject;
+  const questions = loaded.data?.map((question) => ({
+    ...question,
+    subject: readQuestionSubject(question),
+  }));
+  const error = loaded.error;
 
   const summaries = summarizeQuestionSets(
     (questions ?? []).map((question) => question.question_set),
@@ -156,7 +178,16 @@ export default async function AdminQuestionsPage({
                 {visible.map((question) => (
                   <tr key={question.id}>
                     <td className="border-b py-3 pr-4">
-                      {truncate(question.question_text, 60)}
+                      {isMathQuestion(question) ? (
+                        <MathText
+                          text={question.question_text}
+                          subject={question.subject}
+                          category={question.category}
+                          className="max-w-xl"
+                        />
+                      ) : (
+                        truncate(question.question_text, 60)
+                      )}
                     </td>
                     <td className="border-b py-3 pr-4">
                       {question.question_set?.trim() || "No set"}

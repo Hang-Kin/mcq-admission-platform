@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
+import { MathText } from "@/components/MathText";
+import { isMissingSubjectColumn } from "@/components/mathText";
 
 import {
   countdownEndsAtMs,
@@ -40,6 +42,7 @@ type SessionQuestion = {
   type: QuestionType | string;
   options: unknown;
   category: string;
+  subject?: string | null;
   question_set: string;
   image_url?: string | null;
 };
@@ -231,6 +234,7 @@ export function SessionExam({ token }: { token: string }) {
   const sectionKeyRef = useRef<string | null>(null);
   const sectionIndexRef = useRef<number | null>(null);
   const autoAdvanceKeyRef = useRef<string | null>(null);
+  const subjectLookupFailedRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [blockingError, setBlockingError] = useState<RpcErrorCode | null>(null);
@@ -290,6 +294,55 @@ export function SessionExam({ token }: { token: string }) {
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+
+  useEffect(() => {
+    if (subjectLookupFailedRef.current || questions.length === 0) return;
+    if (questions.every((question) => question.subject !== undefined)) return;
+    const ids = [
+      ...new Set(questions.map((question) => question.id).filter(Boolean)),
+    ];
+    if (ids.length === 0) return;
+    let cancelled = false;
+
+    // Display only. The exam still runs if this lookup fails.
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("questions")
+          .select("id, subject")
+          .in("id", ids);
+        if (cancelled) return;
+        if (error || !data) {
+          if (isMissingSubjectColumn(error?.message)) {
+            subjectLookupFailedRef.current = true;
+          }
+          return;
+        }
+        const subjects = new Map(
+          data.map((row) => [String(row.id), row.subject ?? null]),
+        );
+        setQuestions((current) =>
+          current.map((question) => {
+            if (!subjects.has(question.id)) {
+              return question.subject === undefined
+                ? { ...question, subject: null }
+                : question;
+            }
+            return {
+              ...question,
+              subject: subjects.get(question.id) ?? null,
+            };
+          }),
+        );
+      } catch {
+        return;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [questions, supabase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -688,7 +741,11 @@ export function SessionExam({ token }: { token: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-medium leading-relaxed">
-            {question.question_text}
+            <MathText
+              text={question.question_text}
+              subject={question.subject}
+              category={question.category}
+            />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -722,7 +779,11 @@ export function SessionExam({ token }: { token: string }) {
                       className="size-4 shrink-0"
                     />
                     <Label htmlFor={id} className="flex-1 py-3 text-base font-normal">
-                      {option}
+                      <MathText
+                        text={option}
+                        subject={question.subject}
+                        category={question.category}
+                      />
                     </Label>
                   </div>
                 );

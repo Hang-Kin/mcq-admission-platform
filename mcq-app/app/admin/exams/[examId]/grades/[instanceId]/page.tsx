@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MathText } from "@/components/MathText";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -81,7 +83,7 @@ export default async function StudentGradePage({
     );
   }
 
-  const { data: responseRows, error: responsesError } = await supabase
+  const withSubject = await supabase
     .from("responses")
     .select(
       `
@@ -91,10 +93,29 @@ export default async function StudentGradePage({
       is_correct,
       graded_by,
       needs_review,
-      questions!inner ( question_text, type, category )
+      questions!inner ( question_text, type, category, subject )
     `,
     )
     .eq("test_instance_id", instanceId);
+  const loadedResponses =
+    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
+      ? await supabase
+          .from("responses")
+          .select(
+            `
+      id,
+      question_id,
+      student_answer,
+      is_correct,
+      graded_by,
+      needs_review,
+      questions!inner ( question_text, type, category )
+    `,
+          )
+          .eq("test_instance_id", instanceId)
+      : withSubject;
+  const responseRows = loadedResponses.data;
+  const responsesError = loadedResponses.error;
 
   const { data: gradeRows } = await supabase
     .from("grades")
@@ -121,6 +142,7 @@ export default async function StudentGradePage({
         question_text: question?.question_text ?? "Unknown question",
         type: question?.type ?? "unknown",
         category: question?.category ?? "",
+        subject: question ? readQuestionSubject(question) : null,
       };
     }),
     instance.assigned_question_ids,
@@ -214,7 +236,12 @@ export default async function StudentGradePage({
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-medium">
-                    {index + 1}. {response.question_text}
+                    {index + 1}.{" "}
+                    <MathText
+                      text={response.question_text}
+                      subject={response.subject}
+                      category={response.category}
+                    />
                   </CardTitle>
                   <CardDescription>
                     {response.type} · {response.category}
