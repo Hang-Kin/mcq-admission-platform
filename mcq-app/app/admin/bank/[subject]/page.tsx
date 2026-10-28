@@ -40,7 +40,7 @@ export default async function SubjectTopicsPage({
       <div className="max-w-2xl space-y-2">
         <BankTrail
           items={[
-            { href: "/admin/bank", label: "Question bank" },
+            { href: "/admin/bank", label: "Questions" },
             { label: info.title },
           ]}
         />
