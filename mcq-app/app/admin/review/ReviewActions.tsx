@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 
 import { reviewResponse, type ReviewActionState } from "./actions";
 
-export function ReviewActions({ responseId }: { responseId: string }) {
+export function ReviewActions({
+  responseId,
+  primary = true,
+}: {
+  responseId: string;
+  primary?: boolean;
+}) {
   const [state, action, pending] = useActionState<ReviewActionState, FormData>(
     reviewResponse,
     null,
@@ -20,6 +26,7 @@ export function ReviewActions({ responseId }: { responseId: string }) {
           type="submit"
           name="verdict"
           value="correct"
+          variant={primary ? "default" : "outline"}
           disabled={pending}
         >
           {pending ? "Saving…" : "Mark correct"}
