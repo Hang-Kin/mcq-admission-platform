@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import type { CreateStudentResult } from "./actions";
+import { IntakeFields } from "./IntakeFields";
+import { composeIntake, formatIntakeLabel } from "./intakeLabel";
 
 type StudentFormProps = {
   action: (formData: FormData) => Promise<CreateStudentResult>;
@@ -15,6 +17,8 @@ type StudentFormProps = {
 export function StudentForm({ action }: StudentFormProps) {
   const [name, setName] = useState("");
   const [applicationNumber, setApplicationNumber] = useState("");
+  const [year, setYear] = useState("");
+  const [month, setMonth] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,9 +29,12 @@ export function StudentForm({ action }: StudentFormProps) {
     setError(null);
     setSuccess(null);
 
+    const intake = composeIntake(year, month);
     const formData = new FormData();
     formData.set("name", name);
     formData.set("application_number", applicationNumber);
+    formData.set("intake_year", year);
+    formData.set("intake_month", month);
 
     setIsSubmitting(true);
     const result = await action(formData);
@@ -38,19 +45,25 @@ export function StudentForm({ action }: StudentFormProps) {
       return;
     }
 
-    setSuccess(`Added ${name.trim()} (${applicationNumber.trim()}).`);
+    const label = intake ? formatIntakeLabel(intake) : "";
+    setSuccess(`Added ${name.trim()} (${applicationNumber.trim()})${label ? `, ${label}` : ""}.`);
     setName("");
     setApplicationNumber("");
     nameInputRef.current?.focus();
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-6 flex max-w-xl flex-col gap-4"
-    >
+    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
+      <IntakeFields
+        year={year}
+        month={month}
+        onYear={setYear}
+        onMonth={setMonth}
+        idPrefix="add-intake"
+      />
+
       <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Full English name</Label>
         <Input
           id="name"
           name="name"
@@ -63,7 +76,7 @@ export function StudentForm({ action }: StudentFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="application_number">Application number</Label>
+        <Label htmlFor="application_number">提交編號</Label>
         <Input
           id="application_number"
           name="application_number"
@@ -71,6 +84,8 @@ export function StudentForm({ action }: StudentFormProps) {
           value={applicationNumber}
           onChange={(event) => setApplicationNumber(event.target.value)}
           autoComplete="off"
+          inputMode="text"
+          spellCheck={false}
         />
       </div>
 
