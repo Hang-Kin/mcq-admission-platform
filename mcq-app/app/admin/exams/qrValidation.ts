@@ -55,4 +55,6 @@ export const API_ERROR_COPY: Record<string, string> = {
   too_many_students: "Select 500 students or fewer.",
   intake_not_ready: "QR codes are waiting for a database update.",
   could_not_create_codes: "Could not create the QR codes. Try again.",
+  font_missing_glyphs: "A name uses a character the font cannot print.",
+  name_does_not_fit: "A name is too long to fit on the card.",
 };

@@ -160,9 +160,16 @@ export function QrGeneratorClient({
       });
       const contentType = response.headers.get("content-type") ?? "";
       if (!response.ok || !contentType.includes("application/pdf")) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string; message?: string }
+          | null;
         const code = payload?.error ?? "unknown";
-        if (code === "nothing_to_print" && mode === "create") {
+        if (
+          (code === "font_missing_glyphs" || code === "name_does_not_fit") &&
+          payload?.message
+        ) {
+          setError(payload.message);
+        } else if (code === "nothing_to_print" && mode === "create") {
           setError("No new codes. Students who already started were skipped.");
         } else {
           setError(API_ERROR_COPY[code] ?? "Could not download the QR codes. Try again.");

@@ -77,7 +77,7 @@ export async function listIntakeNumbers(
 
 export async function importStudents(input: {
   intake: string;
-  rows: Array<{ applicationNumber: unknown; name: unknown }>;
+  rows: Array<{ applicationNumber: unknown; name: unknown; chineseName?: unknown }>;
 }): Promise<ImportStudentsResult> {
   const intake = INTAKE_RE.test(input.intake) ? input.intake : null;
   if (!intake) return { error: "Choose an intake." };
@@ -111,6 +111,7 @@ export async function importStudents(input: {
       line: index + 2,
       applicationNumber: row.applicationNumber,
       name: row.name,
+      chineseName: row.chineseName,
     })),
     existing,
   );
@@ -121,6 +122,7 @@ export async function importStudents(input: {
   if (toInsert.length > 0) {
     const payload = toInsert.map((row) => ({
       name: row.name,
+      chinese_name: row.chineseName.length > 0 ? row.chineseName : null,
       application_number: row.applicationNumber,
       intake,
     }));
