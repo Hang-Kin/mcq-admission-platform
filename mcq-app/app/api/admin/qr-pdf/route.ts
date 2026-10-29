@@ -4,8 +4,12 @@ import path from "node:path";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createPendingQrCodes, loadPendingQrCodes } from "@/app/admin/exams/qrCodes";
-import { buildQrSheetPdf, type QrCard } from "@/app/admin/exams/qrPdf";
-import { formatIntakeLabel, INTAKE_RE } from "@/app/admin/students/intakeLabel";
+import {
+  buildQrSheetPdf,
+  QR_FONT_FILE,
+  type QrCard,
+} from "@/app/admin/exams/qrPdf";
+import { INTAKE_RE } from "@/app/admin/students/intakeLabel";
 import { isMissingSchema } from "@/app/admin/students/schemaError";
 import { isStaffRole } from "@/lib/staffRole";
 import { createClient } from "@/lib/supabase/server";
@@ -134,7 +138,7 @@ export async function POST(request: NextRequest) {
 
   const { data: studentRows, error: studentError } = await supabase
     .from("students")
-    .select("id, name, application_number, intake")
+    .select("id, name, chinese_name, application_number, intake")
     .in(
       "id",
       batch.created.map((row) => row.studentId),
@@ -149,6 +153,7 @@ export async function POST(request: NextRequest) {
       String(student.id),
       {
         name: typeof student.name === "string" ? student.name : "",
+        chineseName: typeof student.chinese_name === "string" ? student.chinese_name : "",
         applicationNumber:
           typeof student.application_number === "string" ? student.application_number : "",
         intake: typeof student.intake === "string" ? student.intake : "",
@@ -162,12 +167,11 @@ export async function POST(request: NextRequest) {
   for (const row of batch.created) {
     const student = studentsById.get(row.studentId);
     if (!student || student.applicationNumber.length === 0) continue;
-    const intakeLabel = formatIntakeLabel(student.intake) ?? student.intake;
     if (student.intake) intakes.push(student.intake);
     cards.push({
       name: student.name,
+      chineseName: student.chineseName,
       applicationNumber: student.applicationNumber,
-      intakeLabel,
       url: `${origin}/session/${row.token}`,
     });
   }
@@ -177,10 +181,22 @@ export async function POST(request: NextRequest) {
   let pdf: Uint8Array;
   try {
     const fontBytes = new Uint8Array(
-      await readFile(path.join(process.cwd(), "assets/fonts/NotoSansSC-subset.ttf")),
+      await readFile(path.join(process.cwd(), "assets/fonts", QR_FONT_FILE)),
     );
     pdf = await buildQrSheetPdf({ fontBytes, cards });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "QrUnprintableNameError") {
+      return NextResponse.json(
+        { error: "font_missing_glyphs", message: error.message },
+        { status: 400 },
+      );
+    }
+    if (error instanceof Error && error.name === "QrNameDoesNotFitError") {
+      return NextResponse.json(
+        { error: "name_does_not_fit", message: error.message },
+        { status: 400 },
+      );
+    }
     console.error("qr-pdf: failed to build the sheet");
     return jsonError("could_not_create_codes", 500);
   }

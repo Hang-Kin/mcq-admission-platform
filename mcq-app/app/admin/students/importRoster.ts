@@ -1,8 +1,13 @@
 import { APPLICATION_NUMBER_RE } from "./intakeLabel";
 
 export const CODE_HEADER = "提交編號";
-export const NAME_HEADER = "Full English name";
+export const ENGLISH_NAME_HEADER = "English Name";
+export const FULL_ENGLISH_NAME_HEADER = "Full English name";
+export const CHINESE_NAME_HEADER = "Chinese Name";
 export const MAX_IMPORT_ROWS = 5000;
+
+const ENGLISH_NAME_KEYS = ["english name", "full english name"];
+const CHINESE_NAME_KEY = "chinese name";
 
 export type RosterProblem =
   | "blank"
@@ -16,12 +21,14 @@ export type RosterInputRow = {
   line: number;
   applicationNumber: string;
   name: string;
+  chineseName?: string;
 };
 
 export type ClassifiedRosterRow = {
   line: number;
   applicationNumber: string;
   name: string;
+  chineseName: string;
   problems: RosterProblem[];
   outcome: RosterOutcome;
 };
@@ -46,21 +53,35 @@ export function cleanHeader(value: string): string {
 export function mapRosterHeaders(
   headers: string[],
 ):
-  | { ok: true; codeIndex: number; nameIndex: number }
+  | { ok: true; codeIndex: number; nameIndex: number; chineseNameIndex: number | null }
   | { ok: false; error: string } {
   const cleaned = headers.map(cleanHeader);
+  const keys = cleaned.map((value) => value.toLowerCase());
   const codeIndex = cleaned.indexOf(CODE_HEADER);
-  const nameIndex = cleaned.indexOf(NAME_HEADER);
+  let nameIndex = -1;
+  for (const key of ENGLISH_NAME_KEYS) {
+    const index = keys.indexOf(key);
+    if (index >= 0) {
+      nameIndex = index;
+      break;
+    }
+  }
+  const chineseNameIndex = keys.indexOf(CHINESE_NAME_KEY);
   const missing: string[] = [];
   if (codeIndex < 0) missing.push(CODE_HEADER);
-  if (nameIndex < 0) missing.push(NAME_HEADER);
+  if (nameIndex < 0) missing.push(`${ENGLISH_NAME_HEADER} (or ${FULL_ENGLISH_NAME_HEADER})`);
   if (missing.length > 0) {
     return {
       ok: false,
-      error: `The file needs a column named ${missing.join(" and ")}. Other columns are ignored.`,
+      error: `The file needs a column named ${missing.join(" and ")}. ID and 參考編號 are ignored. Chinese Name is optional.`,
     };
   }
-  return { ok: true, codeIndex, nameIndex };
+  return {
+    ok: true,
+    codeIndex,
+    nameIndex,
+    chineseNameIndex: chineseNameIndex >= 0 ? chineseNameIndex : null,
+  };
 }
 
 export function mapRosterSheet(
@@ -76,8 +97,12 @@ export function mapRosterSheet(
   for (const row of rows) {
     const applicationNumber = row.cells[mapped.codeIndex] ?? "";
     const name = row.cells[mapped.nameIndex] ?? "";
-    if (applicationNumber.trim() === "" && name.trim() === "") continue;
-    roster.push({ line: row.line, applicationNumber, name });
+    const chineseName =
+      mapped.chineseNameIndex == null ? "" : (row.cells[mapped.chineseNameIndex] ?? "");
+    if (applicationNumber.trim() === "" && name.trim() === "" && chineseName.trim() === "") {
+      continue;
+    }
+    roster.push({ line: row.line, applicationNumber, name, chineseName });
   }
 
   if (roster.length === 0) {
@@ -116,8 +141,9 @@ export function classifyRosterRows(
       line: row.line,
       applicationNumber: row.applicationNumber.trim(),
       name: row.name.trim(),
+      chineseName: (row.chineseName ?? "").trim(),
     }))
-    .filter((row) => row.applicationNumber !== "" || row.name !== "");
+    .filter((row) => row.applicationNumber !== "" || row.name !== "" || row.chineseName !== "");
 
   const counts = new Map<string, number>();
   for (const row of trimmed) {
@@ -164,30 +190,37 @@ export function formatImportSummary(tally: ImportTally): string {
 }
 
 export type IncomingRosterCell =
-  | { applicationNumber: string; name: string }
+  | { applicationNumber: string; name: string; chineseName: string }
   | { invalid: true };
 
 export function normalizeImportRows(
-  rows: Array<{ applicationNumber: unknown; name: unknown }>,
+  rows: Array<{ applicationNumber: unknown; name: unknown; chineseName?: unknown }>,
 ): IncomingRosterCell[] {
   return rows.map((row) => {
-    if (typeof row.applicationNumber !== "string" || typeof row.name !== "string") {
+    const chineseName = row.chineseName == null ? "" : row.chineseName;
+    if (
+      typeof row.applicationNumber !== "string" ||
+      typeof row.name !== "string" ||
+      typeof chineseName !== "string"
+    ) {
       return { invalid: true };
     }
     return {
       applicationNumber: row.applicationNumber,
       name: row.name,
+      chineseName,
     };
   });
 }
 
 export function rowsToInsert(
   rows: ClassifiedRosterRow[],
-): Array<{ applicationNumber: string; name: string }> {
+): Array<{ applicationNumber: string; name: string; chineseName: string }> {
   return rows
     .filter((row) => row.outcome === "add")
     .map((row) => ({
       applicationNumber: row.applicationNumber,
       name: row.name,
+      chineseName: row.chineseName,
     }));
 }

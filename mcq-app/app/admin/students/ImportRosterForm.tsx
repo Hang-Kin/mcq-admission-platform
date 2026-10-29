@@ -10,8 +10,9 @@ import { importStudents, listIntakeNumbers } from "./actions";
 import { IntakeFields } from "./IntakeFields";
 import {
   classifyRosterRows,
+  CHINESE_NAME_HEADER,
   CODE_HEADER,
-  NAME_HEADER,
+  ENGLISH_NAME_HEADER,
   PROBLEM_LABEL,
   tallyRoster,
   type ClassifiedRosterRow,
@@ -92,6 +93,7 @@ export function ImportRosterForm() {
       rows: rows.map((row) => ({
         applicationNumber: row.applicationNumber,
         name: row.name,
+        chineseName: row.chineseName ?? "",
       })),
     });
     setIsImporting(false);
@@ -122,7 +124,7 @@ export function ImportRosterForm() {
           onChange={(event) => void handleFile(event)}
         />
         <p className="text-sm text-muted-foreground">
-          Columns used: {CODE_HEADER} and {NAME_HEADER}.
+          Columns used: {CODE_HEADER}, {ENGLISH_NAME_HEADER}, and {CHINESE_NAME_HEADER}. ID and 參考編號 are ignored.
         </p>
       </div>
 
@@ -139,16 +141,18 @@ export function ImportRosterForm() {
                 <tr>
                   <th className="border-b py-3 pr-4">Row</th>
                   <th className="border-b py-3 pr-4">{CODE_HEADER}</th>
-                  <th className="border-b py-3 pr-4">{NAME_HEADER}</th>
+                  <th className="border-b py-3 pr-4">{ENGLISH_NAME_HEADER}</th>
+                  <th className="border-b py-3 pr-4">{CHINESE_NAME_HEADER}</th>
                   <th className="border-b py-3">Problems</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.map((row) => (
-                  <tr key={`${row.line}-${row.applicationNumber}-${row.name}`} className={row.outcome === "error" ? "text-destructive" : undefined}>
+                  <tr key={`${row.line}-${row.applicationNumber}-${row.name}-${row.chineseName}`} className={row.outcome === "error" ? "text-destructive" : undefined}>
                     <td className="border-b py-3 pr-4">{row.line}</td>
                     <td className="border-b py-3 pr-4">{row.applicationNumber}</td>
                     <td className="border-b py-3 pr-4">{row.name}</td>
+                    <td className="border-b py-3 pr-4">{row.chineseName}</td>
                     <td className="border-b py-3">
                       {row.problems.map((problem) => PROBLEM_LABEL[problem]).join(", ")}
                     </td>

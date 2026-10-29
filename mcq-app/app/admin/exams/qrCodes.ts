@@ -16,6 +16,13 @@ function emptyBatch(): QrCodeBatch {
   return { created: [], skippedStarted: 0, skippedMissing: 0, skippedFailed: 0 };
 }
 
+export function qrCreateDecision(
+  existing: { status: string } | null,
+): "create" | "skip_started" {
+  if (existing && existing.status !== "pending") return "skip_started";
+  return "create";
+}
+
 export async function createPendingQrCodes(
   supabase: SupabaseClient,
   input: {
@@ -40,7 +47,10 @@ export async function createPendingQrCodes(
       continue;
     }
 
-    if (existing && existing.status !== "pending") {
+    const decision = qrCreateDecision(
+      existing ? { status: typeof existing.status === "string" ? existing.status : "" } : null,
+    );
+    if (decision === "skip_started") {
       batch.skippedStarted += 1;
       continue;
     }

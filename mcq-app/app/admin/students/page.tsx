@@ -15,6 +15,7 @@ export const instant = false;
 type RosterRow = {
   id: string;
   name: string | null;
+  chinese_name?: string | null;
   application_number: string;
   intake: string | null;
   created_at: string | null;
@@ -30,7 +31,7 @@ export default async function AdminStudentsPage({
   const supabase = await createClient();
   const withIntake = await supabase
     .from("students")
-    .select("id, name, application_number, intake, created_at")
+    .select("id, name, chinese_name, application_number, intake, created_at")
     .order("intake", { ascending: false })
     .order("application_number", { ascending: true });
 
@@ -46,6 +47,7 @@ export default async function AdminStudentsPage({
   const students = ((result?.data ?? []) as RosterRow[]).map((student) => ({
     ...student,
     intake: typeof student.intake === "string" ? student.intake : null,
+    chinese_name: typeof student.chinese_name === "string" ? student.chinese_name : null,
   }));
   const intakes = [
     ...new Set(
@@ -120,7 +122,8 @@ export default async function AdminStudentsPage({
             <thead>
               <tr>
                 {intakeReady ? <th className="border-b py-3 pr-4">Intake</th> : null}
-                <th className="border-b py-3 pr-4">Full English name</th>
+                <th className="border-b py-3 pr-4">English Name</th>
+                {intakeReady ? <th className="border-b py-3 pr-4">Chinese Name</th> : null}
                 <th className="border-b py-3 pr-4">提交編號</th>
                 <th className="border-b py-3">Added</th>
               </tr>
@@ -134,6 +137,9 @@ export default async function AdminStudentsPage({
                     </td>
                   ) : null}
                   <td className="border-b py-3 pr-4">{student.name ?? ""}</td>
+                  {intakeReady ? (
+                    <td className="border-b py-3 pr-4">{student.chinese_name ?? ""}</td>
+                  ) : null}
                   <td className="border-b py-3 pr-4">{student.application_number}</td>
                   <td className="border-b py-3">
                     {student.created_at ? new Date(student.created_at).toLocaleString() : ""}
