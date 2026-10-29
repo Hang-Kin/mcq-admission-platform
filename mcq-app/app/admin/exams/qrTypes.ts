@@ -4,6 +4,7 @@ export type QrStudent = {
   id: string;
   name: string | null;
   application_number: string;
+  intake: string | null;
   instanceStatus: InstanceStatus;
 };
 

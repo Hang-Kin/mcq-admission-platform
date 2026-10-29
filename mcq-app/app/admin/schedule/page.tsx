@@ -79,7 +79,11 @@ export default async function SchedulePage({
     supabase.from("test_instances").select("timeslot_id").not("started_at", "is", null),
     supabase.from("subject_topics").select("subject, category, display_order"),
     supabase.from("exam_sections").select("exam_id, subject"),
-    supabase.from("students").select("id, name, application_number").order("application_number", { ascending: true }),
+    supabase
+      .from("students")
+      .select("id, name, application_number, intake")
+      .order("intake", { ascending: false })
+      .order("application_number", { ascending: true }),
     supabase.from("test_instances").select("exam_id, student_id, status, access_token"),
     user
       ? supabase.from("profiles").select("role").eq("id", user.id).single()
@@ -154,6 +158,7 @@ export default async function SchedulePage({
   const selectedSlots = slots.filter((slot) => String(slot.exam_id ?? "") === selectedId);
   const prepareHere = Boolean(target && String(target.examId ?? "") === selectedId);
 
+  const intakeMissing = isMissingSchema(studentsResult.error);
   const students = studentsResult.data ?? [];
   const studentIds = new Set(students.map((student) => String(student.id)));
   const instances = instancesResult.error ? [] : (instancesResult.data ?? []);
@@ -168,14 +173,14 @@ export default async function SchedulePage({
     id: String(student.id),
     name: student.name,
     application_number: String(student.application_number),
+    intake: typeof student.intake === "string" ? student.intake : null,
     instanceStatus: normalizeInstanceStatus(statusByStudent.get(String(student.id))),
   }));
-  const existingCodes = examInstances
-    .map((row) => ({
-      studentId: String(row.student_id ?? ""),
-      token: typeof row.access_token === "string" ? row.access_token : "",
-    }))
-    .filter((row) => row.token.length > 0);
+  const codedStudentIds = new Set(
+    examInstances
+      .filter((row) => typeof row.access_token === "string" && row.access_token.length > 0)
+      .map((row) => String(row.student_id ?? "")),
+  );
 
   const focus = sittingsFocus({
     schemaReady,
@@ -184,7 +189,7 @@ export default async function SchedulePage({
     prepareHere,
     selectedTimeCount: selectedSlots.length,
     studentCount: studentsResult.error ? 0 : students.length,
-    codedStudentCount: new Set(existingCodes.map((row) => row.studentId)).size,
+    codedStudentCount: codedStudentIds.size,
   });
   const checkFailed = Boolean(startedResult.error) && !isMissingSchema(startedResult.error);
   const showCreate = exams.length === 0 || newExam === "1";
@@ -321,7 +326,12 @@ export default async function SchedulePage({
       {selected && selectedHasSubjects ? (
         <section id="codes" className="space-y-4">
           <h2 className="text-lg">QR codes</h2>
-          {studentsResult.error || instancesResult.error ? (
+          {intakeMissing ? (
+            <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground">
+              QR codes are waiting for a database update. You can leave this
+              page until that update is applied.
+            </p>
+          ) : studentsResult.error || instancesResult.error ? (
             <p className="text-sm text-destructive">Could not load the codes.</p>
           ) : students.length === 0 ? (
             <Button asChild variant={focus === "students" ? "default" : "outline"} className="h-12 px-5 text-base">
@@ -335,7 +345,6 @@ export default async function SchedulePage({
               usesSections
               plainLanguage
               primaryAction={focus === "codes" ? "create" : focus === "print" ? "print" : "none"}
-              existingCodes={existingCodes}
             />
           )}
         </section>

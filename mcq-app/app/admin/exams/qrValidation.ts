@@ -50,4 +50,9 @@ export const API_ERROR_COPY: Record<string, string> = {
   not_enough_questions_in_selected_sets:
     "There are not enough questions in the selected set(s).",
   question_fetch_failed: "Could not load questions. Try again.",
+  not_staff: "You do not have permission to create QR codes.",
+  nothing_to_print: "No codes to download. Students who already started are skipped.",
+  too_many_students: "Select 500 students or fewer.",
+  intake_not_ready: "QR codes are waiting for a database update.",
+  could_not_create_codes: "Could not create the QR codes. Try again.",
 };

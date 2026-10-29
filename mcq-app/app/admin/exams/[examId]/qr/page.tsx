@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { isMissingSchema } from "@/app/admin/students/schemaError";
+
 import { QrGeneratorClient } from "../../QrGeneratorClient";
 import {
   normalizeInstanceStatus,
@@ -25,10 +27,12 @@ export default async function ExamQrPage({
     .eq("id", examId)
     .single();
 
-  const { data: studentRows } = await supabase
+  const { data: studentRows, error: studentError } = await supabase
     .from("students")
-    .select("id, name, application_number")
+    .select("id, name, application_number, intake")
+    .order("intake", { ascending: false })
     .order("application_number", { ascending: true });
+  const intakeMissing = isMissingSchema(studentError);
 
   const { data: instanceRows } = await supabase
     .from("test_instances")
@@ -55,6 +59,7 @@ export default async function ExamQrPage({
     id: student.id,
     name: student.name,
     application_number: student.application_number,
+    intake: typeof student.intake === "string" ? student.intake : null,
     instanceStatus: normalizeInstanceStatus(statusByStudent.get(student.id)),
   }));
 
@@ -89,12 +94,21 @@ export default async function ExamQrPage({
               {exam.duration_minutes} minute{exam.duration_minutes === 1 ? "" : "s"}
             </p>
           </header>
-          <QrGeneratorClient
-            examId={exam.id}
-            students={students}
-            questionSets={questionSets}
-            usesSections={usesSections}
-          />
+          {intakeMissing ? (
+            <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground">
+              QR codes are waiting for a database update. You can leave this
+              page until that update is applied.
+            </p>
+          ) : studentError ? (
+            <p className="text-sm text-destructive">Could not load the students.</p>
+          ) : (
+            <QrGeneratorClient
+              examId={exam.id}
+              students={students}
+              questionSets={questionSets}
+              usesSections={usesSections}
+            />
+          )}
         </>
       )}
     </main>
