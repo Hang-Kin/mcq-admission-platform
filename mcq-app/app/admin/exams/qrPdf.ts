@@ -1,5 +1,12 @@
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument,
+  rgb,
+  setFillingColor,
+  StandardFonts,
+  type PDFFont,
+  type PDFPage,
+} from "pdf-lib";
 import { toBuffer } from "qrcode";
 
 import {
@@ -16,6 +23,7 @@ import {
 export const QR_CODE_LABEL = "提交編號";
 export const QR_FONT_FILE = "NotoSansHK-Regular.otf";
 
+const INK = rgb(0, 0, 0);
 const CARD_MARGIN = 28;
 const QR_SIZE = 104;
 const TEXT_GAP = 16;
@@ -34,6 +42,19 @@ export type UnprintableStudent = {
   name: string;
   chineseName: string;
   missing: string;
+};
+
+export type QrTextFont = "times" | "noto";
+
+export type QrTextPiece = {
+  text: string;
+  font: QrTextFont;
+  x: number;
+};
+
+export type QrTextLine = {
+  size: number;
+  pieces: QrTextPiece[];
 };
 
 export class QrUnprintableNameError extends Error {
@@ -80,11 +101,10 @@ export function pdfPlainText(value: string): string {
 }
 
 export function cardTextItems(card: QrCard): [string, string, string] {
-  return [
-    `${QR_CODE_LABEL} ${pdfPlainText(card.applicationNumber)}`.trim(),
-    pdfPlainText(card.name),
-    pdfPlainText(card.chineseName),
-  ];
+  const code = pdfPlainText(card.applicationNumber);
+  const english = pdfPlainText(card.name);
+  const chinese = pdfPlainText(card.chineseName);
+  return [`${QR_CODE_LABEL} ${code}`.trim(), english, chinese];
 }
 
 export function missingGlyphs(supported: ReadonlySet<number>, text: string): string {
@@ -97,6 +117,10 @@ export function missingGlyphs(supported: ReadonlySet<number>, text: string): str
     if (!supported.has(code)) missing += char;
   }
   return missing;
+}
+
+export function numberOffset(labelWidth: number, spaceWidth: number): number {
+  return labelWidth + spaceWidth;
 }
 
 function wrapText(text: string, widthOf: (value: string) => number, maxWidth: number): string[] {
@@ -133,21 +157,47 @@ function wrapText(text: string, widthOf: (value: string) => number, maxWidth: nu
   return lines;
 }
 
-type DrawnLine = { text: string; size: number };
-
 function cardTextWidth(): number {
   const qrX = A4_WIDTH - CARD_MARGIN - QR_SIZE;
   return qrX - CARD_MARGIN - TEXT_GAP;
 }
 
-function layoutCardLines(font: PDFFont, card: QrCard, textWidth: number): DrawnLine[] | null {
-  const [code, english, chinese] = cardTextItems(card);
+export function layoutQrCard(
+  times: PDFFont,
+  noto: PDFFont,
+  card: QrCard,
+  textWidth: number,
+): QrTextLine[] | null {
+  const code = pdfPlainText(card.applicationNumber);
+  const english = pdfPlainText(card.name);
+  const chinese = pdfPlainText(card.chineseName);
+
   for (const size of TEXT_SIZES) {
-    const widthOf = (value: string) => font.widthOfTextAtSize(value, size);
-    const lines: DrawnLine[] = [
-      { text: code, size },
-      ...wrapText(english, widthOf, textWidth).map((text) => ({ text, size })),
-      ...wrapText(chinese, widthOf, textWidth).map((text) => ({ text, size })),
+    const timesWidth = (value: string) => times.widthOfTextAtSize(value, size);
+    const notoWidth = (value: string) => noto.widthOfTextAtSize(value, size);
+    const labelWidth = notoWidth(QR_CODE_LABEL);
+    const spaceWidth = timesWidth(" ");
+    const offset = numberOffset(labelWidth, spaceWidth);
+    if (offset + timesWidth(code) > textWidth) continue;
+
+    const englishLines = wrapText(english, timesWidth, textWidth);
+    const chineseLines = wrapText(chinese, notoWidth, textWidth);
+    const lines: QrTextLine[] = [
+      {
+        size,
+        pieces: [
+          { text: QR_CODE_LABEL, font: "noto", x: 0 },
+          ...(code ? [{ text: code, font: "times" as const, x: offset }] : []),
+        ],
+      },
+      ...englishLines.map((text) => ({
+        size,
+        pieces: [{ text, font: "times" as const, x: 0 }],
+      })),
+      ...chineseLines.map((text) => ({
+        size,
+        pieces: [{ text, font: "noto" as const, x: 0 }],
+      })),
     ];
     const blockHeight = lines.reduce(
       (sum, line, index) => sum + line.size + (index === 0 ? 0 : LINE_GAP),
@@ -170,6 +220,38 @@ function drawCutLines(page: PDFPage, count: number) {
   }
 }
 
+function drawInkText(
+  page: PDFPage,
+  text: string,
+  font: PDFFont,
+  x: number,
+  y: number,
+  size: number,
+) {
+  page.pushOperators(setFillingColor(INK));
+  page.drawText(text, {
+    x,
+    y,
+    size,
+    font,
+    color: rgb(0, 0, 0),
+  });
+}
+
+function studentIdentity(card: QrCard): Omit<UnprintableStudent, "missing"> {
+  return {
+    applicationNumber: pdfPlainText(card.applicationNumber),
+    name: pdfPlainText(card.name),
+    chineseName: pdfPlainText(card.chineseName),
+  };
+}
+
+function missingFromEncodeError(error: unknown): string | null {
+  if (!(error instanceof Error) || !error.message.includes("cannot encode")) return null;
+  const match = /cannot encode "([^"]*)"/.exec(error.message);
+  return match?.[1] || error.message;
+}
+
 export async function buildQrSheetPdf(input: {
   fontBytes: Uint8Array;
   cards: QrCard[];
@@ -181,48 +263,55 @@ export async function buildQrSheetPdf(input: {
     },
   });
   pdf.setTitle("QR codes");
-  const font = await pdf.embedFont(input.fontBytes, { subset: true });
-  const supported = new Set(font.getCharacterSet());
+  const times = await pdf.embedFont(StandardFonts.TimesRoman);
+  // Subsetting this CFF font writes outlines that viewers cannot paint, so the
+  // label and Chinese name come out blank. Embed the full Noto file.
+  const noto = await pdf.embedFont(input.fontBytes, { subset: false });
+  const timesSet = new Set(times.getCharacterSet());
+  const notoSet = new Set(noto.getCharacterSet());
   for (const char of QR_CODE_LABEL) {
     const code = char.codePointAt(0);
-    if (code == null || !supported.has(code)) {
+    if (code == null || !notoSet.has(code)) {
       throw new Error("The QR font cannot print 提交編號.");
     }
   }
 
   const unprintable: UnprintableStudent[] = [];
   for (const card of input.cards) {
-    const [, english, chinese] = cardTextItems(card);
-    const missing = missingGlyphs(
-      supported,
-      `${pdfPlainText(card.applicationNumber)}${english}${chinese}`,
-    );
+    const code = pdfPlainText(card.applicationNumber);
+    const english = pdfPlainText(card.name);
+    const chinese = pdfPlainText(card.chineseName);
+    const missing =
+      missingGlyphs(timesSet, `${code}${english}`) + missingGlyphs(notoSet, chinese);
     if (missing.length > 0) {
-      unprintable.push({
-        applicationNumber: pdfPlainText(card.applicationNumber),
-        name: english,
-        chineseName: chinese,
-        missing,
-      });
+      unprintable.push({ ...studentIdentity(card), missing });
     }
   }
   if (unprintable.length > 0) throw new QrUnprintableNameError(unprintable);
 
   const textWidth = cardTextWidth();
-  const layouts: DrawnLine[][] = [];
+  const layouts: QrTextLine[][] = [];
   const overflow: Array<{ applicationNumber: string; name: string }> = [];
   for (const card of input.cards) {
-    const lines = layoutCardLines(font, card, textWidth);
-    if (!lines) {
-      overflow.push({
-        applicationNumber: pdfPlainText(card.applicationNumber),
-        name: pdfPlainText(card.name),
-      });
+    try {
+      const lines = layoutQrCard(times, noto, card, textWidth);
+      if (!lines) {
+        overflow.push({
+          applicationNumber: pdfPlainText(card.applicationNumber),
+          name: pdfPlainText(card.name),
+        });
+        layouts.push([]);
+      } else {
+        layouts.push(lines);
+      }
+    } catch (error) {
+      const missing = missingFromEncodeError(error);
+      if (!missing) throw error;
+      unprintable.push({ ...studentIdentity(card), missing });
       layouts.push([]);
-    } else {
-      layouts.push(lines);
     }
   }
+  if (unprintable.length > 0) throw new QrUnprintableNameError(unprintable);
   if (overflow.length > 0) throw new QrNameDoesNotFitError(overflow);
 
   const pageCount = sheetPageCount(input.cards.length);
@@ -235,7 +324,13 @@ export async function buildQrSheetPdf(input: {
       const card = input.cards[cardIndex];
       const lines = layouts[cardIndex];
       if (!card || !lines) continue;
-      await drawCard(pdf, page, font, slot, card, lines);
+      try {
+        await drawCard(pdf, page, times, noto, slot, card, lines);
+      } catch (error) {
+        const missing = missingFromEncodeError(error);
+        if (!missing) throw error;
+        throw new QrUnprintableNameError([{ ...studentIdentity(card), missing }]);
+      }
     }
   }
 
@@ -246,10 +341,11 @@ export async function buildQrSheetPdf(input: {
 async function drawCard(
   pdf: PDFDocument,
   page: PDFPage,
-  font: PDFFont,
+  times: PDFFont,
+  noto: PDFFont,
   slot: number,
   card: QrCard,
-  lines: DrawnLine[],
+  lines: QrTextLine[],
 ) {
   const bottom = bandBottom(slot);
   const qrX = A4_WIDTH - CARD_MARGIN - QR_SIZE;
@@ -260,13 +356,17 @@ async function drawCard(
   );
   let baseline = bottom + (CARD_HEIGHT + blockHeight) / 2 - (lines[0]?.size ?? 0);
   for (const line of lines) {
-    page.drawText(line.text, {
-      x: CARD_MARGIN,
-      y: baseline,
-      size: line.size,
-      font,
-      color: rgb(0, 0, 0),
-    });
+    for (const piece of line.pieces) {
+      if (!piece.text) continue;
+      drawInkText(
+        page,
+        piece.text,
+        piece.font === "times" ? times : noto,
+        CARD_MARGIN + piece.x,
+        baseline,
+        line.size,
+      );
+    }
     baseline -= line.size + LINE_GAP;
   }
 
