@@ -21,7 +21,7 @@ import {
 } from "./qrLayout";
 
 export const QR_CODE_LABEL = "提交編號";
-export const QR_FONT_FILE = "NotoSansHK-Regular.otf";
+export const QR_FONT_FILE = "NotoSansHK-TC.otf";
 
 const INK = rgb(0, 0, 0);
 const CARD_MARGIN = 28;
@@ -264,8 +264,9 @@ export async function buildQrSheetPdf(input: {
   });
   pdf.setTitle("QR codes");
   const times = await pdf.embedFont(StandardFonts.TimesRoman);
-  // Subsetting this CFF font writes outlines that viewers cannot paint, so the
-  // label and Chinese name come out blank. Embed the full Noto file.
+  // NotoSansHK-TC.otf is already a static fonttools subset: Traditional Chinese,
+  // HKSCS, and Basic Latin. Subsetting that CFF font again while drawing writes
+  // outlines viewers cannot paint, so embed the file whole.
   const noto = await pdf.embedFont(input.fontBytes, { subset: false });
   const timesSet = new Set(times.getCharacterSet());
   const notoSet = new Set(noto.getCharacterSet());
