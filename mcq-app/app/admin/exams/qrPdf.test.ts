@@ -94,7 +94,7 @@ test("Traditional and HKSCS names and a long English name print", async () => {
     },
   });
   const times = await pdf.embedFont(StandardFonts.TimesRoman);
-  const noto = await pdf.embedFont(fontBytes, { subset: true });
+  const noto = await pdf.embedFont(fontBytes, { subset: false });
   assert.equal(missingGlyphs(new Set(noto.getCharacterSet()), "彧喆嬡堃"), "");
   assert.equal(missingGlyphs(new Set(times.getCharacterSet()), longEnglishName), "");
   const built = await buildQrSheetPdf({ fontBytes, cards: [sample] });
@@ -136,7 +136,7 @@ test("the label and number are separate fonts and the number follows the label w
     },
   });
   const times = await pdf.embedFont(StandardFonts.TimesRoman);
-  const noto = await pdf.embedFont(fontBytes, { subset: true });
+  const noto = await pdf.embedFont(fontBytes, { subset: false });
   const sample: QrCard = {
     name: "Ada Wong",
     chineseName: "陳大文",
@@ -223,6 +223,24 @@ test("an English name Times cannot encode names the student", async () => {
       assert.match(error.message, /Chan/);
       assert.match(error.message, /李/);
       assert.equal(error.message.includes("1001"), false);
+      assert.equal(error.message.includes("WinAnsi cannot encode"), false);
+      return true;
+    },
+  );
+});
+
+test("a character dropped from the reduced Noto file names the student", async () => {
+  await assert.rejects(
+    () =>
+      buildQrSheetPdf({
+        fontBytes,
+        cards: [card(1, { name: "Ada Wong", chineseName: "陳Ä", applicationNumber: "1009" })],
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof QrUnprintableNameError);
+      assert.match(error.message, /1009/);
+      assert.match(error.message, /Ada Wong/);
+      assert.match(error.message, /Ä/);
       assert.equal(error.message.includes("WinAnsi cannot encode"), false);
       return true;
     },
