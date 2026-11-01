@@ -95,6 +95,15 @@ export function groupDrawPreview(rows: DrawRow[], orders: TopicOrder[]): Preview
   });
 }
 
+export function sittingQuestionSummary(groups: PreviewGroup[]): string {
+  return groups
+    .map((group) => {
+      const count = group.topics.reduce((total, topic) => total + topic.questions.length, 0);
+      return `${group.subject} ${count}`;
+    })
+    .join(" · ");
+}
+
 function subjectSort(a: string, b: string) {
   const aIndex = SUBJECT_ORDER.indexOf(a);
   const bIndex = SUBJECT_ORDER.indexOf(b);
