@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { QrGeneratorClient } from "../exams/QrGeneratorClient";
 import { normalizeInstanceStatus, type QrStudent } from "../exams/qrTypes";
 import { isStartInNext24Hours, nextExamId } from "../homeChecklist";
-import { DrawPreview } from "./DrawPreview";
 import { SittingCard } from "./SittingCard";
+import { SittingQuestions } from "./SittingQuestions";
 import { AddSubjectsForm, AddTimeForm, CreateExamForm } from "./SittingsForms";
 import {
   groupDrawPreview,
@@ -312,7 +312,7 @@ export default async function SchedulePage({
                   prominent={focus === "prepare" && slot.id === targetId}
                   canDelete={canDelete}
                 >
-                  <DrawPreview groups={groupDrawPreview(rows, orders)} />
+                  <SittingQuestions groups={groupDrawPreview(rows, orders)} />
                 </SittingCard>
               );
             })

@@ -5,6 +5,7 @@ import {
   drawErrorMessage,
   groupDrawPreview,
   sittingButton,
+  sittingQuestionSummary,
   sittingStatus,
   unpreparedStartWarning,
 } from "./scheduleModel.ts";
@@ -45,6 +46,15 @@ test("preview groups subjects, then numbered topics, then the rest", () => {
     ["Equations", "Fractions", "Decimals"],
   );
   assert.deepEqual(groups[1]?.topics[0]?.questions, ["First idiom", "Second idiom"]);
+  assert.equal(sittingQuestionSummary(groups), "Math 3 · Chinese 2");
+  assert.equal(sittingQuestionSummary([]), "");
+  assert.equal(
+    sittingQuestionSummary([
+      { subject: "Math", topics: [{ name: "Fractions", questions: Array.from({ length: 20 }, () => "m") }] },
+      { subject: "Chinese", topics: [{ name: "成語", questions: Array.from({ length: 20 }, () => "c") }] },
+    ]),
+    "Math 20 · Chinese 20",
+  );
 });
 
 test("an unprepared sitting warns only when its start is within 24 hours", () => {
