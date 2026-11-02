@@ -3,7 +3,10 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  html[data-theme="normal"] {
+    color-scheme: light;
+    /* theme-normal */
     --background: 0 0% 100%;
     --foreground: 0 0% 18%;
     --card: 0 0% 100%;
@@ -29,6 +32,34 @@
     --chart-4: 0 0% 70%;
     --chart-5: 0 72% 42%;
     --radius: 0.375rem;
+  }
+  html[data-theme="contrast"] {
+    color-scheme: dark;
+    /* theme-contrast */
+    --background: 0 0% 0%;
+    --foreground: 52 100% 50%;
+    --card: 0 0% 0%;
+    --card-foreground: 52 100% 50%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 52 100% 50%;
+    --primary: 52 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 0%;
+    --secondary-foreground: 52 100% 50%;
+    --muted: 0 0% 0%;
+    --muted-foreground: 52 100% 50%;
+    --accent: 52 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 52 100% 50%;
+    --input: 52 100% 50%;
+    --ring: 52 100% 50%;
+    --chart-1: 52 100% 50%;
+    --chart-2: 48 100% 50%;
+    --chart-3: 45 100% 50%;
+    --chart-4: 0 0% 100%;
+    --chart-5: 0 100% 50%;
   }
   .dark {
     --background: 0 0% 100%;
@@ -80,6 +111,15 @@
   input[type="radio"],
   input[type="checkbox"] {
     accent-color: hsl(var(--primary));
+  }
+  html[data-locale="zh-Hant"] .shell-en {
+    display: none;
+  }
+  html:not([data-locale="zh-Hant"]) .shell-zh {
+    display: none;
+  }
+  html[data-shell="exam"] .settings-control {
+    display: none;
   }
 }
 

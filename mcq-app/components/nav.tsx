@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 
+import { ShellText } from "@/components/nav-shell-text";
+
 import { NavBar } from "./nav-bar";
-import { staffNavLinks } from "./nav-links";
+import { staffNavMenu } from "./nav-menu";
 import { navbarSession, type NavbarSession } from "./nav-session";
 
 const outlineOnPrimary =
@@ -43,11 +45,15 @@ function SessionControls({
   if (session.showSignIn) {
     return (
       <div className={stacked ? "flex flex-col gap-2" : "flex gap-2"}>
-        <Button asChild size="sm" variant="outline" className={outlineOnPrimary}>
-          <Link href="/auth/login">Sign in</Link>
+        <Button asChild variant="outline" className={`${outlineOnPrimary} h-11 px-4 text-base`}>
+          <Link href="/auth/login">
+            <ShellText id="shell.action.signIn" />
+          </Link>
         </Button>
-        <Button asChild size="sm" variant="secondary">
-          <Link href="/auth/sign-up">Sign up</Link>
+        <Button asChild variant="secondary" className="h-11 px-4 text-base">
+          <Link href="/auth/sign-up">
+            <ShellText id="shell.action.signUp" />
+          </Link>
         </Button>
       </div>
     );
@@ -55,20 +61,21 @@ function SessionControls({
 
   if (!session.showLogOut) return null;
 
-  const email = session.email ?? "Signed in";
-
   return (
     <div className={stacked ? "flex flex-col items-stretch gap-3" : "flex items-center gap-2"}>
       {session.staff ? (
         <AccountMenu email={session.email ?? ""} layout={layout} />
       ) : (
-        <span className="max-w-[14rem] truncate text-sm text-primary-foreground/80" title={email}>
-          {email}
+        <span
+          className="max-w-[14rem] truncate text-base text-primary-foreground"
+          title={session.email ?? undefined}
+        >
+          {session.email ?? <ShellText id="shell.action.signedIn" />}
         </span>
       )}
       <form action={signOut}>
-        <Button type="submit" size="sm" variant="outline" className={outlineOnPrimary}>
-          Log out
+        <Button type="submit" variant="outline" className={`${outlineOnPrimary} h-11 px-4 text-base`}>
+          <ShellText id="shell.action.logOut" />
         </Button>
       </form>
     </div>
@@ -83,7 +90,7 @@ async function SessionSlot({ layout }: { layout: "menu" | "list" }) {
 export function Nav() {
   return (
     <NavBar
-      links={staffNavLinks}
+      sections={staffNavMenu}
       session={
         <Suspense fallback={null}>
           <SessionSlot layout="menu" />
