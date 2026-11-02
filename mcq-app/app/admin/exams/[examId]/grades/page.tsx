@@ -8,6 +8,8 @@ import {
   isGradeStale,
   scoreResponses,
 } from "../../gradeScore";
+import { isMissingMarking } from "../../../results/markSchema";
+import { scoreRow } from "../../../results/marking";
 
 export const instant = false;
 
@@ -32,7 +34,7 @@ export default async function ExamGradesPage({
     .eq("id", examId)
     .single();
 
-  const { data: instanceRows, error: instancesError } = await supabase
+  const withMarks = await supabase
     .from("test_instances")
     .select(
       `
@@ -41,11 +43,30 @@ export default async function ExamGradesPage({
       submitted_at,
       assigned_question_ids,
       students!inner ( name, application_number ),
-      responses ( is_correct, needs_review )
+      responses ( is_correct, needs_review, response_marks ( state, override_is_correct, system_mark_known ) )
     `,
     )
     .eq("exam_id", examId)
     .eq("status", "submitted");
+  const loadedInstances =
+    withMarks.error && isMissingMarking(withMarks.error)
+      ? await supabase
+          .from("test_instances")
+          .select(
+            `
+      id,
+      student_id,
+      submitted_at,
+      assigned_question_ids,
+      students!inner ( name, application_number ),
+      responses ( is_correct, needs_review )
+    `,
+          )
+          .eq("exam_id", examId)
+          .eq("status", "submitted")
+      : withMarks;
+  const instanceRows = loadedInstances.data;
+  const instancesError = loadedInstances.error;
 
   const { data: gradeRows } = await supabase
     .from("grades")
@@ -60,7 +81,7 @@ export default async function ExamGradesPage({
     .map((instance) => {
       const student = asSingle(instance.students);
       const score = scoreResponses(
-        instance.responses ?? [],
+        (instance.responses ?? []).map((row) => scoreRow(row)),
         assignedCountOf(instance.assigned_question_ids),
       );
       const grade = gradeByStudent.get(instance.student_id) ?? null;
@@ -114,10 +135,7 @@ export default async function ExamGradesPage({
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <td className="border-b py-3 pr-4">
-                      <Link
-                        href={`/admin/exams/${exam.id}/grades/${row.id}`}
-                        className="hover:underline"
-                      >
+                      <Link href={`/admin/review/${row.id}`} className="hover:underline">
                         {row.name?.trim() || row.application_number}
                       </Link>
                     </td>

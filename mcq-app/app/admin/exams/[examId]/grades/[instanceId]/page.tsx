@@ -1,40 +1,11 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { MathText } from "@/components/MathText";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { createClient } from "@/lib/supabase/server";
 
-import {
-  assignedCountOf,
-  isGradeStale,
-  orderByAssigned,
-  scoreResponses,
-} from "../../../gradeScore";
-import { CorrectionActions, FinalizeGradeButton } from "./GradeControls";
+import { labels } from "../../../../results/labels";
+import { UUID_RE } from "../../../../results/ids";
 
 export const instant = false;
-
-type Nested<T> = T | T[] | null | undefined;
-
-function asSingle<T>(value: Nested<T>): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
-
-function correctnessLabel(value: boolean | null) {
-  if (value === true) return "correct";
-  if (value === false) return "incorrect";
-  return "not graded";
-}
 
 export default async function StudentGradePage({
   params,
@@ -42,248 +13,29 @@ export default async function StudentGradePage({
   params: Promise<{ examId: string; instanceId: string }>;
 }) {
   const { examId, instanceId } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-    : { data: null };
-  const isAdmin = profile?.role === "admin";
-
-  const { data: instance, error: instanceError } = await supabase
-    .from("test_instances")
-    .select(
-      `
-      id,
-      student_id,
-      exam_id,
-      status,
-      submitted_at,
-      assigned_question_ids,
-      students!inner ( name, application_number ),
-      exams!inner ( name )
-    `,
-    )
-    .eq("id", instanceId)
-    .eq("exam_id", examId)
-    .single();
-
-  if (instanceError || !instance) {
+  if (!UUID_RE.test(examId) || !UUID_RE.test(instanceId)) {
     return (
-      <main className="space-y-8">
-        <h1 className="text-2xl">Student sitting not found</h1>
+      <main className="space-y-2">
+        <h1 className="text-2xl">{labels.studentSittingNotFound}</h1>
       </main>
     );
   }
 
-  const withSubject = await supabase
-    .from("responses")
-    .select(
-      `
-      id,
-      question_id,
-      student_answer,
-      is_correct,
-      graded_by,
-      needs_review,
-      questions!inner ( question_text, type, category, subject )
-    `,
-    )
-    .eq("test_instance_id", instanceId);
-  const loadedResponses =
-    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
-      ? await supabase
-          .from("responses")
-          .select(
-            `
-      id,
-      question_id,
-      student_answer,
-      is_correct,
-      graded_by,
-      needs_review,
-      questions!inner ( question_text, type, category )
-    `,
-          )
-          .eq("test_instance_id", instanceId)
-      : withSubject;
-  const responseRows = loadedResponses.data;
-  const responsesError = loadedResponses.error;
-
-  const { data: gradeRows } = await supabase
-    .from("grades")
-    .select("final_grade, finalized_at")
-    .eq("student_id", instance.student_id)
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("test_instances")
+    .select("id")
+    .eq("id", instanceId)
     .eq("exam_id", examId)
-    .order("finalized_at", { ascending: false })
-    .limit(1);
-  const grade = gradeRows?.[0] ?? null;
+    .maybeSingle();
 
-  const student = asSingle(instance.students);
-  const exam = asSingle(instance.exams);
+  if (!data) {
+    return (
+      <main className="space-y-2">
+        <h1 className="text-2xl">{labels.studentSittingNotFound}</h1>
+      </main>
+    );
+  }
 
-  const responses = orderByAssigned(
-    (responseRows ?? []).map((row) => {
-      const question = asSingle(row.questions);
-      return {
-        id: row.id,
-        question_id: row.question_id,
-        student_answer: row.student_answer,
-        is_correct: row.is_correct,
-        graded_by: row.graded_by,
-        needs_review: row.needs_review,
-        question_text: question?.question_text ?? "Unknown question",
-        type: question?.type ?? "unknown",
-        category: question?.category ?? "",
-        subject: question ? readQuestionSubject(question) : null,
-      };
-    }),
-    instance.assigned_question_ids,
-  );
-
-  const score = scoreResponses(
-    responses,
-    assignedCountOf(instance.assigned_question_ids),
-  );
-  const stale = grade ? isGradeStale(grade.final_grade, score) : false;
-  const unanswered = Math.max(0, score.total - responses.length);
-
-  return (
-    <main className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-sm">
-          <Link href={`/admin/exams/${examId}/grades`} className="hover:underline">
-            Back to grades
-          </Link>
-        </p>
-        <h1 className="text-2xl">
-          {student?.name?.trim() || student?.application_number || "Student"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {student?.application_number} · {exam?.name ?? "Exam"}
-        </p>
-      </header>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Grade</CardTitle>
-          <CardDescription>
-            Final grade is the percentage of assigned questions marked correct.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p>
-            {score.correct}/{score.total} correct
-            {score.percent !== null ? ` (${score.percent}%)` : ""}
-          </p>
-          {unanswered > 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {unanswered} assigned question{unanswered === 1 ? " was" : "s were"}{" "}
-              not answered and count{unanswered === 1 ? "s" : ""} as incorrect.
-            </p>
-          ) : null}
-          {score.pendingReview > 0 ? (
-            <p className="text-sm text-destructive">
-              {score.pendingReview} response
-              {score.pendingReview === 1 ? " needs" : "s need"} review before
-              this grade can be finalized.
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            {grade ? (
-              <Badge>
-                Finalized {Number(grade.final_grade)}%
-                {grade.finalized_at
-                  ? ` · ${new Date(grade.finalized_at).toLocaleString()}`
-                  : ""}
-              </Badge>
-            ) : (
-              <Badge variant="secondary">Not finalized</Badge>
-            )}
-            {stale ? (
-              <Badge variant="destructive">Changed since finalize</Badge>
-            ) : null}
-          </div>
-        </CardContent>
-        {isAdmin && instance.status === "submitted" ? (
-          <CardFooter>
-            <FinalizeGradeButton
-              examId={examId}
-              instanceId={instanceId}
-              alreadyFinalized={Boolean(grade)}
-            />
-          </CardFooter>
-        ) : null}
-      </Card>
-
-      {responsesError ? (
-        <p className="text-sm text-destructive">Failed to load responses.</p>
-      ) : responses.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No responses recorded for this sitting.
-        </p>
-      ) : (
-        <ul className="space-y-6">
-          {responses.map((response, index) => (
-            <li key={response.id}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-medium">
-                    {index + 1}.{" "}
-                    <MathText
-                      text={response.question_text}
-                      subject={response.subject}
-                      category={response.category}
-                    />
-                  </CardTitle>
-                  <CardDescription>
-                    {response.type} · {response.category}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="whitespace-pre-wrap rounded-md border bg-muted/40 p-4 text-base">
-                    {response.student_answer?.trim()
-                      ? response.student_answer
-                      : "(empty answer)"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={
-                        response.is_correct === true ? "default" : "secondary"
-                      }
-                    >
-                      {correctnessLabel(response.is_correct)}
-                    </Badge>
-                    <Badge variant="outline">
-                      graded by {response.graded_by ?? "unknown"}
-                    </Badge>
-                    {response.needs_review ? (
-                      <Badge variant="destructive">Needs review</Badge>
-                    ) : null}
-                  </div>
-                </CardContent>
-                {isAdmin ? (
-                  <CardFooter>
-                    <CorrectionActions
-                      responseId={response.id}
-                      examId={examId}
-                      instanceId={instanceId}
-                      isCorrect={response.is_correct}
-                    />
-                  </CardFooter>
-                ) : null}
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  );
+  redirect(`/admin/review/${instanceId}`);
 }

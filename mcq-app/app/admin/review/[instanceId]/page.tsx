@@ -1,9 +1,16 @@
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
+import { formatHongKongDateTime } from "@/lib/hongKongTime";
+import { isStaffRole } from "@/lib/staffRole";
+
+import { isGradeStale, scoreResponses } from "../../exams/gradeScore";
+import { labels } from "../../results/labels";
 import { UUID_RE } from "../../results/ids";
 import { loadReviewSitting } from "../../results/loadReview";
 import { ReviewPaper } from "../../results/ReviewPaper";
 import { requireStaff } from "../../results/staffGate";
+import { FinalizeControl } from "../MarkControls";
 
 export const instant = false;
 
@@ -17,7 +24,7 @@ export default async function ReviewSittingPage({
   if (!staff.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">Review</h1>
+        <h1 className="text-2xl">{labels.review}</h1>
         <p className="text-sm text-muted-foreground">{staff.error}</p>
       </main>
     );
@@ -26,8 +33,8 @@ export default async function ReviewSittingPage({
   if (!UUID_RE.test(instanceId)) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">Review</h1>
-        <p className="text-sm text-muted-foreground">This sitting was not found.</p>
+        <h1 className="text-2xl">{labels.review}</h1>
+        <p className="text-sm text-muted-foreground">{labels.sittingNotFound}</p>
       </main>
     );
   }
@@ -36,21 +43,41 @@ export default async function ReviewSittingPage({
   if (!loaded.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">Review</h1>
+        <h1 className="text-2xl">{labels.review}</h1>
         <p className="text-sm text-destructive">{loaded.error}</p>
       </main>
     );
   }
 
   const sitting = loaded.sitting;
-  const title = sitting.studentName.trim() || sitting.submissionCode || "Student";
+  const title = sitting.studentName.trim() || sitting.submissionCode || labels.student;
+  const {
+    data: { user },
+  } = await staff.supabase.auth.getUser();
+  const { data: profile } = user
+    ? await staff.supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null };
+  const isAdmin = isStaffRole(profile?.role) && profile?.role === "admin";
 
-  return (
-    <main className="space-y-8">
+  const answered = sitting.questions.filter((question) => question.responseId);
+  const score = scoreResponses(
+    answered.map((question) => ({
+      is_correct: question.finalCorrect,
+      needs_review: question.needsReview,
+    })),
+    sitting.assignedCount,
+  );
+  const unanswered = Math.max(0, score.total - answered.length);
+  const stale =
+    sitting.finalizedPercent != null && isGradeStale(sitting.finalizedPercent, score);
+  const finalizedWhen = formatHongKongDateTime(sitting.finalizedAt);
+
+  const header = (
+    <>
       <header className="space-y-2">
         <p className="text-sm">
           <Link href="/admin/review" className="hover:underline">
-            Back to results
+            {labels.backToResults}
           </Link>
         </p>
         <h1 className="text-2xl">{title}</h1>
@@ -60,20 +87,47 @@ export default async function ReviewSittingPage({
             .join(" · ")}
         </p>
         {sitting.status !== "submitted" ? (
-          <p className="text-sm text-muted-foreground">This sitting is not submitted yet.</p>
-        ) : null}
-        {sitting.examId ? (
-          <p className="text-sm">
-            <Link
-              href={`/admin/exams/${sitting.examId}/grades/${sitting.instanceId}`}
-              className="hover:underline"
-            >
-              Open the grade page
-            </Link>
-          </p>
+          <p className="text-sm text-muted-foreground">{labels.notSubmitted}</p>
         ) : null}
       </header>
-      <ReviewPaper questions={sitting.questions} />
+
+      <section className="space-y-3 rounded-md border border-border p-4">
+        <h2 className="text-lg">{labels.score}</h2>
+        <p>{labels.scoreLine(score.correct, score.total, score.percent)}</p>
+        <p className="text-sm text-muted-foreground">{labels.scoreDetail}</p>
+        {unanswered > 0 ? (
+          <p className="text-sm text-muted-foreground">{labels.unanswered(unanswered)}</p>
+        ) : null}
+        {score.pendingReview > 0 ? (
+          <p className="text-sm text-destructive">{labels.pendingReview(score.pendingReview)}</p>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {sitting.finalizedPercent != null ? (
+            <Badge>{labels.finalizedBadge(sitting.finalizedPercent, finalizedWhen)}</Badge>
+          ) : (
+            <Badge variant="secondary">{labels.notFinalized}</Badge>
+          )}
+          {stale ? <Badge variant="destructive">{labels.changedSinceFinalize}</Badge> : null}
+        </div>
+        {isAdmin && sitting.status === "submitted" && sitting.examId ? (
+          <FinalizeControl
+            examId={sitting.examId}
+            instanceId={sitting.instanceId}
+            alreadyFinalized={sitting.finalizedPercent != null}
+          />
+        ) : null}
+      </section>
+    </>
+  );
+
+  return (
+    <main>
+      <ReviewPaper
+        questions={sitting.questions}
+        instanceId={sitting.instanceId}
+        markingReady={sitting.markingReady}
+        header={header}
+      />
     </main>
   );
 }

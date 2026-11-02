@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 import { assignedCountOf, scoreResponses } from "../../gradeScore";
+import { labels } from "../../../results/labels";
+import { isMissingMarking } from "../../../results/markSchema";
+import { rpcOverride } from "../../../results/markRpc";
+import { scoreRow } from "../../../results/marking";
+import { UUID_RE } from "../../../results/ids";
 
 export type GradeActionState = { error?: string; message?: string } | null;
 
@@ -14,7 +19,7 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return { error: "You are not signed in. Refresh and log in again." } as const;
+    return { error: labels.signIn } as const;
   }
   const { data: profile } = await supabase
     .from("profiles")
@@ -22,7 +27,7 @@ async function requireAdmin() {
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") {
-    return { error: "Only an admin can change grades." } as const;
+    return { error: labels.adminOnly } as const;
   }
   return { supabase, user } as const;
 }
@@ -31,6 +36,7 @@ function revalidateGrades(examId: string, instanceId: string) {
   revalidatePath(`/admin/exams/${examId}/grades`);
   revalidatePath(`/admin/exams/${examId}/grades/${instanceId}`);
   revalidatePath("/admin/review");
+  revalidatePath(`/admin/review/${instanceId}`);
 }
 
 export async function correctResponse(
@@ -43,14 +49,25 @@ export async function correctResponse(
   const verdict = String(formData.get("verdict") ?? "").trim();
 
   if (!id || !examId || !instanceId) {
-    return { error: "Missing response." };
+    return { error: labels.missingResponse };
   }
   if (verdict !== "correct" && verdict !== "incorrect") {
-    return { error: "Choose mark correct or mark incorrect." };
+    return { error: labels.chooseVerdict };
   }
 
   const auth = await requireAdmin();
   if ("error" in auth) return { error: auth.error };
+
+  if (UUID_RE.test(id)) {
+    const marked = await rpcOverride(auth.supabase, id, verdict === "correct", "");
+    if (marked.ok) {
+      revalidateGrades(examId, instanceId);
+      return null;
+    }
+    if (marked.code !== "waiting") {
+      return { error: labels.couldNotSaveMark };
+    }
+  }
 
   const { data, error } = await auth.supabase
     .from("responses")
@@ -66,10 +83,10 @@ export async function correctResponse(
     .select("id");
 
   if (error) {
-    return { error: "Could not save this correction. You may not have permission." };
+    return { error: labels.couldNotSaveMark };
   }
   if (!data || data.length === 0) {
-    return { error: "This response was not found for this student." };
+    return { error: labels.responseMissing };
   }
 
   revalidateGrades(examId, instanceId);
@@ -83,7 +100,7 @@ export async function finalizeGrade(
   const examId = String(formData.get("exam_id") ?? "").trim();
   const instanceId = String(formData.get("instance_id") ?? "").trim();
   if (!examId || !instanceId) {
-    return { error: "Missing student sitting." };
+    return { error: labels.missingSitting };
   }
 
   const auth = await requireAdmin();
@@ -97,33 +114,38 @@ export async function finalizeGrade(
     .single();
 
   if (instanceError || !instance) {
-    return { error: "This student sitting was not found." };
+    return { error: labels.sittingMissing };
   }
   if (instance.status !== "submitted") {
-    return { error: "Only submitted exams can be finalized." };
+    return { error: labels.submittedOnly };
   }
 
-  const { data: responses, error: responsesError } = await auth.supabase
+  const withMarks = await auth.supabase
     .from("responses")
-    .select("is_correct, needs_review")
+    .select("is_correct, needs_review, response_marks ( state, override_is_correct, system_mark_known )")
     .eq("test_instance_id", instanceId);
+  const loadedResponses =
+    withMarks.error && isMissingMarking(withMarks.error)
+      ? await auth.supabase
+          .from("responses")
+          .select("is_correct, needs_review")
+          .eq("test_instance_id", instanceId)
+      : withMarks;
 
-  if (responsesError) {
-    return { error: "Could not load responses. Try again." };
+  if (loadedResponses.error) {
+    return { error: labels.couldNotLoadResponses };
   }
 
   const score = scoreResponses(
-    responses ?? [],
+    (loadedResponses.data ?? []).map((row) => scoreRow(row)),
     assignedCountOf(instance.assigned_question_ids),
   );
 
   if (score.pendingReview > 0) {
-    return {
-      error: `${score.pendingReview} response${score.pendingReview === 1 ? " still needs" : "s still need"} review. Mark ${score.pendingReview === 1 ? "it" : "them"} correct or incorrect before finalizing.`,
-    };
+    return { error: labels.pendingFinalize(score.pendingReview) };
   }
   if (score.percent === null) {
-    return { error: "This student has no questions to grade." };
+    return { error: labels.noQuestionsToGrade };
   }
 
   const { error: upsertError } = await auth.supabase.from("grades").upsert(
@@ -137,9 +159,9 @@ export async function finalizeGrade(
   );
 
   if (upsertError) {
-    return { error: "Could not save the final grade. You may not have permission." };
+    return { error: labels.couldNotSaveGrade };
   }
 
   revalidateGrades(examId, instanceId);
-  return { message: `Finalized at ${score.percent}%.` };
+  return { message: labels.finalizedAt(score.percent) };
 }

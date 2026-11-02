@@ -187,7 +187,7 @@ export async function updateQuestion(id: string, formData: FormData) {
 
   const { data: existing, error: existingError } = await auth.supabase
     .from("questions")
-    .select("image_url")
+    .select("image_url, correct_answer")
     .eq("id", id)
     .single();
 
@@ -223,6 +223,17 @@ export async function updateQuestion(id: string, formData: FormData) {
 
   revalidatePath("/admin/questions");
   revalidatePath(`/admin/questions/${id}/edit`);
+
+  const previous =
+    existing.correct_answer == null ? null : String(existing.correct_answer);
+  const next = parsed.payload.correct_answer;
+  if ((previous ?? "").trim() !== (next ?? "").trim()) {
+    const params = new URLSearchParams({ edited: "1" });
+    if (previous === null) params.set("before_null", "1");
+    else if (previous.length <= 1800) params.set("before", previous);
+    redirect(`/admin/review/regrade/${id}?${params.toString()}`);
+  }
+
   redirect("/admin/questions");
 }
 
