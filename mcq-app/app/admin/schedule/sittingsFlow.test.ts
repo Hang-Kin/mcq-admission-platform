@@ -27,6 +27,30 @@ test("a time needs a name and an end after the start", () => {
   if (ok.ok) assert.equal(ok.label, "Morning");
 });
 
+test("13:46 is stored as Hong Kong time and the slot must cover the exam", () => {
+  const accepted = validateSittingTime({
+    label: "Afternoon",
+    startsAt: "2026-11-02T13:46",
+    endsAt: "2026-11-02T14:02",
+    examMinutes: 16,
+  });
+  assert.equal(accepted.ok, true);
+  if (accepted.ok) {
+    assert.equal(accepted.startsAt, "2026-11-02T05:46:00.000Z");
+    assert.equal(accepted.endsAt, "2026-11-02T06:02:00.000Z");
+  }
+  const rejected = validateSittingTime({
+    label: "Afternoon",
+    startsAt: "2026-11-02T13:46",
+    endsAt: "2026-11-02T14:01",
+    examMinutes: 16,
+  });
+  assert.equal(rejected.ok, false);
+  if (!rejected.ok) {
+    assert.equal(rejected.error, "This slot is 15 minutes but the exam needs 16.");
+  }
+});
+
 test("prepare targets the next unprepared sitting, not one already prepared", () => {
   const id = prepareTargetId(
     [

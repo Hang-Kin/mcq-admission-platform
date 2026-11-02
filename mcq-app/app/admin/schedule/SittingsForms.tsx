@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { examNeedsLabel } from "../settings/sectionMinutes";
 import { addMathAndChinese, addSittingTime, createNamedExam } from "./sittingsActions";
+import { validateSittingTime } from "./sittingsFlow";
 
 type Action = (formData: FormData) => Promise<{ error?: string } | void>;
 
@@ -105,10 +107,12 @@ export function AddSubjectsForm({
 export function AddTimeForm({
   examId,
   prominent,
+  examMinutes = 0,
   action = addSittingTime,
 }: {
   examId: string;
   prominent: boolean;
+  examMinutes?: number;
   action?: Action;
 }) {
   const [label, setLabel] = useState("");
@@ -120,9 +124,14 @@ export function AddTimeForm({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const parsed = validateSittingTime({ label, startsAt, endsAt, examMinutes });
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     const formData = new FormData();
     formData.set("exam_id", examId);
-    formData.set("label", label);
+    formData.set("label", parsed.label);
     formData.set("starts_at", startsAt);
     formData.set("ends_at", endsAt);
     setPending(true);
@@ -152,7 +161,7 @@ export function AddTimeForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time-start">Starts</Label>
+          <Label htmlFor="time-start">Starts (HKT)</Label>
           <Input
             id="time-start"
             type="datetime-local"
@@ -162,7 +171,7 @@ export function AddTimeForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time-end">Ends</Label>
+          <Label htmlFor="time-end">Ends (HKT)</Label>
           <Input
             id="time-end"
             type="datetime-local"
@@ -172,6 +181,10 @@ export function AddTimeForm({
           />
         </div>
       </div>
+      <p className="text-sm text-muted-foreground">Hong Kong time (HKT).</p>
+      {examNeedsLabel(examMinutes) ? (
+        <p className="text-sm text-muted-foreground">{examNeedsLabel(examMinutes)}</p>
+      ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button
         type="submit"
