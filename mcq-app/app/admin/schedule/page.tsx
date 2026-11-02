@@ -6,6 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { QrGeneratorClient } from "../exams/QrGeneratorClient";
 import { normalizeInstanceStatus, type QrStudent } from "../exams/qrTypes";
 import { isStartInNext24Hours, nextExamId } from "../homeChecklist";
+import {
+  examMinuteTotals,
+  shortSlotWarning,
+  subjectMinutesFromRows,
+} from "../settings/sectionMinutes";
 import { SittingCard } from "./SittingCard";
 import { SittingQuestions } from "./SittingQuestions";
 import { AddSubjectsForm, AddTimeForm, CreateExamForm } from "./SittingsForms";
@@ -45,6 +50,8 @@ type ExamRow = {
 type SectionRow = {
   exam_id: string;
   subject: string | null;
+  position: number | null;
+  duration_minutes: number | null;
 };
 
 export default async function SchedulePage({
@@ -69,6 +76,8 @@ export default async function SchedulePage({
     studentsResult,
     instancesResult,
     profileResult,
+    settingsResult,
+    plansResult,
   ] = await Promise.all([
     supabase
       .from("timeslots")
@@ -78,7 +87,7 @@ export default async function SchedulePage({
     supabase.from("timeslot_draws").select("timeslot_id, subject, question_id, position"),
     supabase.from("test_instances").select("timeslot_id").not("started_at", "is", null),
     supabase.from("subject_topics").select("subject, category, display_order"),
-    supabase.from("exam_sections").select("exam_id, subject"),
+    supabase.from("exam_sections").select("exam_id, subject, position, duration_minutes"),
     supabase
       .from("students")
       .select("id, name, application_number, intake")
@@ -88,6 +97,11 @@ export default async function SchedulePage({
     user
       ? supabase.from("profiles").select("role").eq("id", user.id).single()
       : Promise.resolve({ data: null, error: null }),
+    supabase.from("subject_settings").select("subject, duration_minutes"),
+    supabase
+      .from("test_instances")
+      .select("exam_id, started_at, section_plan")
+      .not("started_at", "is", null),
   ]);
 
   const slots = (slotsResult.data ?? []) as SlotRow[];
@@ -107,6 +121,39 @@ export default async function SchedulePage({
       }));
   const sections = sectionsResult.error ? [] : ((sectionsResult.data ?? []) as SectionRow[]);
   const subjectColumnMissing = isMissingSchema(sectionsResult.error);
+  const startedExamIds = plansResult.error
+    ? []
+    : [
+        ...new Set(
+          (plansResult.data ?? [])
+            .map((row) => (row.exam_id == null ? "" : String(row.exam_id)))
+            .filter((id) => id.length > 0),
+        ),
+      ];
+  const minuteTotals = examMinuteTotals({
+    sections: sections.map((row) => ({
+      examId: String(row.exam_id),
+      subject: row.subject,
+      position: Number(row.position ?? 0),
+      durationMinutes: Number(row.duration_minutes ?? 0),
+    })),
+    startedExamIds,
+    plans: plansResult.error
+      ? []
+      : (plansResult.data ?? []).map((row) => ({
+          examId: row.exam_id == null ? "" : String(row.exam_id),
+          startedAt: row.started_at == null ? null : String(row.started_at),
+          plan: row.section_plan,
+        })),
+    settings: settingsResult.error
+      ? null
+      : subjectMinutesFromRows(
+          (settingsResult.data ?? []).map((row) => ({
+            subject: row.subject == null ? null : String(row.subject),
+            durationMinutes: Number(row.duration_minutes),
+          })),
+        ),
+  });
   const drawsMissing = isMissingSchema(drawsResult.error);
   const schemaReady = !drawsMissing && !subjectColumnMissing;
   const canDelete = profileResult.data?.role === "admin";
@@ -279,6 +326,11 @@ export default async function SchedulePage({
       {selected ? (
         <section className="space-y-4">
           <h2 className="text-lg">Times</h2>
+          {settingsResult.error && !isMissingSchema(settingsResult.error) ? (
+            <p className="text-sm text-destructive">
+              Could not read Subject settings, so the length check uses the saved section minutes.
+            </p>
+          ) : null}
           {selectedSlots.length === 0 ? (
             <p className="text-sm text-muted-foreground">No times yet.</p>
           ) : (
@@ -308,6 +360,11 @@ export default async function SchedulePage({
                   endsAt={slot.ends_at}
                   status={status}
                   startWarning={unpreparedStartWarning(status, slot.starts_at, nowMs)}
+                  lengthWarning={shortSlotWarning(
+                    slot.starts_at,
+                    slot.ends_at,
+                    minuteTotals.get(String(selected.id)) ?? 0,
+                  )}
                   unavailable={checkFailed && !locked}
                   prominent={focus === "prepare" && slot.id === targetId}
                   canDelete={canDelete}
@@ -318,7 +375,11 @@ export default async function SchedulePage({
             })
           )}
           {schemaReady ? (
-            <AddTimeForm examId={String(selected.id)} prominent={focus === "time"} />
+            <AddTimeForm
+              examId={String(selected.id)}
+              prominent={focus === "time"}
+              examMinutes={minuteTotals.get(String(selected.id)) ?? 0}
+            />
           ) : null}
         </section>
       ) : null}

@@ -9,6 +9,11 @@ import {
   renumberSections,
   updateSection,
 } from "./actions";
+import {
+  earliestSectionPlan,
+  sectionDurationView,
+  subjectMinutesFromRows,
+} from "../../../settings/sectionMinutes";
 import { SectionAdminClient, type SectionRow } from "./SectionAdminClient";
 
 export const instant = false;
@@ -41,9 +46,36 @@ export default async function ExamSectionsPage({
 
   const { data: sectionRows, error: sectionError } = await supabase
     .from("exam_sections")
-    .select("id, label, question_set, duration_minutes, position")
+    .select("id, label, question_set, duration_minutes, position, subject")
     .eq("exam_id", examId)
     .order("position", { ascending: true });
+
+  const [settingsResult, startedResult] = await Promise.all([
+    supabase.from("subject_settings").select("subject, duration_minutes"),
+    supabase
+      .from("test_instances")
+      .select("started_at, section_plan")
+      .eq("exam_id", examId)
+      .not("started_at", "is", null)
+      .order("started_at", { ascending: true })
+      .limit(1),
+  ]);
+  const started = !startedResult.error && (startedResult.data?.length ?? 0) > 0;
+  const startedUnknown = Boolean(startedResult.error);
+  const settings = settingsResult.error
+    ? null
+    : subjectMinutesFromRows(
+        (settingsResult.data ?? []).map((row) => ({
+          subject: row.subject == null ? null : String(row.subject),
+          durationMinutes: Number(row.duration_minutes),
+        })),
+      );
+  const plan = earliestSectionPlan(
+    (startedResult.data ?? []).map((row) => ({
+      startedAt: row.started_at == null ? null : String(row.started_at),
+      plan: row.section_plan,
+    })),
+  );
 
   const { data: questionRows } = await supabase
     .from("questions")
@@ -57,13 +89,25 @@ export default async function ExamSectionsPage({
     ),
   ].sort((a, b) => a.localeCompare(b));
 
-  const sections: SectionRow[] = (sectionRows ?? []).map((row) => ({
-    id: row.id,
-    label: row.label,
-    question_set: row.question_set,
-    duration_minutes: Number(row.duration_minutes),
-    position: row.position,
-  }));
+  const sections: SectionRow[] = (sectionRows ?? []).map((row) => {
+    const view = sectionDurationView({
+      subject: row.subject == null ? null : String(row.subject),
+      position: Number(row.position),
+      storedMinutes: Number(row.duration_minutes),
+      settings,
+      started: started || startedUnknown,
+      plan,
+    });
+    return {
+      id: row.id,
+      label: row.label,
+      question_set: row.question_set,
+      duration_minutes: view.minutes,
+      position: row.position,
+      duration_locked: view.locked || startedUnknown,
+      duration_note: startedUnknown ? "Could not check whether a student has started." : view.note,
+    };
+  });
 
   return (
     <main className="space-y-8">
@@ -83,6 +127,26 @@ export default async function ExamSectionsPage({
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
             <p className="text-sm text-muted-foreground">Sections</p>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              {startedUnknown
+                ? "These minutes cannot be changed until we know whether a student has started."
+                : started
+                  ? "A student has started, so these minutes stay fixed."
+                  : "Math and Chinese minutes come from Subject settings until a student starts. After that, they stay fixed."}{" "}
+              <Link href="/admin/bank?tab=settings" className="hover:underline">
+                Subject settings
+              </Link>
+            </p>
+            {startedUnknown ? (
+              <p className="text-sm text-destructive">
+                Could not check whether a student has started, so the minutes cannot be changed.
+              </p>
+            ) : null}
+            {!started && !startedUnknown && settingsResult.error ? (
+              <p className="text-sm text-destructive">
+                Could not load Subject settings, so the saved section minutes are shown.
+              </p>
+            ) : null}
           </header>
           <SectionAdminClient
             examId={exam.id}

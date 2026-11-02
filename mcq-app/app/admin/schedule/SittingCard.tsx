@@ -5,18 +5,11 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatHongKongRange } from "@/lib/hongKongTime";
 
 import { prepareSitting } from "./actions";
 import { sittingButton, type SittingStatus } from "./scheduleModel";
 import { deleteSittingTime } from "./sittingsActions";
-
-function formatWhen(starts: string | null, ends: string | null) {
-  if (!starts || !ends) return "";
-  const start = new Date(starts);
-  const end = new Date(ends);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
-  return `${start.toLocaleString()} – ${end.toLocaleString()}`;
-}
 
 export function SittingCard({
   sittingId,
@@ -26,6 +19,7 @@ export function SittingCard({
   endsAt,
   status,
   startWarning = false,
+  lengthWarning = null,
   unavailable = false,
   prominent = false,
   canDelete = false,
@@ -39,6 +33,7 @@ export function SittingCard({
   endsAt: string | null;
   status: SittingStatus;
   startWarning?: boolean;
+  lengthWarning?: string | null;
   unavailable?: boolean;
   prominent?: boolean;
   canDelete?: boolean;
@@ -46,7 +41,7 @@ export function SittingCard({
   children?: ReactNode;
 }) {
   const button = sittingButton(status);
-  const when = formatWhen(startsAt, endsAt);
+  const when = formatHongKongRange(startsAt, endsAt);
   const cannotRun = button.disabled || unavailable;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,10 +92,11 @@ export function SittingCard({
             <Badge variant="destructive">Within 24 hours</Badge>
           ) : null}
         </div>
-        <p className="text-sm text-muted-foreground" suppressHydrationWarning>
+        <p className="text-sm text-muted-foreground">
           {examName}
           {when ? ` · ${when}` : ""}
         </p>
+        {lengthWarning ? <p className="text-sm text-destructive">{lengthWarning}</p> : null}
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit}>

@@ -61,6 +61,10 @@ export function SettingsForm({ subjects }: { subjects: SubjectSettingValues[] })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        Exam sections use these minutes until a student starts. After a student
+        starts, that exam keeps its minutes.
+      </p>
       <div className="grid gap-4 lg:grid-cols-2">
         {subjects.map((subject) => {
           const perTopic = parsePositiveInteger(

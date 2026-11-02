@@ -25,6 +25,8 @@ export type SectionRow = {
   question_set: string;
   duration_minutes: number;
   position: number;
+  duration_locked?: boolean;
+  duration_note?: string | null;
 };
 
 type SectionAdminClientProps = {
@@ -119,9 +121,10 @@ export function SectionAdminClient({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Set {section.question_set} · {section.duration_minutes} min
+                    {section.duration_note ? ` · ${section.duration_note}` : ""}
                   </p>
                   <SectionForm
-                    key={`${section.id}-${section.label}-${section.question_set}-${section.duration_minutes}`}
+                    key={`${section.id}-${section.label}-${section.question_set}-${section.duration_minutes}-${section.duration_locked ? "locked" : "open"}`}
                     examId={examId}
                     sectionId={section.id}
                     questionSetNames={questionSetNames}
@@ -251,6 +254,7 @@ function SectionForm({
           inputMode="numeric"
           value={durationMinutes}
           onChange={(event) => setDurationMinutes(event.target.value)}
+          readOnly={initial?.duration_locked === true}
           required
         />
       </div>

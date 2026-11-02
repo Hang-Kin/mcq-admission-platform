@@ -12,6 +12,13 @@ import {
   validateSectionFields,
   type SectionPosition,
 } from "../../sectionValidation";
+import {
+  effectiveSectionMinutes,
+  MINUTES_LOCKED_MESSAGE,
+  resolveSavedDuration,
+  snapshotMinutesByPosition,
+  subjectMinutesFromRows,
+} from "../../../settings/sectionMinutes";
 
 export type SectionActionResult = { error?: string } | void;
 
@@ -196,13 +203,92 @@ export async function updateSection(
     return { error: "You are not signed in. Refresh and log in again." };
   }
 
+  const { data: current, error: currentError } = await supabase
+    .from("exam_sections")
+    .select("id, subject, position, duration_minutes")
+    .eq("id", sectionId)
+    .eq("exam_id", examId)
+    .maybeSingle();
+  if (currentError || !current) {
+    return { error: "Could not update this section. You may not have permission." };
+  }
+
+  const { count: startedCount, error: startedError } = await supabase
+    .from("test_instances")
+    .select("id", { count: "exact", head: true })
+    .eq("exam_id", examId)
+    .not("started_at", "is", null);
+  if (startedError) {
+    return {
+      error: "Could not check whether a student has started, so the minutes were not changed.",
+    };
+  }
+  const started = (startedCount ?? 0) > 0;
+  const subject = current.subject == null ? null : String(current.subject);
+
+  let settings = null;
+  if (!started && (subject === "Math" || subject === "Chinese")) {
+    const { data, error: settingsError } = await supabase
+      .from("subject_settings")
+      .select("subject, duration_minutes");
+    if (settingsError) {
+      return { error: "Could not read Subject settings, so the minutes were not changed." };
+    }
+    settings = subjectMinutesFromRows(
+      (data ?? []).map((row) => ({
+        subject: row.subject == null ? null : String(row.subject),
+        durationMinutes: Number(row.duration_minutes),
+      })),
+    );
+  }
+
+  let effectiveMinutes: number | null = null;
+  if (started) {
+    const { data: planRows, error: planError } = await supabase
+      .from("test_instances")
+      .select("section_plan")
+      .eq("exam_id", examId)
+      .not("started_at", "is", null)
+      .order("started_at", { ascending: true })
+      .limit(1);
+    if (planError) {
+      return { error: "Could not read the fixed minutes, so this section was not saved." };
+    }
+    effectiveMinutes = effectiveSectionMinutes({
+      subject,
+      storedMinutes: Number(current.duration_minutes),
+      snapshotMinutes:
+        snapshotMinutesByPosition(planRows?.[0]?.section_plan).get(Number(current.position)) ??
+        null,
+      settings: null,
+      started: true,
+    });
+  }
+
+  const duration = resolveSavedDuration({
+    started,
+    subject,
+    storedMinutes: Number(current.duration_minutes),
+    submittedMinutes: parsed.payload.duration_minutes,
+    effectiveMinutes,
+    settings,
+  });
+  if (!duration.ok) return { error: duration.error };
+
   const { error } = await supabase
     .from("exam_sections")
-    .update(parsed.payload)
+    .update({
+      label: parsed.payload.label,
+      question_set: parsed.payload.question_set,
+      duration_minutes: duration.minutes,
+    })
     .eq("id", sectionId)
     .eq("exam_id", examId);
 
   if (error) {
+    if (/section_minutes_locked/i.test(error.message ?? "")) {
+      return { error: MINUTES_LOCKED_MESSAGE };
+    }
     if (uniqueSectionError(error)) {
       return {
         error: "A section with that label already exists for this exam.",

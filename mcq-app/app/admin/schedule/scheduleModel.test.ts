@@ -78,6 +78,16 @@ test("an unprepared sitting warns only when its start is within 24 hours", () =>
   assert.equal(unpreparedStartWarning("Not prepared", "not-a-time", now), false);
 });
 
+test("the 24 hour warning reads a wall clock as Hong Kong time", () => {
+  const now = Date.parse("2026-11-02T18:00:00.000Z");
+  assert.equal(unpreparedStartWarning("Not prepared", "2026-11-03T20:00", now), true);
+  assert.equal(
+    unpreparedStartWarning("Not prepared", "2026-11-03T20:00:00.000Z", now),
+    false,
+  );
+  assert.equal(unpreparedStartWarning("Not prepared", "2026-11-02T00:30", Date.parse("2026-11-01T16:00:00.000Z")), true);
+});
+
 test("prepare errors stay in plain language", () => {
   assert.equal(
     drawErrorMessage("This exam has no subject on its sections."),

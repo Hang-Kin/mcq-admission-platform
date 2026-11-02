@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 
 import { validateExamFields } from "../exams/examValidation";
 import { isUniqueLabelError } from "../exams/timeslotValidation";
+import {
+  earliestSectionPlan,
+  slotLengthError,
+  subjectMinutesFromRows,
+  totalExamMinutes,
+} from "../settings/sectionMinutes";
 import { isMissingSchema, parseSittingId } from "./scheduleModel";
 import { validateSittingTime } from "./sittingsFlow";
 
@@ -167,6 +173,88 @@ export async function addMathAndChinese(formData: FormData): Promise<ActionResul
   refresh(examId);
 }
 
+async function examMinutesFor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  examId: string,
+): Promise<{ minutes: number } | { error: string }> {
+  const [sectionsResult, settingsResult, startedResult, plansResult] = await Promise.all([
+    supabase
+      .from("exam_sections")
+      .select("subject, position, duration_minutes")
+      .eq("exam_id", examId),
+    supabase.from("subject_settings").select("subject, duration_minutes"),
+    supabase
+      .from("test_instances")
+      .select("id", { count: "exact", head: true })
+      .eq("exam_id", examId)
+      .not("started_at", "is", null),
+    supabase
+      .from("test_instances")
+      .select("started_at, section_plan")
+      .eq("exam_id", examId)
+      .not("started_at", "is", null)
+      .order("started_at", { ascending: true })
+      .limit(1),
+  ]);
+
+  if (sectionsResult.error) {
+    if (isMissingSchema(sectionsResult.error)) return { minutes: 0 };
+    return { error: "Could not check how long this exam is." };
+  }
+  const sections = sectionsResult.data ?? [];
+  if (sections.length === 0) return { minutes: 0 };
+
+  if (startedResult.error && !isMissingSchema(startedResult.error)) {
+    return { error: "Could not check whether a student has started." };
+  }
+  const started = !startedResult.error && (startedResult.count ?? 0) > 0;
+
+  let settings = null;
+  if (!started) {
+    if (settingsResult.error) {
+      if (!isMissingSchema(settingsResult.error)) {
+        return { error: "Could not read the minutes for Math and Chinese." };
+      }
+    } else {
+      settings = subjectMinutesFromRows(
+        (settingsResult.data ?? []).map((row) => ({
+          subject: row.subject == null ? null : String(row.subject),
+          durationMinutes: Number(row.duration_minutes),
+        })),
+      );
+    }
+  }
+
+  let plan: unknown = null;
+  if (started) {
+    if (plansResult.error) {
+      if (!isMissingSchema(plansResult.error)) {
+        return { error: "Could not read the fixed minutes for this exam." };
+      }
+    } else {
+      plan = earliestSectionPlan(
+        (plansResult.data ?? []).map((row) => ({
+          startedAt: row.started_at == null ? null : String(row.started_at),
+          plan: row.section_plan,
+        })),
+      );
+    }
+  }
+
+  return {
+    minutes: totalExamMinutes({
+      sections: sections.map((row) => ({
+        subject: row.subject == null ? null : String(row.subject),
+        position: Number(row.position),
+        durationMinutes: Number(row.duration_minutes),
+      })),
+      settings,
+      started,
+      plan,
+    }),
+  };
+}
+
 export async function addSittingTime(formData: FormData): Promise<ActionResult> {
   const examId = String(formData.get("exam_id") ?? "").trim();
   if (!examId) return { error: "Choose an exam first." };
@@ -180,6 +268,15 @@ export async function addSittingTime(formData: FormData): Promise<ActionResult> 
 
   const auth = await requireStaff("You do not have permission to add a time.");
   if ("error" in auth) return { error: auth.error };
+
+  const length = await examMinutesFor(auth.supabase, examId);
+  if ("error" in length) return { error: length.error };
+  const lengthError = slotLengthError(
+    Date.parse(parsed.startsAt),
+    Date.parse(parsed.endsAt),
+    length.minutes,
+  );
+  if (lengthError) return { error: lengthError };
 
   const { error } = await auth.supabase.from("timeslots").insert({
     exam_id: examId,

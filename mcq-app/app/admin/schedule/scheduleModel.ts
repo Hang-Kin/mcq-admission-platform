@@ -1,3 +1,5 @@
+import { parseHongKongDateTime } from "../../../lib/hongKongTime";
+
 export type SittingStatus = "Not prepared" | "Prepared" | "Locked";
 
 export type DrawRow = {
@@ -34,8 +36,8 @@ export function unpreparedStartWarning(
   nowMs: number,
 ): boolean {
   if (status !== "Not prepared" || !startsAt) return false;
-  const startMs = Date.parse(startsAt);
-  if (Number.isNaN(startMs)) return false;
+  const startMs = parseHongKongDateTime(startsAt);
+  if (startMs === null) return false;
   return Math.abs(startMs - nowMs) <= TWENTY_FOUR_HOURS_MS;
 }
 

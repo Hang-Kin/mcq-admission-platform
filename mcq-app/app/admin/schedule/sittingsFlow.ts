@@ -1,3 +1,6 @@
+import { parseHongKongDateTime } from "../../../lib/hongKongTime";
+import { slotLengthError } from "../settings/sectionMinutes";
+
 export type SittingState = "Not prepared" | "Prepared" | "Locked";
 
 export type SittingsFocus =
@@ -14,6 +17,7 @@ export function validateSittingTime(input: {
   label: string;
   startsAt: string;
   endsAt: string;
+  examMinutes?: number;
 }):
   | { ok: true; label: string; startsAt: string; endsAt: string }
   | { ok: false; error: string } {
@@ -23,13 +27,17 @@ export function validateSittingTime(input: {
   if (!label) return { ok: false, error: "Enter a name for this time." };
   if (!startsAt || !endsAt) return { ok: false, error: "Enter a start and an end." };
 
-  const startsMs = Date.parse(startsAt);
-  const endsMs = Date.parse(endsAt);
-  if (Number.isNaN(startsMs) || Number.isNaN(endsMs)) {
+  const startsMs = parseHongKongDateTime(startsAt);
+  const endsMs = parseHongKongDateTime(endsAt);
+  if (startsMs === null || endsMs === null) {
     return { ok: false, error: "Start and end must be valid dates." };
   }
   if (!(endsMs > startsMs)) {
     return { ok: false, error: "End time must be after start time." };
+  }
+  if (input.examMinutes != null) {
+    const lengthError = slotLengthError(startsMs, endsMs, input.examMinutes);
+    if (lengthError) return { ok: false, error: lengthError };
   }
 
   return {
