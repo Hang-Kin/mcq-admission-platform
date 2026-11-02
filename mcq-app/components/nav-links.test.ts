@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isNavActive, staffNavLinks, type NavLink } from "./nav-links.ts";
+import { isHrefActive, isNavActive, staffNavLinks, type NavLink } from "./nav-links.ts";
 
 const home: NavLink = { href: "/admin", label: "Home", exact: true };
 const questions: NavLink = { href: "/admin/bank", label: "Questions" };
@@ -32,6 +32,22 @@ test("questions, sittings, and students follow their own paths", () => {
   assert.equal(isNavActive("/admin/schedule", sittings), true);
   assert.equal(isNavActive("/admin/students", students), true);
   assert.equal(isNavActive("/admin/students/new", students), true);
+});
+
+test("questions stays active on subject settings", () => {
+  const questionsLink = staffNavLinks[1];
+  assert.equal(questionsLink?.label, "Questions");
+  assert.equal(questionsLink ? isNavActive("/admin/settings", questionsLink) : false, true);
+  assert.equal(isNavActive("/admin/settings", home), false);
+  assert.equal(questionsLink ? isNavActive("/admin/bank/Math", questionsLink) : false, true);
+  assert.equal(questionsLink ? isNavActive("/admin/bank/Chinese", questionsLink) : false, true);
+});
+
+test("a hash link is current only when that hash is open", () => {
+  assert.equal(isHrefActive("/admin/schedule", "/admin/schedule", ""), true);
+  assert.equal(isHrefActive("/admin/schedule", "/admin/schedule#codes", ""), false);
+  assert.equal(isHrefActive("/admin/schedule", "/admin/schedule", "#codes"), false);
+  assert.equal(isHrefActive("/admin/schedule", "/admin/schedule#codes", "#codes"), true);
 });
 
 test("results stays active on the review queue and on a grade page", () => {

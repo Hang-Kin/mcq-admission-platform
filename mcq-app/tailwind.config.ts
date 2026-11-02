@@ -12,7 +12,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: [
+          "var(--font-geist-sans)",
+          "PingFang TC",
+          "Microsoft JhengHei",
+          "Noto Sans TC",
+          "Noto Sans CJK TC",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       colors: {
         background: "hsl(var(--background))",
