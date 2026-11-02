@@ -2,7 +2,14 @@ import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathTe
 import { isMissingSchema } from "@/app/admin/students/schemaError";
 import type { createClient } from "@/lib/supabase/server";
 
-import { assembleReview, type ReviewQuestion, type ReviewQuestionInput, type ReviewResponseInput } from "./marking";
+import { isMissingMarking } from "./markSchema";
+import {
+  assembleReview,
+  teacherMarkFromEmbed,
+  type ReviewQuestion,
+  type ReviewQuestionInput,
+  type ReviewResponseInput,
+} from "./marking";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 
@@ -27,13 +34,36 @@ function boolOrNull(value: unknown): boolean | null {
 export type ReviewSitting = {
   instanceId: string;
   examId: string;
+  studentId: string;
   examName: string;
   studentName: string;
   chineseName: string;
   submissionCode: string;
   status: string;
+  assignedCount: number | undefined;
+  markingReady: boolean;
+  finalizedPercent: number | null;
+  finalizedAt: string | null;
   questions: ReviewQuestion[];
 };
+
+const MARKS =
+  "response_marks ( state, system_is_correct, system_mark_known, override_is_correct, note, marked_by_label, marked_at )";
+
+function responseSelect(withSubject: boolean, withMarks: boolean): string {
+  const question = withSubject
+    ? "questions!inner ( id, question_text, category, subject, correct_answer )"
+    : "questions!inner ( id, question_text, category, correct_answer )";
+  const marks = withMarks ? `,\n      ${MARKS}` : "";
+  return `
+      id,
+      question_id,
+      student_answer,
+      is_correct,
+      needs_review${marks},
+      ${question}
+    `;
+}
 
 export async function loadReviewSitting(
   supabase: Client,
@@ -76,33 +106,26 @@ export async function loadReviewSitting(
     }
   }
 
-  const withSubject = await supabase
-    .from("responses")
-    .select(
-      `
-      question_id,
-      student_answer,
-      is_correct,
-      needs_review,
-      questions!inner ( id, question_text, category, subject, correct_answer )
-    `,
-    )
-    .eq("test_instance_id", instanceId);
-  const responseQuery =
-    withSubject.error && isMissingSubjectColumn(withSubject.error.message)
-      ? await supabase
-          .from("responses")
-          .select(
-            `
-      question_id,
-      student_answer,
-      is_correct,
-      needs_review,
-      questions!inner ( id, question_text, category, correct_answer )
-    `,
-          )
-          .eq("test_instance_id", instanceId)
-      : withSubject;
+  const loadResponses = async (withMarks: boolean) => {
+    const withSubject = await supabase
+      .from("responses")
+      .select(responseSelect(true, withMarks))
+      .eq("test_instance_id", instanceId);
+    if (withSubject.error && isMissingSubjectColumn(withSubject.error.message)) {
+      return supabase
+        .from("responses")
+        .select(responseSelect(false, withMarks))
+        .eq("test_instance_id", instanceId);
+    }
+    return withSubject;
+  };
+
+  let markingReady = true;
+  let responseQuery = await loadResponses(true);
+  if (responseQuery.error && isMissingMarking(responseQuery.error)) {
+    markingReady = false;
+    responseQuery = await loadResponses(false);
+  }
   if (responseQuery.error) return { ok: false, error: "Could not load answers." };
 
   const questions: ReviewQuestionInput[] = [];
@@ -123,7 +146,7 @@ export async function loadReviewSitting(
     });
   };
 
-  for (const row of (responseQuery.data ?? []) as Array<Record<string, unknown>>) {
+  for (const row of (responseQuery.data ?? []) as unknown as Array<Record<string, unknown>>) {
     const question = asSingle(
       row.questions as Record<string, unknown> | Record<string, unknown>[] | null,
     );
@@ -132,9 +155,11 @@ export async function loadReviewSitting(
     if (!questionId) continue;
     responses.push({
       questionId,
+      responseId: text(row.id) || null,
       studentAnswer: textOrNull(row.student_answer),
       isCorrect: boolOrNull(row.is_correct),
       needsReview: row.needs_review === true,
+      mark: markingReady ? teacherMarkFromEmbed(row.response_marks) : undefined,
     });
   }
 
@@ -160,16 +185,44 @@ export async function loadReviewSitting(
     }
   }
 
+  let finalizedPercent: number | null = null;
+  let finalizedAt: string | null = null;
+  const examId = text(instance.exam_id);
+  if (studentId && examId) {
+    const grade = await supabase
+      .from("grades")
+      .select("final_grade, finalized_at")
+      .eq("student_id", studentId)
+      .eq("exam_id", examId)
+      .order("finalized_at", { ascending: false })
+      .limit(1);
+    const gradeRow = (grade.data ?? [])[0] as Record<string, unknown> | undefined;
+    if (!grade.error && gradeRow && gradeRow.final_grade != null && gradeRow.final_grade !== "") {
+      const percent = Number(gradeRow.final_grade);
+      if (Number.isFinite(percent)) finalizedPercent = percent;
+      finalizedAt = textOrNull(gradeRow.finalized_at);
+    }
+  }
+
+  const assignedCount = Array.isArray(instance.assigned_question_ids)
+    ? instance.assigned_question_ids.length
+    : undefined;
+
   return {
     ok: true,
     sitting: {
       instanceId: text(instance.id),
-      examId: text(instance.exam_id),
+      examId,
+      studentId,
       examName: text(exam?.name) || "Exam",
       studentName: text(student?.name),
       chineseName,
       submissionCode: text(student?.application_number),
       status: text(instance.status),
+      assignedCount,
+      markingReady,
+      finalizedPercent,
+      finalizedAt,
       questions: assembleReview(instance.assigned_question_ids, questions, responses),
     },
   };

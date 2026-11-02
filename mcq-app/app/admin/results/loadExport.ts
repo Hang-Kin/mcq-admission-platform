@@ -11,6 +11,8 @@ import {
   type ExportResponse,
   type ResultRow,
 } from "./columns";
+import { isMissingMarking } from "./markSchema";
+import { scoreRow } from "./marking";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 type QueryError = { message?: string; code?: string } | null;
@@ -136,13 +138,25 @@ export async function loadExportRows(
   if (slots.error) return { ok: false, status: 500, error: "Could not load slots." };
 
   const instanceIds = instanceRows.map((row) => text(row.id)).filter(Boolean);
-  const responses = await byIds(instanceIds, (chunk, from, to) =>
+  const withMarks = await byIds(instanceIds, (chunk, from, to) =>
     supabase
       .from("responses")
-      .select("test_instance_id, question_id, is_correct")
+      .select(
+        "test_instance_id, question_id, is_correct, response_marks ( state, override_is_correct, system_mark_known )",
+      )
       .in("test_instance_id", chunk)
       .range(from, to),
   );
+  const responses =
+    withMarks.error && isMissingMarking(withMarks.error)
+      ? await byIds(instanceIds, (chunk, from, to) =>
+          supabase
+            .from("responses")
+            .select("test_instance_id, question_id, is_correct")
+            .in("test_instance_id", chunk)
+            .range(from, to),
+        )
+      : withMarks;
   if (responses.error) return { ok: false, status: 500, error: "Could not load scores." };
 
   const assignedByInstance = new Map<string, string[]>();
@@ -183,7 +197,11 @@ export async function loadExportRows(
     const questionId = text(row.question_id);
     if (!instanceId || !questionId) continue;
     const list = responsesByInstance.get(instanceId) ?? [];
-    list.push({ questionId, isCorrect: boolOrNull(row.is_correct) });
+    const scored = scoreRow({
+      is_correct: boolOrNull(row.is_correct),
+      response_marks: row.response_marks,
+    });
+    list.push({ questionId, isCorrect: scored.is_correct });
     responsesByInstance.set(instanceId, list);
   }
 

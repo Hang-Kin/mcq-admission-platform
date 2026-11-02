@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { labels } from "@/app/admin/results/labels";
 
 import { reviewResponse, type ReviewActionState } from "./actions";
 
@@ -29,7 +30,7 @@ export function ReviewActions({
           variant={primary ? "default" : "outline"}
           disabled={pending}
         >
-          {pending ? "Saving…" : "Mark correct"}
+          {pending ? labels.saving : labels.queueMarkCorrect}
         </Button>
         <Button
           type="submit"
@@ -38,7 +39,7 @@ export function ReviewActions({
           variant="outline"
           disabled={pending}
         >
-          Mark incorrect
+          {labels.queueMarkIncorrect}
         </Button>
       </div>
       {state?.error ? (

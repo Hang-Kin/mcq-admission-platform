@@ -3,6 +3,9 @@ import Link from "next/link";
 import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { createClient } from "@/lib/supabase/server";
 
+import { answeredWarning } from "@/app/admin/results/labels";
+import { countStudents } from "@/app/admin/results/regrade";
+
 import { deleteQuestion, updateQuestion } from "../../actions";
 import { DeleteQuestionButton } from "../../DeleteQuestionButton";
 import { QuestionForm } from "../../QuestionForm";
@@ -47,6 +50,20 @@ export default async function EditQuestionPage({
   const error = loaded.error;
 
   const { data: rows } = await supabase.from("questions").select("question_set");
+  let warning: string | null = null;
+  if (question) {
+    const answered = await supabase
+      .from("responses")
+      .select("test_instances!inner(student_id)")
+      .eq("question_id", question.id);
+    if (!answered.error) {
+      const studentIds = (answered.data ?? []).map((row) => {
+        const instance = Array.isArray(row.test_instances) ? row.test_instances[0] : row.test_instances;
+        return instance?.student_id ?? null;
+      });
+      warning = answeredWarning(countStudents(studentIds));
+    }
+  }
 
   return (
     <main className="space-y-8">
@@ -62,6 +79,7 @@ export default async function EditQuestionPage({
         <p className="text-sm text-destructive">Question not found.</p>
       ) : (
         <>
+          {warning ? <p className="max-w-xl text-sm text-muted-foreground">{warning}</p> : null}
           <QuestionForm
             question={question}
             action={updateQuestion.bind(null, question.id)}

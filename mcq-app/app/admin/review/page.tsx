@@ -20,6 +20,8 @@ import {
   scoreResponses,
 } from "../exams/gradeScore";
 import { ExportForm } from "../results/ExportForm";
+import { isMissingMarking } from "../results/markSchema";
+import { scoreRow } from "../results/marking";
 import { requireStaff } from "../results/staffGate";
 
 import { ReviewActions } from "./ReviewActions";
@@ -48,13 +50,7 @@ type GradeGroup = {
   }>;
 };
 
-async function loadGrades(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-): Promise<{ failed: boolean; groups: GradeGroup[] }> {
-  const { data: instanceRows, error } = await supabase
-    .from("test_instances")
-    .select(
-      `
+const SCORE_SELECT = `
       id,
       exam_id,
       student_id,
@@ -62,9 +58,31 @@ async function loadGrades(
       students!inner ( name, application_number ),
       exams!inner ( name ),
       responses ( is_correct, needs_review )
-    `,
-    )
+    `;
+
+const SCORE_SELECT_MARKS = `
+      id,
+      exam_id,
+      student_id,
+      assigned_question_ids,
+      students!inner ( name, application_number ),
+      exams!inner ( name ),
+      responses ( is_correct, needs_review, response_marks ( state, override_is_correct, system_mark_known ) )
+    `;
+
+async function loadGrades(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<{ failed: boolean; groups: GradeGroup[] }> {
+  const withMarks = await supabase
+    .from("test_instances")
+    .select(SCORE_SELECT_MARKS)
     .eq("status", "submitted");
+  const loaded =
+    withMarks.error && isMissingMarking(withMarks.error)
+      ? await supabase.from("test_instances").select(SCORE_SELECT).eq("status", "submitted")
+      : withMarks;
+  const instanceRows = loaded.data;
+  const error = loaded.error;
 
   if (error) return { failed: true, groups: [] };
 
@@ -86,7 +104,7 @@ async function loadGrades(
     const exam = asSingle(instance.exams);
     const examId = String(instance.exam_id);
     const score = scoreResponses(
-      instance.responses ?? [],
+      (instance.responses ?? []).map((row) => scoreRow(row)),
       assignedCountOf(instance.assigned_question_ids),
     );
     const grade = gradeByStudent.get(gradeKey(examId, String(instance.student_id))) ?? null;
@@ -283,17 +301,8 @@ export default async function ReviewQueuePage() {
                       <tr key={row.id}>
                         <td className="border-b py-3 pr-4">
                           <div className="flex flex-col gap-1">
-                            <Link
-                              href={`/admin/exams/${group.examId}/grades/${row.id}`}
-                              className="hover:underline"
-                            >
+                            <Link href={`/admin/review/${row.id}`} className="hover:underline">
                               {row.name?.trim() || row.applicationNumber}
-                            </Link>
-                            <Link
-                              href={`/admin/review/${row.id}`}
-                              className="text-sm hover:underline"
-                            >
-                              Review answers
                             </Link>
                           </div>
                         </td>
