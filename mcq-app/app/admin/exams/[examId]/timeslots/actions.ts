@@ -12,6 +12,9 @@ import {
   isUniqueLabelError,
   validateTimeslotFields,
 } from "../../timeslotValidation";
+import { labels } from "../../../schedule/labels";
+import { isMissingSchema } from "../../../schedule/scheduleModel";
+import { clashMessage, type SittingWindow } from "../../../schedule/sittingRules";
 
 export type TimeslotActionResult = { error?: string } | void;
 
@@ -46,6 +49,40 @@ async function currentRole(
   return data?.role ?? "";
 }
 
+async function overlapError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  examId: string,
+  candidate: { startsAt: string; endsAt: string },
+  ignoreId?: string,
+): Promise<string | null> {
+  const withArchive = await supabase
+    .from("timeslots")
+    .select("id, label, starts_at, ends_at, archived_at")
+    .eq("exam_id", examId);
+  let rows = withArchive.data as Array<Record<string, unknown>> | null;
+  let keepArchive = true;
+  if (withArchive.error) {
+    if (!isMissingSchema(withArchive.error)) {
+      return labels.couldNotCheckTimes;
+    }
+    const plain = await supabase
+      .from("timeslots")
+      .select("id, label, starts_at, ends_at")
+      .eq("exam_id", examId);
+    if (plain.error) return labels.couldNotCheckTimes;
+    rows = plain.data as Array<Record<string, unknown>> | null;
+    keepArchive = false;
+  }
+  const windows: SittingWindow[] = (rows ?? []).map((row) => ({
+    id: String(row.id ?? ""),
+    label: String(row.label ?? "").trim() || "Sitting",
+    startsAt: row.starts_at == null ? "" : String(row.starts_at),
+    endsAt: row.ends_at == null ? "" : String(row.ends_at),
+    archivedAt: keepArchive && row.archived_at ? String(row.archived_at) : null,
+  }));
+  return clashMessage(candidate, windows, ignoreId);
+}
+
 function fieldsFromForm(formData: FormData) {
   return validateTimeslotFields({
     label: String(formData.get("label") ?? ""),
@@ -72,6 +109,12 @@ export async function createTimeslot(
   if (!user) {
     return { error: "You are not signed in. Refresh and log in again." };
   }
+
+  const clash = await overlapError(supabase, examId, {
+    startsAt: parsed.payload.starts_at,
+    endsAt: parsed.payload.ends_at,
+  });
+  if (clash) return { error: clash };
 
   const { error } = await supabase.from("timeslots").insert({
     exam_id: examId,
@@ -104,6 +147,17 @@ export async function updateTimeslot(
   if (!user) {
     return { error: "You are not signed in. Refresh and log in again." };
   }
+
+  const clash = await overlapError(
+    supabase,
+    examId,
+    {
+      startsAt: parsed.payload.starts_at,
+      endsAt: parsed.payload.ends_at,
+    },
+    timeslotId,
+  );
+  if (clash) return { error: clash };
 
   const { error } = await supabase
     .from("timeslots")

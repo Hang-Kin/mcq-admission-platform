@@ -8,8 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatHongKongRange } from "@/lib/hongKongTime";
 
 import { prepareSitting } from "./actions";
+import { DeleteTestData } from "./DeleteTestData";
+import { labels } from "./labels";
 import { sittingButton, type SittingStatus } from "./scheduleModel";
-import { deleteSittingTime } from "./sittingsActions";
+import { EditTimeForm } from "./SittingsForms";
+import type { SittingControls, SittingWindow } from "./sittingRules";
+import { deleteSittingTime, setSittingArchived } from "./sittingsActions";
 
 export function SittingCard({
   sittingId,
@@ -24,6 +28,10 @@ export function SittingCard({
   prominent = false,
   canDelete = false,
   examId,
+  archived = false,
+  controls,
+  peers = [],
+  examMinutes = 0,
   children,
 }: {
   sittingId: string;
@@ -38,6 +46,10 @@ export function SittingCard({
   prominent?: boolean;
   canDelete?: boolean;
   examId?: string;
+  archived?: boolean;
+  controls?: SittingControls;
+  peers?: SittingWindow[];
+  examMinutes?: number;
   children?: ReactNode;
 }) {
   const button = sittingButton(status);
@@ -46,6 +58,12 @@ export function SittingCard({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const showDelete = controls ? controls.deleteTime : canDelete;
+  const showArchive = controls?.archive === true;
+  const showRestore = controls?.restore === true;
+  const showTestData = controls?.deleteTestData === true;
+  const showEdit = controls?.editTime === true;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,9 +82,27 @@ export function SittingCard({
     }
   }
 
+  async function handleArchive(nextArchived: boolean) {
+    if (!examId) return;
+    const message = nextArchived ? labels.archiveConfirm(title) : labels.restoreConfirm(title);
+    if (!window.confirm(message)) return;
+    setError(null);
+    setIsArchiving(true);
+    const formData = new FormData();
+    formData.set("exam_id", examId);
+    formData.set("sitting_id", sittingId);
+    formData.set("archived", nextArchived ? "1" : "0");
+    try {
+      const result = await setSittingArchived(formData);
+      if (result?.error) setError(result.error);
+    } finally {
+      setIsArchiving(false);
+    }
+  }
+
   async function handleDelete() {
-    if (!canDelete || !examId) return;
-    if (!window.confirm(`Delete ${title}?`)) return;
+    if (!showDelete || !examId) return;
+    if (!window.confirm(labels.deleteTimeConfirm(title))) return;
     setError(null);
     setIsDeleting(true);
     const formData = new FormData();
@@ -81,13 +117,14 @@ export function SittingCard({
   }
 
   return (
-    <Card>
+    <Card id={`sitting-${sittingId}`} className="scroll-mt-24">
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <CardTitle className="text-xl">{title}</CardTitle>
           <Badge variant={status === "Prepared" ? "default" : status === "Locked" ? "outline" : "secondary"}>
             {status}
           </Badge>
+          {archived ? <Badge variant="outline">{labels.archived}</Badge> : null}
           {startWarning ? (
             <Badge variant="destructive">Within 24 hours</Badge>
           ) : null}
@@ -109,7 +146,7 @@ export function SittingCard({
             >
               {isSubmitting ? "Preparing…" : button.label}
             </Button>
-            {canDelete && examId ? (
+            {showDelete && examId ? (
               <Button
                 type="button"
                 variant="outline"
@@ -120,8 +157,48 @@ export function SittingCard({
                 {isDeleting ? "Deleting…" : "Delete"}
               </Button>
             ) : null}
+            {showArchive && examId ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-5 text-base"
+                disabled={isArchiving}
+                onClick={() => void handleArchive(true)}
+              >
+                {isArchiving ? labels.archiving : labels.archive}
+              </Button>
+            ) : null}
+            {showRestore && examId ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-5 text-base"
+                disabled={isArchiving}
+                onClick={() => void handleArchive(false)}
+              >
+                {isArchiving ? labels.restoring : labels.restore}
+              </Button>
+            ) : null}
           </div>
         </form>
+        {showTestData && examId ? (
+          <DeleteTestData examId={examId} sittingId={sittingId} title={title} />
+        ) : null}
+        {showEdit && examId ? (
+          <details className="max-w-xl">
+            <summary className="cursor-pointer text-sm text-primary">{labels.changeTime}</summary>
+            <EditTimeForm
+              key={`${sittingId}-${startsAt ?? ""}-${endsAt ?? ""}-${title}`}
+              examId={examId}
+              sittingId={sittingId}
+              title={title}
+              startsAt={startsAt}
+              endsAt={endsAt}
+              examMinutes={examMinutes}
+              peers={peers}
+            />
+          </details>
+        ) : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {children}
       </CardContent>
