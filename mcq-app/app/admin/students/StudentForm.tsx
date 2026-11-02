@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -16,44 +16,47 @@ type StudentFormProps = {
 
 export function StudentForm({ action }: StudentFormProps) {
   const [name, setName] = useState("");
+  const [chineseName, setChineseName] = useState("");
   const [applicationNumber, setApplicationNumber] = useState("");
   const [year, setYear] = useState("");
   const [month, setMonth] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submit(formData: FormData) {
     setError(null);
     setSuccess(null);
-
-    const intake = composeIntake(year, month);
-    const formData = new FormData();
-    formData.set("name", name);
-    formData.set("application_number", applicationNumber);
-    formData.set("intake_year", year);
-    formData.set("intake_month", month);
-
-    setIsSubmitting(true);
-    const result = await action(formData);
-    setIsSubmitting(false);
-
+    let result: CreateStudentResult;
+    try {
+      result = await action(formData);
+    } catch {
+      setError("Could not add this student. Try again.");
+      return;
+    }
     if (result?.error) {
       setError(result.error);
       return;
     }
 
+    const savedName = String(formData.get("name") ?? "").trim();
+    const savedNumber = String(formData.get("application_number") ?? "").trim();
+    const savedChinese = String(formData.get("chinese_name") ?? "").trim();
+    const intake = composeIntake(
+      String(formData.get("intake_year") ?? ""),
+      String(formData.get("intake_month") ?? ""),
+    );
     const label = intake ? formatIntakeLabel(intake) : "";
-    setSuccess(`Added ${name.trim()} (${applicationNumber.trim()})${label ? `, ${label}` : ""}.`);
+    const extra = [savedChinese, label ?? ""].filter((part) => part.length > 0).join(", ");
+    setSuccess(`Added ${savedName} (${savedNumber})${extra ? `, ${extra}` : ""}.`);
     setName("");
+    setChineseName("");
     setApplicationNumber("");
     nameInputRef.current?.focus();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
+    <form action={submit} className="flex max-w-xl flex-col gap-4">
       <IntakeFields
         year={year}
         month={month}
@@ -76,6 +79,18 @@ export function StudentForm({ action }: StudentFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="chinese_name">Chinese name</Label>
+        <Input
+          id="chinese_name"
+          name="chinese_name"
+          value={chineseName}
+          onChange={(event) => setChineseName(event.target.value)}
+          autoComplete="off"
+        />
+        <p className="text-sm text-muted-foreground">Optional.</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="application_number">提交編號</Label>
         <Input
           id="application_number"
@@ -92,9 +107,9 @@ export function StudentForm({ action }: StudentFormProps) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Adding…" : "Add student"}
-      </Button>
+      <SubmitButton type="submit" variant="outline" pendingLabel="Adding…">
+        Add student
+      </SubmitButton>
     </form>
   );
 }

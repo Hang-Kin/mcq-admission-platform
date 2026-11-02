@@ -1,11 +1,9 @@
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/server";
 
+import { formatAddedAt } from "./addedAt";
 import { createStudent } from "./actions";
-import { fieldClassName } from "./fieldClass";
+import { ImportStudentsLink } from "./ImportStudentsLink";
+import { IntakeFilterForm } from "./IntakeFilterForm";
 import { formatIntakeLabel, INTAKE_RE } from "./intakeLabel";
 import { INTAKE_WAITING_READ, isMissingSchema } from "./schemaError";
 import { StudentForm } from "./StudentForm";
@@ -62,18 +60,14 @@ export default async function AdminStudentsPage({
 
   return (
     <main className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-2xl space-y-2">
-          <h1 className="text-2xl">Students</h1>
-          <p className="text-sm text-muted-foreground">
-            Each student is one intake and one 提交編號. The code is four digits
-            and can be used again in a later intake. Import a spreadsheet, or add
-            one student below.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/students/import">Import</Link>
-        </Button>
+      <div className="max-w-2xl space-y-4">
+        <h1 className="text-2xl">Students</h1>
+        <ImportStudentsLink />
+        <p className="text-sm text-muted-foreground">
+          Each student is one intake and one 提交編號. The code is four digits
+          and can be used again in a later intake. Import a spreadsheet, or add
+          one student below.
+        </p>
       </div>
 
       {!intakeReady ? (
@@ -81,27 +75,7 @@ export default async function AdminStudentsPage({
           {INTAKE_WAITING_READ}
         </p>
       ) : (
-        <form action="/admin/students" className="flex max-w-xl flex-wrap items-end gap-3">
-          <div className="flex min-w-56 flex-1 flex-col gap-2">
-            <Label htmlFor="intake-filter">Intake</Label>
-            <select
-              id="intake-filter"
-              name="intake"
-              defaultValue={selectedIntake}
-              className={fieldClassName}
-            >
-              <option value="">All intakes</option>
-              {intakes.map((intake) => (
-                <option key={intake} value={intake}>
-                  {formatIntakeLabel(intake)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button type="submit" variant="outline">
-            Show
-          </Button>
-        </form>
+        <IntakeFilterForm intakes={intakes} selectedIntake={selectedIntake} />
       )}
 
       <section className="space-y-2">
@@ -142,7 +116,7 @@ export default async function AdminStudentsPage({
                   ) : null}
                   <td className="border-b py-3 pr-4">{student.application_number}</td>
                   <td className="border-b py-3">
-                    {student.created_at ? new Date(student.created_at).toLocaleString() : ""}
+                    {student.created_at ? formatAddedAt(student.created_at) : ""}
                   </td>
                 </tr>
               ))}
