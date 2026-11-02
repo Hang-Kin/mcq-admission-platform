@@ -1,6 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { examLabels } from "./labels.js";
+
 type FractionAnswerFieldsProps = {
   numerator: string;
   denominator: string;
@@ -21,10 +23,14 @@ export function FractionAnswerFields({
   const messageId = "fraction-answer-message";
   return (
     <fieldset className="space-y-3">
-      <legend className="text-sm font-medium text-foreground">Fraction answer</legend>
-      <div className="flex max-w-md items-end gap-3">
+      <legend className="text-base font-medium text-foreground">
+        {examLabels.fractionLegend}
+      </legend>
+      <div className="flex w-full max-w-md items-end gap-3">
         <div className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor="fraction-numerator">a (numerator)</Label>
+          <Label htmlFor="fraction-numerator" className="text-base">
+            {examLabels.fractionNumerator}
+          </Label>
           <Input
             id="fraction-numerator"
             inputMode="text"
@@ -33,14 +39,17 @@ export function FractionAnswerFields({
             disabled={disabled}
             aria-invalid={message ? true : undefined}
             aria-describedby={message ? messageId : undefined}
+            className="h-11 min-h-11 text-base md:text-base"
             onChange={(event) => onNumeratorChange(event.target.value)}
           />
         </div>
-        <span className="pb-2 text-base text-foreground" aria-hidden="true">
+        <span className="pb-3 text-base text-foreground" aria-hidden="true">
           /
         </span>
         <div className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor="fraction-denominator">b (denominator)</Label>
+          <Label htmlFor="fraction-denominator" className="text-base">
+            {examLabels.fractionDenominator}
+          </Label>
           <Input
             id="fraction-denominator"
             inputMode="text"
@@ -49,12 +58,13 @@ export function FractionAnswerFields({
             disabled={disabled}
             aria-invalid={message ? true : undefined}
             aria-describedby={message ? messageId : undefined}
+            className="h-11 min-h-11 text-base md:text-base"
             onChange={(event) => onDenominatorChange(event.target.value)}
           />
         </div>
       </div>
       {message ? (
-        <p id={messageId} className="text-sm text-muted-foreground">
+        <p id={messageId} className="break-words text-base text-muted-foreground">
           {message}
         </p>
       ) : null}

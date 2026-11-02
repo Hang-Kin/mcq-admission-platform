@@ -2,28 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
-import { MathText } from "@/components/MathText";
-
-import { FractionAnswerFields } from "./FractionAnswerFields";
+import { ExamChrome } from "./ExamChrome";
+import type { SessionQuestion } from "./examProgress";
 import { fractionAnswer, readFractionParts } from "./fractionAnswer";
+import { autosaveStatusLabel, examLabels } from "./labels.js";
 import {
   countdownEndsAtMs,
-  finishSectionButtonLabel,
-  finishSectionConfirmCopy,
   interpretAdvancePayload,
   questionsAfterAdvance,
   sectionFromIndex,
@@ -35,32 +27,7 @@ import {
   type ExamSectionState,
 } from "./sectionSession";
 
-type QuestionType = "radio" | "numeric" | "text" | "fraction";
-
-type SessionQuestion = {
-  id: string;
-  question_text: string;
-  type: QuestionType | string;
-  options: unknown;
-  category: string;
-  // From the start_session payload. A blank subject still uses the legacy
-  // Math/math category inside MathText. question_text stays as stored.
-  subject?: string | null;
-  question_set: string;
-  image_url?: string | null;
-};
-
-type RpcErrorCode =
-  | "invalid_token"
-  | "expired"
-  | "already_submitted"
-  | "session_already_active"
-  | "not_in_progress"
-  | "question_not_assigned"
-  | "invalid_session_id"
-  | "invalid_sections"
-  | "not_prepared"
-  | "unknown";
+type RpcErrorCode = keyof typeof examLabels.errors;
 
 type StartSessionSuccess = {
   ok: true;
@@ -81,48 +48,8 @@ type RpcFailure = {
 
 type AutosaveState = "idle" | "saving" | "saved" | "error";
 
-const ERROR_COPY: Record<RpcErrorCode, { title: string; body: string }> = {
-  invalid_token: {
-    title: "This link is invalid",
-    body: "The exam link you used is not recognised. Check the QR code or ask a teacher for a new link.",
-  },
-  expired: {
-    title: "This exam has expired",
-    body: "The time allowed for this exam has ended. You can no longer start or continue it.",
-  },
-  already_submitted: {
-    title: "This exam has already been submitted",
-    body: "Your answers have already been recorded. You cannot open this exam again.",
-  },
-  session_already_active: {
-    title: "This exam is already open on another device",
-    body: "This sitting is locked to the device that opened it first. Close that session, or ask a teacher if you need to switch devices.",
-  },
-  not_in_progress: {
-    title: "This exam is no longer in progress",
-    body: "The sitting is not active, so answers cannot be saved. Refresh only if a teacher asks you to.",
-  },
-  question_not_assigned: {
-    title: "This question is not part of your exam",
-    body: "The question you tried to answer is not in your assigned set. The exam has been stopped.",
-  },
-  invalid_session_id: {
-    title: "This session is no longer valid",
-    body: "The exam sitting on this device does not match the server. Ask a teacher before trying again.",
-  },
-  invalid_sections: {
-    title: "This exam isn’t ready",
-    body: "The sections for this exam are not in a continuous order. Ask a teacher to fix them before you start.",
-  },
-  not_prepared: {
-    title: "This sitting is not ready yet. Please ask a teacher.",
-    body: "",
-  },
-  unknown: {
-    title: "Something went wrong",
-    body: "The exam could not continue. Ask a teacher for help.",
-  },
-};
+const statusFrame =
+  "-mx-5 -my-10 flex min-h-[calc(100svh-3.5rem)] items-center justify-center px-5 py-10 sm:-mx-8 sm:px-8";
 
 function classifyError(code: string | undefined): RpcErrorCode {
   switch (code) {
@@ -170,31 +97,6 @@ function extractErrorCode(
     /not_prepared|invalid_sections|invalid_token|expired|already_submitted|session_already_active|not_in_progress|question_not_assigned|invalid_session_id|section_locked/,
   );
   return match?.[0];
-}
-
-function optionList(options: unknown): string[] {
-  if (Array.isArray(options)) {
-    return options.map((option) => String(option)).filter((option) => option.length > 0);
-  }
-  if (typeof options === "string") {
-    try {
-      return optionList(JSON.parse(options));
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-function sanitizeNumeric(value: string) {
-  let next = value.replace(/[^0-9.-]/g, "");
-  const minus = next.startsWith("-") ? "-" : "";
-  next = next.replace(/-/g, "");
-  const parts = next.split(".");
-  if (parts.length > 1) {
-    next = `${parts[0]}.${parts.slice(1).join("")}`;
-  }
-  return minus + next;
 }
 
 function formatRemaining(ms: number) {
@@ -613,24 +515,36 @@ export function SessionExam({ token }: { token: string }) {
   const question = questions[index];
   const total = questions.length;
 
+  function goToQuestion(next: number) {
+    if (advanceBusy || submitBusy) return;
+    const last = Math.max(0, total - 1);
+    setFinishConfirmOpen(false);
+    setConfirmOpen(false);
+    setIndex(Math.min(last, Math.max(0, next)));
+  }
+
   if (loading) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-16">
-        <p className="text-sm text-muted-foreground">Opening your exam…</p>
+      <main className={statusFrame}>
+        <p className="text-base text-muted-foreground">{examLabels.opening}</p>
       </main>
     );
   }
 
   if (blockingError) {
-    const copy = ERROR_COPY[blockingError];
+    const copy = examLabels.errors[blockingError];
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
-        <Card className="w-full">
+      <main className={statusFrame}>
+        <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle className={copy.body ? undefined : "leading-normal"}>
+            <CardTitle className={copy.body ? "text-xl leading-snug" : "text-xl leading-normal"}>
               {copy.title}
             </CardTitle>
-            {copy.body ? <CardDescription>{copy.body}</CardDescription> : null}
+            {copy.body ? (
+              <CardDescription className="text-base leading-relaxed">
+                {copy.body}
+              </CardDescription>
+            ) : null}
           </CardHeader>
         </Card>
       </main>
@@ -639,12 +553,12 @@ export function SessionExam({ token }: { token: string }) {
 
   if (submitted) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
-        <Card className="w-full">
+      <main className={statusFrame}>
+        <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>Exam submitted</CardTitle>
-            <CardDescription>
-              Your answers have been recorded. You can close this page.
+            <CardTitle className="text-xl leading-snug">{examLabels.submittedTitle}</CardTitle>
+            <CardDescription className="text-base leading-relaxed">
+              {examLabels.submittedBody}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -654,12 +568,12 @@ export function SessionExam({ token }: { token: string }) {
 
   if (!question || total === 0) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center py-10">
-        <Card className="w-full">
+      <main className={statusFrame}>
+        <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>No questions assigned</CardTitle>
-            <CardDescription>
-              This exam has no questions for you. Ask a teacher for help.
+            <CardTitle className="text-xl leading-snug">{examLabels.noQuestionsTitle}</CardTitle>
+            <CardDescription className="text-base leading-relaxed">
+              {examLabels.noQuestionsBody}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -667,7 +581,6 @@ export function SessionExam({ token }: { token: string }) {
     );
   }
 
-  const options = optionList(question.options);
   const value = answers[question.id] ?? "";
   const fractionParts =
     fractionDrafts[question.id] ?? readFractionParts(value);
@@ -700,233 +613,38 @@ export function SessionExam({ token }: { token: string }) {
     }
     setAutosave("idle");
   }
-  const autosaveLabel =
-    autosave === "saving"
-      ? "Saving…"
-      : autosave === "saved"
-        ? "Saved"
-        : autosave === "error"
-          ? "Couldn’t save — try again"
-          : "";
 
   return (
-    <main className="mx-auto w-full max-w-2xl">
-      <div className="sticky top-14 z-20 mb-6 flex items-center justify-between gap-4 border-b border-border bg-background py-4">
-        {currentSection ? (
-          <div>
-            <p className="text-sm font-medium text-primary">{currentSection.label}</p>
-            <p className="text-sm text-muted-foreground">
-              Question {index + 1} of {total}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Question {index + 1} of {total}
-          </p>
-        )}
-        <p className="text-2xl font-medium tabular-nums text-primary">
-          {remainingMs === null ? "--:--" : formatRemaining(remainingMs)}
-        </p>
-      </div>
-      <p className="mb-4 min-h-5 text-sm text-muted-foreground">{autosaveLabel}</p>
-      {sectionNotice ? (
-        <p className="mb-4 text-sm text-muted-foreground">{sectionNotice}</p>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium leading-relaxed">
-            <MathText
-              text={question.question_text}
-              subject={question.subject}
-              category={question.category}
-            />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {question.image_url && publicQuestionImagePath(question.image_url) ? (
-            // Public bucket URL from start_session. Loaded directly so it does not need a Next image host.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={question.image_url}
-              alt=""
-              className="max-h-96 w-full rounded-md object-contain"
-            />
-          ) : null}
-          {question.type === "radio" ? (
-            <fieldset className="space-y-3">
-              <legend className="sr-only">Choose an answer</legend>
-              {options.map((option) => {
-                const id = `${question.id}-${option}`;
-                return (
-                  <div
-                    key={option}
-                    className="flex min-h-11 items-center gap-3 rounded-md border border-border px-3"
-                  >
-                    <input
-                      id={id}
-                      type="radio"
-                      name={question.id}
-                      value={option}
-                      checked={value === option}
-                      disabled={advanceBusy}
-                      onChange={() => updateAnswer(question.id, option)}
-                      className="size-4 shrink-0"
-                    />
-                    <Label htmlFor={id} className="flex-1 py-3 text-base font-normal">
-                      <MathText
-                        text={option}
-                        subject={question.subject}
-                        category={question.category}
-                      />
-                    </Label>
-                  </div>
-                );
-              })}
-            </fieldset>
-          ) : null}
-
-          {question.type === "numeric" ? (
-            <div className="space-y-2">
-              <Label htmlFor="numeric-answer">Numeric answer</Label>
-              <Input
-                id="numeric-answer"
-                inputMode="decimal"
-                autoComplete="off"
-                value={value}
-                disabled={advanceBusy}
-                onChange={(event) =>
-                  updateAnswer(question.id, sanitizeNumeric(event.target.value))
-                }
-              />
-            </div>
-          ) : null}
-
-          {question.type === "fraction" ? (
-            <FractionAnswerFields
-              numerator={fractionParts.numerator}
-              denominator={fractionParts.denominator}
-              message={fractionCheck && !fractionCheck.ok ? fractionCheck.message : null}
-              disabled={advanceBusy}
-              onNumeratorChange={(next) => changeFraction("numerator", next)}
-              onDenominatorChange={(next) => changeFraction("denominator", next)}
-            />
-          ) : null}
-
-          {question.type === "text" ? (
-            <div className="space-y-2">
-              <Label htmlFor="text-answer">Your answer</Label>
-              <textarea
-                id="text-answer"
-                value={value}
-                disabled={advanceBusy}
-                onChange={(event) => updateAnswer(question.id, event.target.value)}
-                className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
-          ) : null}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              disabled={index === 0 || advanceBusy}
-              onClick={() => setIndex((current) => Math.max(0, current - 1))}
-            >
-              Back
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              disabled={index >= total - 1 || advanceBusy}
-              onClick={() => setIndex((current) => Math.min(total - 1, current + 1))}
-            >
-              Next
-            </Button>
-          </div>
-          {currentSection ? (
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              disabled={advanceBusy}
-              onClick={() => setFinishConfirmOpen(true)}
-            >
-              {finishSectionButtonLabel(currentSection.label)}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => setConfirmOpen(true)}
-            >
-              Submit exam
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-
-      {confirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Submit this exam?</CardTitle>
-              <CardDescription>
-                You will not be able to change answers after submitting.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={submitBusy}
-                onClick={() => setConfirmOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={submitBusy}
-                onClick={() => void submitExam()}
-              >
-                {submitBusy ? "Submitting…" : "Submit"}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      ) : null}
-
-      {finishConfirmOpen && currentSection ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Finish this section?</CardTitle>
-              <CardDescription>
-                {finishSectionConfirmCopy(currentSection.label)}
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={advanceBusy}
-                onClick={() => setFinishConfirmOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={advanceBusy}
-                onClick={() => void advanceSection()}
-              >
-                {advanceBusy ? "Finishing…" : "Finish"}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      ) : null}
-    </main>
+    <ExamChrome
+      questions={questions}
+      index={index}
+      answers={answers}
+      section={currentSection}
+      remainingLabel={
+        remainingMs === null ? examLabels.timerPlaceholder : formatRemaining(remainingMs)
+      }
+      autosaveLabel={autosaveStatusLabel(autosave)}
+      sectionNotice={sectionNotice}
+      advanceBusy={advanceBusy}
+      submitBusy={submitBusy}
+      finishConfirmOpen={finishConfirmOpen}
+      submitConfirmOpen={confirmOpen}
+      fraction={{
+        numerator: fractionParts.numerator,
+        denominator: fractionParts.denominator,
+        message: fractionCheck && !fractionCheck.ok ? fractionCheck.message : null,
+      }}
+      onSelectQuestion={goToQuestion}
+      onPrevious={() => goToQuestion(index - 1)}
+      onNext={() => goToQuestion(index + 1)}
+      onAnswer={updateAnswer}
+      onFractionPart={changeFraction}
+      onOpenFinish={() => setFinishConfirmOpen(true)}
+      onOpenSubmit={() => setConfirmOpen(true)}
+      onCancelFinish={() => setFinishConfirmOpen(false)}
+      onCancelSubmit={() => setConfirmOpen(false)}
+      onConfirmFinish={() => void advanceSection()}
+      onConfirmSubmit={() => void submitExam()}
+    />
   );
 }

@@ -1,3 +1,5 @@
+import { ADVANCE_FAILED_MESSAGE, SECTION_LOCKED_MESSAGE } from "./labels.js";
+
 export type ExamSectionState = {
   id: string | null;
   label: string;
@@ -5,6 +7,7 @@ export type ExamSectionState = {
   position: number | null;
   questionSet: string | null;
   endsAtMs: number | null;
+  isLast: boolean;
 };
 
 export type AdvanceBlockCode =
@@ -26,19 +29,7 @@ export type AdvanceInterpretation =
   | { type: "resync" }
   | { type: "soft"; message: string };
 
-export const SECTION_LOCKED_MESSAGE =
-  "This section is already finished, so that answer was not saved.";
-
-const ADVANCE_FAILED_MESSAGE =
-  "The section could not be finished. Check your connection and try again.";
-
-export function finishSectionButtonLabel(label: string) {
-  return `Finish ${label}`;
-}
-
-export function finishSectionConfirmCopy(label: string) {
-  return `Confirm finishing ${label}? You may not come back to review your answers in ${label}.`;
-}
+export { SECTION_LOCKED_MESSAGE };
 
 export function sectionKey(section: ExamSectionState) {
   if (section.index !== null) return `index:${section.index}`;
@@ -144,6 +135,7 @@ export function readSection(raw: unknown): ExamSectionState | null {
     position: wholePosition ?? wholeIndex,
     questionSet: text(record.question_set),
     endsAtMs,
+    isLast: record.is_last === true,
   };
 }
 

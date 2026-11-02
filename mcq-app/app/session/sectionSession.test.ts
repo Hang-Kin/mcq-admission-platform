@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { finishSectionConfirmCopy } from "./[token]/labels.js";
 import {
   countdownEndsAtMs,
-  finishSectionConfirmCopy,
   interpretAdvancePayload,
   questionsAfterAdvance,
   readSection,
@@ -54,10 +54,10 @@ test("section end can be started_at plus duration", () => {
   assert.equal(fromAlias?.endsAtMs, Date.parse("2026-09-27T10:10:00.000Z"));
 });
 
-test("finish confirmation uses the section label verbatim", () => {
+test("finish confirmation says the section cannot be reopened", () => {
   assert.equal(
-    finishSectionConfirmCopy("Section A"),
-    "Confirm finishing Section A? You may not come back to review your answers in Section A.",
+    finishSectionConfirmCopy(),
+    "You cannot return to this section. Finish now?",
   );
 });
 
@@ -81,6 +81,7 @@ test("section.is_last does not finish the exam", () => {
   assert.equal(result.type, "section");
   if (result.type !== "section") return;
   assert.equal(result.section.label, "Section B");
+  assert.equal(result.section.isLast, true);
 });
 
 test("is_last shows completion even if a section object is also present", () => {
@@ -144,6 +145,7 @@ test("section index comes from the server section object", () => {
   });
   assert.equal(section?.index, 0);
   assert.equal(section?.position, 0);
+  assert.equal(section?.isLast, false);
 });
 
 test("a stale advance reloads instead of skipping a section", () => {
