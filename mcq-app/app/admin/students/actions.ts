@@ -12,7 +12,8 @@ import {
   rowsToInsert,
   tallyRoster,
 } from "./importRoster";
-import { APPLICATION_NUMBER_RE, composeIntake, INTAKE_RE } from "./intakeLabel";
+import { INTAKE_RE } from "./intakeLabel";
+import { manualStudentInsert, parseManualStudent } from "./manualStudent";
 import { INTAKE_WAITING_WRITE, isMissingSchema } from "./schemaError";
 
 export type CreateStudentResult = { error?: string } | void;
@@ -27,25 +28,11 @@ function writeError(error: { code?: string; message?: string }): string {
 }
 
 export async function createStudent(formData: FormData): Promise<CreateStudentResult> {
-  const name = String(formData.get("name") ?? "").trim();
-  const applicationNumber = String(formData.get("application_number") ?? "").trim();
-  const intake = composeIntake(
-    String(formData.get("intake_year") ?? ""),
-    String(formData.get("intake_month") ?? ""),
-  );
-
-  if (!intake) return { error: "Choose an intake." };
-  if (!name) return { error: "Full English name is required." };
-  if (!APPLICATION_NUMBER_RE.test(applicationNumber)) {
-    return { error: "提交編號 must be 4 digits." };
-  }
+  const parsed = parseManualStudent(formData);
+  if ("error" in parsed) return { error: parsed.error };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("students").insert({
-    name,
-    application_number: applicationNumber,
-    intake,
-  });
+  const { error } = await supabase.from("students").insert(manualStudentInsert(parsed));
 
   if (error) return { error: writeError(error) };
   revalidatePath("/admin/students");

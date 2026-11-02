@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState, useTransition, type ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ export function ImportRosterForm() {
   const [checking, setChecking] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const intake = composeIntake(year, month);
 
@@ -83,27 +83,32 @@ export function ImportRosterForm() {
     setRows(result.rows);
   }
 
-  async function handleImport() {
-    if (!intake || rows.length === 0 || checking || lookupError) return;
-    setIsImporting(true);
+  function handleImport() {
+    if (!intake || rows.length === 0 || checking || lookupError || isPending) return;
     setImportError(null);
     setSummary(null);
-    const result = await importStudents({
-      intake,
-      rows: rows.map((row) => ({
-        applicationNumber: row.applicationNumber,
-        name: row.name,
-        chineseName: row.chineseName ?? "",
-      })),
+    const intakeNow = intake;
+    startTransition(async () => {
+      try {
+        const result = await importStudents({
+          intake: intakeNow,
+          rows: rows.map((row) => ({
+            applicationNumber: row.applicationNumber,
+            name: row.name,
+            chineseName: row.chineseName ?? "",
+          })),
+        });
+        if (result.error) {
+          setImportError(result.error);
+          return;
+        }
+        const fresh = await listIntakeNumbers(intakeNow);
+        if (fresh.numbers) setExisting(fresh.numbers);
+        setSummary(result.summary ?? null);
+      } catch {
+        setImportError("Could not import these students. Try again.");
+      }
     });
-    setIsImporting(false);
-    if (result.error) {
-      setImportError(result.error);
-      return;
-    }
-    const fresh = await listIntakeNumbers(intake);
-    if (fresh.numbers) setExisting(fresh.numbers);
-    setSummary(result.summary ?? null);
   }
 
   return (
@@ -169,10 +174,13 @@ export function ImportRosterForm() {
 
       <Button
         type="button"
-        disabled={!intake || rows.length === 0 || checking || Boolean(lookupError) || isImporting}
-        onClick={() => void handleImport()}
+        className="h-12 px-8 text-base"
+        pending={isPending}
+        pendingLabel="Importing…"
+        disabled={!intake || rows.length === 0 || checking || Boolean(lookupError)}
+        onClick={handleImport}
       >
-        {isImporting ? "Importing…" : "Import"}
+        Import
       </Button>
     </div>
   );
