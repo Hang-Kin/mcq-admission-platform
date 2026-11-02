@@ -13,6 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { labels } from "../../../schedule/labels";
+import { sectionSourceText } from "../../../schedule/sittingRules";
 import {
   positionsAreContiguous,
   validateSectionFields,
@@ -23,6 +25,7 @@ export type SectionRow = {
   id: string;
   label: string;
   question_set: string;
+  subject?: string | null;
   duration_minutes: number;
   position: number;
   duration_locked?: boolean;
@@ -63,10 +66,7 @@ export function SectionAdminClient({
       <Card>
         <CardHeader>
           <CardTitle>Create section</CardTitle>
-          <CardDescription>
-            Sections run in order. Each one has its own question set and
-            duration. New sections are added at the end.
-          </CardDescription>
+          <CardDescription>{labels.sectionsCreateHelp}</CardDescription>
         </CardHeader>
         <CardContent>
           <SectionForm
@@ -120,7 +120,12 @@ export function SectionAdminClient({
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Set {section.question_set} · {section.duration_minutes} min
+                    {sectionSourceText({
+                      subject: section.subject ?? null,
+                      questionSet: section.question_set,
+                    })}
+                    {" · "}
+                    {section.duration_minutes} min
                     {section.duration_note ? ` · ${section.duration_note}` : ""}
                   </p>
                   <SectionForm
@@ -180,6 +185,7 @@ function SectionForm({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const listId = sectionId ? `question-sets-${sectionId}` : "question-sets-new";
+  const bankSubject = initial?.subject === "Math" || initial?.subject === "Chinese";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -228,25 +234,31 @@ function SectionForm({
           required
         />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor={`${listId}-set`}>Question set</Label>
-        <Input
-          id={`${listId}-set`}
-          list={listId}
-          value={questionSet}
-          onChange={(event) => setQuestionSet(event.target.value)}
-          required
-        />
-        <datalist id={listId}>
-          {questionSetNames.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
+      {bankSubject ? (
         <p className="text-sm text-muted-foreground">
-          Must match an existing questions.question_set value (for example{" "}
-          {questionSetNames[0] ?? "General"}).
+          {sectionSourceText({
+            subject: initial?.subject ?? null,
+            questionSet: questionSet,
+          })}
         </p>
-      </div>
+      ) : (
+        <div className="grid gap-2">
+          <Label htmlFor={`${listId}-set`}>{labels.legacyQuestionSet}</Label>
+          <Input
+            id={`${listId}-set`}
+            list={listId}
+            value={questionSet}
+            onChange={(event) => setQuestionSet(event.target.value)}
+            required
+          />
+          <datalist id={listId}>
+            {questionSetNames.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <p className="text-sm text-muted-foreground">{labels.legacyQuestionSetHelp}</p>
+        </div>
+      )}
       <div className="grid gap-2">
         <Label htmlFor={`${listId}-duration`}>Duration (minutes)</Label>
         <Input

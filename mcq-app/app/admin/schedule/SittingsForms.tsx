@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { examNeedsLabel } from "../settings/sectionMinutes";
-import { addMathAndChinese, addSittingTime, createNamedExam } from "./sittingsActions";
+import { labels } from "./labels";
+import { clashMessage, toHongKongDatetimeLocal, type SittingWindow } from "./sittingRules";
+import { addMathAndChinese, addSittingTime, createNamedExam, updateSittingTime } from "./sittingsActions";
 import { validateSittingTime } from "./sittingsFlow";
 
 type Action = (formData: FormData) => Promise<{ error?: string } | void>;
@@ -108,11 +110,15 @@ export function AddTimeForm({
   examId,
   prominent,
   examMinutes = 0,
+  peers = [],
+  onDraftChange,
   action = addSittingTime,
 }: {
   examId: string;
   prominent: boolean;
   examMinutes?: number;
+  peers?: SittingWindow[];
+  onDraftChange?: (draft: { startsAt: string; endsAt: string }) => void;
   action?: Action;
 }) {
   const [label, setLabel] = useState("");
@@ -120,6 +126,11 @@ export function AddTimeForm({
   const [endsAt, setEndsAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const liveOverlap = clashMessage({ startsAt, endsAt }, peers);
+
+  function changeDraft(next: { startsAt: string; endsAt: string }) {
+    onDraftChange?.(next);
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -127,6 +138,11 @@ export function AddTimeForm({
     const parsed = validateSittingTime({ label, startsAt, endsAt, examMinutes });
     if (!parsed.ok) {
       setError(parsed.error);
+      return;
+    }
+    const clash = clashMessage(parsed, peers);
+    if (clash) {
+      setError(clash);
       return;
     }
     const formData = new FormData();
@@ -144,6 +160,7 @@ export function AddTimeForm({
     setLabel("");
     setStartsAt("");
     setEndsAt("");
+    onDraftChange?.({ startsAt: "", endsAt: "" });
   }
 
   return (
@@ -166,7 +183,11 @@ export function AddTimeForm({
             id="time-start"
             type="datetime-local"
             value={startsAt}
-            onChange={(event) => setStartsAt(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setStartsAt(value);
+              changeDraft({ startsAt: value, endsAt });
+            }}
             required
           />
         </div>
@@ -176,7 +197,11 @@ export function AddTimeForm({
             id="time-end"
             type="datetime-local"
             value={endsAt}
-            onChange={(event) => setEndsAt(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setEndsAt(value);
+              changeDraft({ startsAt, endsAt: value });
+            }}
             required
           />
         </div>
@@ -185,6 +210,7 @@ export function AddTimeForm({
       {examNeedsLabel(examMinutes) ? (
         <p className="text-sm text-muted-foreground">{examNeedsLabel(examMinutes)}</p>
       ) : null}
+      {liveOverlap ? <p className="text-sm text-destructive">{liveOverlap}</p> : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button
         type="submit"
@@ -193,6 +219,99 @@ export function AddTimeForm({
         disabled={pending}
       >
         {pending ? "Adding…" : "Add a time"}
+      </Button>
+    </form>
+  );
+}
+
+export function EditTimeForm({
+  examId,
+  sittingId,
+  title,
+  startsAt,
+  endsAt,
+  examMinutes = 0,
+  peers,
+}: {
+  examId: string;
+  sittingId: string;
+  title: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  examMinutes?: number;
+  peers: SittingWindow[];
+}) {
+  const [label, setLabel] = useState(title);
+  const [start, setStart] = useState(startsAt ? toHongKongDatetimeLocal(startsAt) : "");
+  const [end, setEnd] = useState(endsAt ? toHongKongDatetimeLocal(endsAt) : "");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const liveOverlap = clashMessage({ startsAt: start, endsAt: end }, peers, sittingId);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    const parsed = validateSittingTime({ label, startsAt: start, endsAt: end, examMinutes });
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
+    const clash = clashMessage(parsed, peers, sittingId);
+    if (clash) {
+      setError(clash);
+      return;
+    }
+    const formData = new FormData();
+    formData.set("exam_id", examId);
+    formData.set("sitting_id", sittingId);
+    formData.set("label", parsed.label);
+    formData.set("starts_at", start);
+    formData.set("ends_at", end);
+    setPending(true);
+    const result = await updateSittingTime(formData);
+    setPending(false);
+    if (result?.error) setError(result.error);
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="grid max-w-xl gap-4 pt-3">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`edit-name-${sittingId}`}>Name</Label>
+        <Input
+          id={`edit-name-${sittingId}`}
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          autoComplete="off"
+          required
+        />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`edit-start-${sittingId}`}>Starts (HKT)</Label>
+          <Input
+            id={`edit-start-${sittingId}`}
+            type="datetime-local"
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`edit-end-${sittingId}`}>Ends (HKT)</Label>
+          <Input
+            id={`edit-end-${sittingId}`}
+            type="datetime-local"
+            value={end}
+            onChange={(event) => setEnd(event.target.value)}
+            required
+          />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">{labels.hongKongTime}</p>
+      {liveOverlap ? <p className="text-sm text-destructive">{liveOverlap}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <Button type="submit" variant="outline" className="h-12 w-fit px-5 text-base" disabled={pending}>
+        {pending ? labels.savingTime : labels.saveTime}
       </Button>
     </form>
   );

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
+import { labels } from "../schedule/labels";
+
 export const instant = false;
 
 export default async function ExamsPage() {
@@ -18,7 +20,7 @@ export default async function ExamsPage() {
         <div className="space-y-2">
           <h1 className="text-2xl">Exams</h1>
           <p className="text-sm text-muted-foreground">
-            Open an exam for QR codes, timeslots, sections, and grades.
+            {labels.examListIntro}
           </p>
         </div>
         <Button asChild>
@@ -38,7 +40,7 @@ export default async function ExamsPage() {
                 <th className="border-b py-3 pr-4">Duration</th>
                 <th className="border-b py-3 pr-4">Created</th>
                 <th className="border-b py-3 pr-4">QR codes</th>
-                <th className="border-b py-3 pr-4">Timeslots</th>
+                <th className="border-b py-3 pr-4">{labels.sittingsColumn}</th>
                 <th className="border-b py-3 pr-4">Sections</th>
                 <th className="border-b py-3">Grades</th>
               </tr>
@@ -67,10 +69,10 @@ export default async function ExamsPage() {
                   </td>
                   <td className="border-b py-3 pr-4">
                     <Link
-                      href={`/admin/exams/${exam.id}/timeslots`}
+                      href={`/admin/schedule?exam=${exam.id}`}
                       className="hover:underline"
                     >
-                      Timeslots
+                      {labels.openSittings}
                     </Link>
                   </td>
                   <td className="border-b py-3 pr-4">

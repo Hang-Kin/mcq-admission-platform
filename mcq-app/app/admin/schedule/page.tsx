@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { isStaffRole } from "@/lib/staffRole";
 import { createClient } from "@/lib/supabase/server";
 
 import { QrGeneratorClient } from "../exams/QrGeneratorClient";
@@ -11,9 +12,11 @@ import {
   shortSlotWarning,
   subjectMinutesFromRows,
 } from "../settings/sectionMinutes";
+import { labels } from "./labels";
 import { SittingCard } from "./SittingCard";
 import { SittingQuestions } from "./SittingQuestions";
-import { AddSubjectsForm, AddTimeForm, CreateExamForm } from "./SittingsForms";
+import { SittingSchedule } from "./SittingSchedule";
+import { AddSubjectsForm, CreateExamForm } from "./SittingsForms";
 import {
   groupDrawPreview,
   isMissingSchema,
@@ -22,6 +25,13 @@ import {
   type DrawRow,
   type TopicOrder,
 } from "./scheduleModel";
+import {
+  activeSittings,
+  archivedSittings,
+  existingOverlapWarning,
+  sittingControls,
+  type SittingWindow,
+} from "./sittingRules";
 import { hasMathAndChinese, prepareTargetId, sittingsFocus } from "./sittingsFlow";
 
 export const instant = false;
@@ -32,6 +42,7 @@ type SlotRow = {
   starts_at: string | null;
   ends_at: string | null;
   exam_id: string | null;
+  archived_at?: string | null;
 };
 
 type DrawRecord = {
@@ -57,9 +68,10 @@ type SectionRow = {
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ exam?: string; new?: string }>;
+  searchParams: Promise<{ exam?: string; new?: string; archived?: string }>;
 }) {
-  const { exam: examParam, new: newExam } = await searchParams;
+  const { exam: examParam, new: newExam, archived: archivedParam } = await searchParams;
+  const showArchived = archivedParam === "1";
   const nowMs = Date.now();
   const supabase = await createClient();
   const {
@@ -81,7 +93,7 @@ export default async function SchedulePage({
   ] = await Promise.all([
     supabase
       .from("timeslots")
-      .select("id, label, starts_at, ends_at, exam_id")
+      .select("id, label, starts_at, ends_at, exam_id, archived_at")
       .order("starts_at", { ascending: true }),
     supabase.from("exams").select("id, name, created_at").order("created_at", { ascending: false }),
     supabase.from("timeslot_draws").select("timeslot_id, subject, question_id, position"),
@@ -104,7 +116,23 @@ export default async function SchedulePage({
       .not("started_at", "is", null),
   ]);
 
-  const slots = (slotsResult.data ?? []) as SlotRow[];
+  let resolvedSlots: { data: SlotRow[] | null; error: { code?: string; message?: string } | null } =
+    slotsResult;
+  let archiveSupported = true;
+  if (isMissingSchema(slotsResult.error)) {
+    archiveSupported = false;
+    const fallback = await supabase
+      .from("timeslots")
+      .select("id, label, starts_at, ends_at, exam_id")
+      .order("starts_at", { ascending: true });
+    resolvedSlots = {
+      data: (fallback.data ?? null) as SlotRow[] | null,
+      error: fallback.error,
+    };
+  }
+
+  const slots = (resolvedSlots.data ?? []) as SlotRow[];
+  const activeSlotRows = slots.filter((slot) => !slot.archived_at);
   const exams = (examsResult.data ?? []) as ExamRow[];
   const draws = drawsResult.error ? [] : ((drawsResult.data ?? []) as DrawRecord[]);
   const lockedIds = new Set(
@@ -156,7 +184,9 @@ export default async function SchedulePage({
   });
   const drawsMissing = isMissingSchema(drawsResult.error);
   const schemaReady = !drawsMissing && !subjectColumnMissing;
-  const canDelete = profileResult.data?.role === "admin";
+  const role = profileResult.data?.role;
+  const canDelete = role === "admin";
+  const canManage = isStaffRole(role);
 
   const questionIds = [...new Set(draws.map((draw) => draw.question_id))];
   const questionsResult =
@@ -173,7 +203,7 @@ export default async function SchedulePage({
     ]),
   );
 
-  const sittingViews = slots.map((slot) => {
+  const sittingViews = activeSlotRows.map((slot) => {
     const prepared = draws.some((draw) => draw.timeslot_id === slot.id);
     const locked = lockedIds.has(slot.id);
     return {
@@ -187,7 +217,7 @@ export default async function SchedulePage({
   const targetId = prepareTargetId(sittingViews, nowMs, isStartInNext24Hours);
   const target = sittingViews.find((sitting) => sitting.id === targetId) ?? null;
   const nextId = nextExamId(
-    slots.map((slot) => ({ examId: slot.exam_id, endsAt: slot.ends_at })),
+    activeSlotRows.map((slot) => ({ examId: slot.exam_id, endsAt: slot.ends_at })),
     exams.map((exam) => ({ id: String(exam.id), createdAt: exam.created_at })),
     nowMs,
   );
@@ -202,7 +232,12 @@ export default async function SchedulePage({
     .filter((section) => String(section.exam_id) === selectedId)
     .map((section) => section.subject);
   const selectedHasSubjects = hasMathAndChinese(selectedSubjects);
-  const selectedSlots = slots.filter((slot) => String(slot.exam_id ?? "") === selectedId);
+  const selectedWindows = slots
+    .filter((slot) => String(slot.exam_id ?? "") === selectedId)
+    .map(toWindow);
+  const activeSelected = activeSittings(selectedWindows);
+  const archivedSelected = archivedSittings(selectedWindows);
+  const selectedSlots = activeSlotRows.filter((slot) => String(slot.exam_id ?? "") === selectedId);
   const prepareHere = Boolean(target && String(target.examId ?? "") === selectedId);
 
   const intakeMissing = isMissingSchema(studentsResult.error);
@@ -241,6 +276,54 @@ export default async function SchedulePage({
   const checkFailed = Boolean(startedResult.error) && !isMissingSchema(startedResult.error);
   const showCreate = exams.length === 0 || newExam === "1";
   const elsewhere = target && String(target.examId ?? "") !== selectedId ? target : null;
+  const overlapWarning = existingOverlapWarning(selectedWindows);
+  const examMinutes = minuteTotals.get(String(selected?.id ?? "")) ?? 0;
+
+  function renderSitting(slot: SittingWindow, archived: boolean) {
+    const prepared = draws.some((draw) => draw.timeslot_id === slot.id);
+    const locked = lockedIds.has(slot.id);
+    const status = sittingStatus(prepared, locked);
+    const rows: DrawRow[] = draws
+      .filter((draw) => draw.timeslot_id === slot.id)
+      .map((draw) => {
+        const question = questions.get(draw.question_id);
+        return {
+          subject: String(draw.subject ?? ""),
+          category: question?.category || "Topic",
+          position: Number(draw.position ?? 0),
+          questionText: question?.text || "This question could not be loaded.",
+        };
+      });
+    return (
+      <SittingCard
+        key={slot.id}
+        sittingId={slot.id}
+        examId={String(selected?.id ?? "")}
+        title={slot.label}
+        examName={selected?.name?.trim() || "Exam"}
+        startsAt={slot.startsAt}
+        endsAt={slot.endsAt}
+        status={status}
+        startWarning={unpreparedStartWarning(status, slot.startsAt, nowMs)}
+        lengthWarning={shortSlotWarning(slot.startsAt, slot.endsAt, examMinutes)}
+        unavailable={checkFailed && !locked}
+        prominent={focus === "prepare" && slot.id === targetId}
+        canDelete={canDelete}
+        archived={archived}
+        controls={sittingControls({
+          locked: status === "Locked",
+          archived,
+          isAdmin: canDelete,
+          canManage,
+          archiveSupported,
+        })}
+        peers={selectedWindows}
+        examMinutes={examMinutes}
+      >
+        <SittingQuestions groups={groupDrawPreview(rows, orders)} />
+      </SittingCard>
+    );
+  }
 
   return (
     <main className="space-y-8">
@@ -281,7 +364,7 @@ export default async function SchedulePage({
           this page until that update is applied.
         </p>
       ) : null}
-      {slotsResult.error ? (
+      {resolvedSlots.error ? (
         <p className="text-sm text-destructive">Could not load the sittings.</p>
       ) : null}
       {drawsResult.error && !drawsMissing ? (
@@ -325,62 +408,52 @@ export default async function SchedulePage({
 
       {selected ? (
         <section className="space-y-4">
-          <h2 className="text-lg">Times</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg">{labels.timesHeading}</h2>
+            {archiveSupported ? (
+              <Link
+                href={scheduleHref(selectedId, !showArchived)}
+                className="text-sm hover:underline"
+              >
+                {showArchived ? labels.hideArchived : labels.showArchived}
+              </Link>
+            ) : (
+              <p className="text-sm text-muted-foreground">{labels.archiveUnavailable}</p>
+            )}
+          </div>
           {settingsResult.error && !isMissingSchema(settingsResult.error) ? (
             <p className="text-sm text-destructive">
               Could not read Subject settings, so the length check uses the saved section minutes.
             </p>
           ) : null}
-          {selectedSlots.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No times yet.</p>
-          ) : (
-            selectedSlots.map((slot) => {
-              const prepared = draws.some((draw) => draw.timeslot_id === slot.id);
-              const locked = lockedIds.has(slot.id);
-              const status = sittingStatus(prepared, locked);
-              const rows: DrawRow[] = draws
-                .filter((draw) => draw.timeslot_id === slot.id)
-                .map((draw) => {
-                  const question = questions.get(draw.question_id);
-                  return {
-                    subject: String(draw.subject ?? ""),
-                    category: question?.category || "Topic",
-                    position: Number(draw.position ?? 0),
-                    questionText: question?.text || "This question could not be loaded.",
-                  };
-                });
-              return (
-                <SittingCard
-                  key={slot.id}
-                  sittingId={slot.id}
-                  examId={String(selected.id)}
-                  title={slot.label?.trim() || "Sitting"}
-                  examName={selected.name?.trim() || "Exam"}
-                  startsAt={slot.starts_at}
-                  endsAt={slot.ends_at}
-                  status={status}
-                  startWarning={unpreparedStartWarning(status, slot.starts_at, nowMs)}
-                  lengthWarning={shortSlotWarning(
-                    slot.starts_at,
-                    slot.ends_at,
-                    minuteTotals.get(String(selected.id)) ?? 0,
-                  )}
-                  unavailable={checkFailed && !locked}
-                  prominent={focus === "prepare" && slot.id === targetId}
-                  canDelete={canDelete}
-                >
-                  <SittingQuestions groups={groupDrawPreview(rows, orders)} />
-                </SittingCard>
-              );
-            })
-          )}
-          {schemaReady ? (
-            <AddTimeForm
-              examId={String(selected.id)}
-              prominent={focus === "time"}
-              examMinutes={minuteTotals.get(String(selected.id)) ?? 0}
-            />
+          {overlapWarning ? (
+            <p className="text-sm text-destructive">{overlapWarning}</p>
           ) : null}
+          <SittingSchedule
+            examId={String(selected.id)}
+            examMinutes={examMinutes}
+            prominent={focus === "time"}
+            canAdd={schemaReady}
+            gridSlots={showArchived ? selectedWindows : activeSelected}
+            clashSlots={selectedWindows}
+            nowMs={nowMs}
+          >
+            {activeSelected.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No times yet.</p>
+            ) : (
+              activeSelected.map((slot) => renderSitting(slot, false))
+            )}
+            {showArchived ? (
+              <div className="space-y-4">
+                <h3 className="text-base">{labels.archivedHeading}</h3>
+                {archivedSelected.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{labels.noArchived}</p>
+                ) : (
+                  archivedSelected.map((slot) => renderSitting(slot, true))
+                )}
+              </div>
+            ) : null}
+          </SittingSchedule>
         </section>
       ) : null}
 
@@ -412,4 +485,22 @@ export default async function SchedulePage({
       ) : null}
     </main>
   );
+}
+
+function toWindow(slot: SlotRow): SittingWindow {
+  return {
+    id: slot.id,
+    label: slot.label?.trim() || "Sitting",
+    startsAt: slot.starts_at ?? "",
+    endsAt: slot.ends_at ?? "",
+    archivedAt: slot.archived_at ? String(slot.archived_at) : null,
+  };
+}
+
+function scheduleHref(examId: string | null, archived: boolean): string {
+  const params = new URLSearchParams();
+  if (examId) params.set("exam", examId);
+  if (archived) params.set("archived", "1");
+  const query = params.toString();
+  return query ? `/admin/schedule?${query}` : "/admin/schedule";
 }

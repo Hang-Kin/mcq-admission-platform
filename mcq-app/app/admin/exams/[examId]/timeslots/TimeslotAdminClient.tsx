@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { labels } from "../../../schedule/labels";
 import {
   automaticTimeslotId,
   overlappingTimeslotLabels,
@@ -134,10 +135,10 @@ export function TimeslotAdminClient({
             Question set must match a value already used on questions
             (free text, not a fixed list).
             {hasSections
-              ? " This exam has sections, so students draw from Section question sets, not from this timeslot set."
+              ? " This exam has sections, so students draw from the question bank, not from this timeslot set."
               : ""}{" "}
-            Overlapping windows are allowed, but start_session assumes they
-            do not overlap in practice.
+            A time that overlaps another time for this exam is rejected.
+            Touching at the same minute is allowed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -321,11 +322,16 @@ function TimeslotForm({
       existing,
       timeslotId,
     );
-    setOverlapWarning(
-      overlaps.length > 0
-        ? `This window overlaps ${overlaps.join(", ")}. That is allowed, but first-scan assignment uses the earliest unfinished timeslot.`
-        : null,
-    );
+    if (overlaps.length > 0) {
+      const names =
+        overlaps.length === 1
+          ? overlaps[0]
+          : `${overlaps.slice(0, -1).join(", ")} and ${overlaps[overlaps.length - 1]}`;
+      setOverlapWarning(null);
+      setError(labels.overlaps(names ?? ""));
+      return;
+    }
+    setOverlapWarning(null);
 
     const formData = new FormData();
     formData.set("exam_id", examId);

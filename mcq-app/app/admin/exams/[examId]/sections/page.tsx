@@ -14,6 +14,11 @@ import {
   sectionDurationView,
   subjectMinutesFromRows,
 } from "../../../settings/sectionMinutes";
+import { labels } from "../../../schedule/labels";
+import {
+  frozenMinutesMessage,
+  subjectSettingsMessage,
+} from "../../../schedule/sittingRules";
 import { SectionAdminClient, type SectionRow } from "./SectionAdminClient";
 
 export const instant = false;
@@ -102,12 +107,16 @@ export default async function ExamSectionsPage({
       id: row.id,
       label: row.label,
       question_set: row.question_set,
+      subject: row.subject == null ? null : String(row.subject),
       duration_minutes: view.minutes,
       position: row.position,
       duration_locked: view.locked || startedUnknown,
-      duration_note: startedUnknown ? "Could not check whether a student has started." : view.note,
+      duration_note: null,
     };
   });
+  const minutesMessage = started
+    ? frozenMinutesMessage(sections.map((section) => section.duration_minutes))
+    : subjectSettingsMessage(settings);
 
   return (
     <main className="space-y-8">
@@ -130,13 +139,12 @@ export default async function ExamSectionsPage({
             <p className="max-w-2xl text-sm text-muted-foreground">
               {startedUnknown
                 ? "These minutes cannot be changed until we know whether a student has started."
-                : started
-                  ? "A student has started, so these minutes stay fixed."
-                  : "Math and Chinese minutes come from Subject settings until a student starts. After that, they stay fixed."}{" "}
+                : minutesMessage}{" "}
               <Link href="/admin/bank?tab=settings" className="hover:underline">
-                Subject settings
+                {labels.subjectSettingsLink}
               </Link>
             </p>
+            <p className="max-w-2xl text-sm text-muted-foreground">{labels.sectionsIntro}</p>
             {startedUnknown ? (
               <p className="text-sm text-destructive">
                 Could not check whether a student has started, so the minutes cannot be changed.
