@@ -1,15 +1,9 @@
 import Link from "next/link";
 
+import { INTAKE_WAITING_READ, isMissingSchema } from "@/app/admin/students/schemaError";
 import { MathText } from "@/components/MathText";
 import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
 import { Badge } from "@/components/ui/badge";
-import { createClient } from "@/lib/supabase/server";
-
-import {
-  assignedCountOf,
-  isGradeStale,
-  scoreResponses,
-} from "../exams/gradeScore";
 import {
   Card,
   CardContent,
@@ -18,6 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { createClient } from "@/lib/supabase/server";
+
+import {
+  assignedCountOf,
+  isGradeStale,
+  scoreResponses,
+} from "../exams/gradeScore";
+import { ExportForm } from "../results/ExportForm";
+import { requireStaff } from "../results/staffGate";
 
 import { ReviewActions } from "./ReviewActions";
 
@@ -116,9 +119,27 @@ async function loadGrades(
   };
 }
 
+function marker(isCorrect: boolean | null) {
+  if (isCorrect === true) return "Correct";
+  if (isCorrect === false) return "Incorrect";
+  return "Not graded";
+}
+
 export default async function ReviewQueuePage() {
-  const supabase = await createClient();
+  const staff = await requireStaff();
+  if (!staff.ok) {
+    return (
+      <main className="space-y-2">
+        <h1 className="text-2xl">Results</h1>
+        <p className="text-sm text-muted-foreground">{staff.error}</p>
+      </main>
+    );
+  }
+
+  const supabase = staff.supabase;
   const gradesPromise = loadGrades(supabase);
+  const examsPromise = supabase.from("exams").select("id, name").order("name", { ascending: true });
+  const intakePromise = supabase.from("students").select("intake");
   const withSubject = await supabase
     .from("responses")
     .select(
@@ -129,10 +150,11 @@ export default async function ReviewQueuePage() {
       needs_review,
       created_at,
       test_instances!inner (
+        id,
         students!inner ( name, application_number ),
         exams!inner ( name )
       ),
-      questions!inner ( question_text, category, subject )
+      questions!inner ( question_text, category, subject, correct_answer )
     `,
     )
     .eq("needs_review", true)
@@ -149,10 +171,11 @@ export default async function ReviewQueuePage() {
       needs_review,
       created_at,
       test_instances!inner (
+        id,
         students!inner ( name, application_number ),
         exams!inner ( name )
       ),
-      questions!inner ( question_text, category )
+      questions!inner ( question_text, category, correct_answer )
     `,
           )
           .eq("needs_review", true)
@@ -162,6 +185,8 @@ export default async function ReviewQueuePage() {
   const error = loaded.error;
 
   const grades = await gradesPromise;
+  const examsResult = await examsPromise;
+  const intakeResult = await intakePromise;
   const rows = (data ?? []).map((row) => {
     const instance = asSingle(row.test_instances);
     const student = asSingle(instance?.students);
@@ -169,6 +194,7 @@ export default async function ReviewQueuePage() {
     const question = asSingle(row.questions);
     return {
       id: row.id,
+      instance_id: instance?.id ? String(instance.id) : "",
       student_answer: row.student_answer,
       is_correct: row.is_correct,
       created_at: row.created_at,
@@ -178,8 +204,30 @@ export default async function ReviewQueuePage() {
       question_text: question?.question_text ?? "Unknown question",
       category: question?.category ?? "",
       subject: question ? readQuestionSubject(question) : null,
+      correct_answer:
+        question && "correct_answer" in question && typeof question.correct_answer === "string"
+          ? question.correct_answer
+          : null,
     };
   });
+
+  const examsFailed = Boolean(examsResult.error);
+  const exams = (examsResult.data ?? []).flatMap((exam) => {
+    const id = typeof exam.id === "string" ? exam.id : "";
+    const name = typeof exam.name === "string" ? exam.name : "";
+    return id && name ? [{ id, name }] : [];
+  });
+  const intakeMissing = Boolean(intakeResult.error && isMissingSchema(intakeResult.error));
+  const intakeFailed = Boolean(intakeResult.error && !intakeMissing);
+  const intakes = intakeMissing
+    ? []
+    : [
+        ...new Set(
+          (intakeResult.data ?? [])
+            .map((row) => (typeof row.intake === "string" ? row.intake : ""))
+            .filter(Boolean),
+        ),
+      ].sort();
 
   return (
     <main className="space-y-10">
@@ -189,6 +237,26 @@ export default async function ReviewQueuePage() {
           Scores for submitted sittings, then written answers that still need a teacher.
         </p>
       </div>
+
+      <section className="max-w-3xl space-y-3">
+        <h2 className="text-lg">Export</h2>
+        <p className="text-sm text-muted-foreground">
+          Download submitted results for one exam. Times are Hong Kong time.
+        </p>
+        {intakeMissing ? (
+          <p className="text-sm text-muted-foreground">{INTAKE_WAITING_READ}</p>
+        ) : null}
+        {intakeFailed ? (
+          <p className="text-sm text-destructive">Could not load intakes.</p>
+        ) : null}
+        {examsFailed ? (
+          <p className="text-sm text-destructive">Could not load exams for export.</p>
+        ) : exams.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No exams to export.</p>
+        ) : (
+          <ExportForm exams={exams} intakes={intakes} intakeReady={!intakeMissing} />
+        )}
+      </section>
 
       <section className="space-y-6">
         <h2 className="text-lg">Grades</h2>
@@ -214,12 +282,20 @@ export default async function ReviewQueuePage() {
                     {group.rows.map((row) => (
                       <tr key={row.id}>
                         <td className="border-b py-3 pr-4">
-                          <Link
-                            href={`/admin/exams/${group.examId}/grades/${row.id}`}
-                            className="hover:underline"
-                          >
-                            {row.name?.trim() || row.applicationNumber}
-                          </Link>
+                          <div className="flex flex-col gap-1">
+                            <Link
+                              href={`/admin/exams/${group.examId}/grades/${row.id}`}
+                              className="hover:underline"
+                            >
+                              {row.name?.trim() || row.applicationNumber}
+                            </Link>
+                            <Link
+                              href={`/admin/review/${row.id}`}
+                              className="text-sm hover:underline"
+                            >
+                              Review answers
+                            </Link>
+                          </div>
                         </td>
                         <td className="border-b py-3 pr-4">{row.applicationNumber}</td>
                         <td className="border-b py-3 pr-4">
@@ -266,7 +342,10 @@ export default async function ReviewQueuePage() {
         </p>
       ) : (
         <ul className="space-y-6">
-          {rows.map((row, index) => (
+          {rows.map((row, index) => {
+            const subjectLine = [row.subject, row.category].filter(Boolean).join(" · ");
+            const wrong = row.is_correct === false;
+            return (
             <li key={row.id}>
               <Card>
                 <CardHeader>
@@ -275,6 +354,7 @@ export default async function ReviewQueuePage() {
                   </CardTitle>
                   <CardDescription>
                     {row.application_number} · {row.exam_name}
+                    {subjectLine ? ` · ${subjectLine}` : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -285,27 +365,58 @@ export default async function ReviewQueuePage() {
                       category={row.category}
                     />
                   </p>
-                  <p className="whitespace-pre-wrap rounded-md border bg-muted/40 p-4 text-base">
-                    {row.student_answer?.trim()
-                      ? row.student_answer
-                      : "(empty answer)"}
-                  </p>
-                  {row.is_correct === null ? (
-                    <p className="text-sm text-muted-foreground">
-                      Auto-grade did not record a yes/no result.
+                  <div
+                    className={
+                      wrong
+                        ? "space-y-2 rounded-md border border-destructive bg-destructive/10 p-4"
+                        : "space-y-2 rounded-md border bg-muted/40 p-4"
+                    }
+                  >
+                    <p className="text-sm font-medium">Student answer</p>
+                    <p className="whitespace-pre-wrap text-base">
+                      {row.student_answer?.trim() ? row.student_answer : "(empty answer)"}
                     </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Auto-grade guess: {row.is_correct ? "correct" : "incorrect"}
+                  </div>
+                  <div className="space-y-2 rounded-md border p-4">
+                    <p className="text-sm font-medium">Correct answer</p>
+                    <p className="whitespace-pre-wrap text-base">
+                      {row.correct_answer?.trim() ? (
+                        <MathText
+                          text={row.correct_answer}
+                          subject={row.subject}
+                          category={row.category}
+                        />
+                      ) : (
+                        "(none stored)"
+                      )}
                     </p>
-                  )}
+                  </div>
+                  <Badge
+                    variant={
+                      row.is_correct === true
+                        ? "default"
+                        : wrong
+                          ? "destructive"
+                          : "secondary"
+                    }
+                  >
+                    {marker(row.is_correct)}
+                  </Badge>
+                  {row.instance_id ? (
+                    <p className="text-sm">
+                      <Link href={`/admin/review/${row.instance_id}`} className="hover:underline">
+                        Review all answers
+                      </Link>
+                    </p>
+                  ) : null}
                 </CardContent>
                 <CardFooter>
                   <ReviewActions responseId={row.id} primary={index === 0} />
                 </CardFooter>
               </Card>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       </section>
