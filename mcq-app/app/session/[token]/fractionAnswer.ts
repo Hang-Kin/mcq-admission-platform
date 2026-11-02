@@ -1,8 +1,16 @@
+import {
+  FRACTION_BLANK_MESSAGE,
+  FRACTION_DENOMINATOR_MESSAGE,
+  FRACTION_INTEGER_MESSAGE,
+} from "./labels.js";
+
 const SIGNED_WHOLE_NUMBER = /^-?(?:0|[1-9]\d*)$/;
 
-export const FRACTION_BLANK_MESSAGE = "Enter a whole number in both boxes.";
-export const FRACTION_INTEGER_MESSAGE = "Use whole numbers only.";
-export const FRACTION_DENOMINATOR_MESSAGE = "The denominator must be greater than 0.";
+export {
+  FRACTION_BLANK_MESSAGE,
+  FRACTION_DENOMINATOR_MESSAGE,
+  FRACTION_INTEGER_MESSAGE,
+};
 
 export type FractionAnswer =
   | { ok: true; answer: string }
