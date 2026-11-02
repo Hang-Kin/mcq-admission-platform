@@ -6,6 +6,14 @@ export type NavLink = {
   matchGrades?: boolean;
 };
 
+export const staffNavLinks: NavLink[] = [
+  { href: "/admin", label: "Home", exact: true },
+  { href: "/admin/bank", label: "Questions" },
+  { href: "/admin/schedule", label: "Sittings" },
+  { href: "/admin/students", label: "Students" },
+  { href: "/admin/review", label: "Results", matchGrades: true },
+];
+
 const GRADES_PATH = /^\/admin\/exams\/[^/]+\/grades(?:\/|$)/;
 
 export function isNavActive(pathname: string, link: NavLink): boolean {

@@ -1,13 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isNavActive, type NavLink } from "./nav-links.ts";
+import { isNavActive, staffNavLinks, type NavLink } from "./nav-links.ts";
 
 const home: NavLink = { href: "/admin", label: "Home", exact: true };
 const questions: NavLink = { href: "/admin/bank", label: "Questions" };
 const sittings: NavLink = { href: "/admin/schedule", label: "Sittings" };
 const students: NavLink = { href: "/admin/students", label: "Students" };
 const results: NavLink = { href: "/admin/review", label: "Results", matchGrades: true };
+
+test("staff nav keeps Home, Questions, Sittings, Students, and Results", () => {
+  assert.deepEqual(
+    staffNavLinks.map((link) => link.label),
+    ["Home", "Questions", "Sittings", "Students", "Results"],
+  );
+  assert.equal(staffNavLinks[0]?.exact, true);
+  assert.equal(staffNavLinks[4]?.matchGrades, true);
+});
 
 test("home is only the checklist, not every admin page", () => {
   assert.equal(isNavActive("/admin", home), true);
