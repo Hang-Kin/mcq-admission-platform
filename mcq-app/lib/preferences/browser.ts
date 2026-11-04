@@ -8,6 +8,7 @@ import {
   preferencesFromSources,
   readCookieValue,
   serializePreferences,
+  usesLegacyContrastTheme,
   type DocumentPreferenceState,
   type Preferences,
 } from "./preferences";
@@ -20,10 +21,12 @@ export function readClientPreferences(): Preferences {
   } catch {
     storage = null;
   }
-  return preferencesFromSources({
-    cookie: readCookieValue(document.cookie, PREFERENCE_COOKIE),
-    storage,
-  });
+  const cookie = readCookieValue(document.cookie, PREFERENCE_COOKIE);
+  const prefs = preferencesFromSources({ cookie, storage });
+  if (usesLegacyContrastTheme(cookie) || usesLegacyContrastTheme(storage)) {
+    persistPreferences(prefs);
+  }
+  return prefs;
 }
 
 export function persistPreferences(prefs: Preferences) {

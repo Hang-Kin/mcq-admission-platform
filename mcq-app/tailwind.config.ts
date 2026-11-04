@@ -57,6 +57,14 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        "menu-border": "hsl(var(--menu-border))",
+        "menu-highlight": {
+          DEFAULT: "hsl(var(--menu-highlight))",
+          foreground: "hsl(var(--menu-highlight-foreground))",
+        },
+        scrim: "hsl(var(--scrim))",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
