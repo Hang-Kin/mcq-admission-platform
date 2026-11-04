@@ -129,7 +129,7 @@ export function scoreRow(input: {
 export function railCellClass(verdict: ReviewVerdict, state: TeacherMarkState): string {
   const color =
     verdict === "correct"
-      ? "bg-green-100 text-green-950"
+      ? "bg-accent text-accent-foreground"
       : verdict === "incorrect"
         ? "bg-destructive text-destructive-foreground"
         : "bg-muted text-muted-foreground";
@@ -149,7 +149,7 @@ export function railCellClass(verdict: ReviewVerdict, state: TeacherMarkState): 
 }
 
 export function judgementClass(verdict: ReviewVerdict): string {
-  if (verdict === "correct") return "border-transparent bg-green-100 text-green-950";
+  if (verdict === "correct") return "border-transparent bg-accent text-accent-foreground";
   if (verdict === "incorrect") return "border-transparent bg-destructive text-destructive-foreground";
   return "border-transparent bg-muted text-muted-foreground";
 }

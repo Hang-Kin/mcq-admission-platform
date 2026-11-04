@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type ChangeEvent } from "react";
 import Papa from "papaparse";
 
@@ -161,31 +163,16 @@ export function ImportForm() {
   return (
     <div className="mt-6 flex max-w-4xl flex-col gap-4">
       <div className="text-sm">
-        <p>CSV format (header row required):</p>
+        <p><T id="shell.copy.csvHeader" /></p>
         <p className="mt-1 text-sm">
           question_text,category,type,options,correct_answer
         </p>
-        <ul className="mt-2 list-disc pl-5">
-          <li>
-            <code>type</code> must be exactly <code>radio</code>,{" "}
-            <code>numeric</code>, or <code>text</code>
-          </li>
-          <li>
-            For <code>radio</code>: <code>options</code> is a pipe-separated list
-            (e.g. <code>Paris|London|Berlin</code>).{" "}
-            <code>correct_answer</code> must exactly match one option after
-            trimming.
-          </li>
-          <li>
-            For <code>numeric</code>: leave <code>options</code> blank and put
-            the value in <code>correct_answer</code>. For <code>text</code>,{" "}
-            <code>correct_answer</code> is optional.
-          </li>
-          <li>
-            Optional <code>question_set</code> column. Leave it blank to import
-            the row with no set.
-          </li>
-          <li>Maximum {MAX_IMPORT_ROWS} data rows (after the header).</li>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li><T id="shell.copy.csvTypeRule" /></li>
+          <li><T id="shell.copy.csvRadioRule" /></li>
+          <li><T id="shell.copy.csvNumericRule" /></li>
+          <li><T id="shell.copy.csvSetRule" /></li>
+          <li><T id="shell.copy.maxRows" values={{ count: MAX_IMPORT_ROWS }} /></li>
         </ul>
       </div>
 
@@ -195,7 +182,7 @@ export function ImportForm() {
           className="text-sm text-primary underline-offset-4 hover:underline"
           onClick={downloadTemplate}
         >
-          Download template
+          <T id="shell.copy.downloadTemplate" />
         </button>
       </div>
 
@@ -205,17 +192,17 @@ export function ImportForm() {
         onChange={handleFileChange}
       />
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
 
       {preview.length > 0 ? (
         <div className="overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
           <thead>
             <tr>
-              <th className="border-b py-3 pr-4">Question</th>
-              <th className="border-b py-3 pr-4">Category</th>
-              <th className="border-b py-3 pr-4">Type</th>
-              <th className="border-b py-3">Status</th>
+              <th className="border-b py-3 pr-4"><T id="shell.copy.question" /></th>
+              <th className="border-b py-3 pr-4"><T id="shell.copy.category" /></th>
+              <th className="border-b py-3 pr-4"><T id="shell.copy.type" /></th>
+              <th className="border-b py-3"><T id="shell.copy.status" /></th>
             </tr>
           </thead>
           <tbody>

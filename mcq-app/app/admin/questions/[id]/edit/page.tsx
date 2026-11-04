@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { isMissingSubjectColumn, readQuestionSubject } from "@/components/mathText";
@@ -69,17 +70,15 @@ export default async function EditQuestionPage({
     <main className="space-y-8">
       <div className="space-y-2">
         <p className="text-sm">
-          <Link href="/admin/questions" className="hover:underline">
-            Questions
-          </Link>
+          <Link href="/admin/questions" className="hover:underline"><T id="shell.nav.questions" /></Link>
         </p>
-        <h1 className="text-2xl">Edit question</h1>
+        <h1 className="text-2xl"><T id="shell.copy.editQuestion" /></h1>
       </div>
       {error || !question ? (
-        <p className="text-sm text-destructive">Question not found.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.questionNotFound" /></p>
       ) : (
         <>
-          {warning ? <p className="max-w-xl text-sm text-muted-foreground">{warning}</p> : null}
+          {warning ? <p className="max-w-xl text-sm text-muted-foreground"><TText text={warning} /></p> : null}
           <QuestionForm
             question={question}
             action={updateQuestion.bind(null, question.id)}

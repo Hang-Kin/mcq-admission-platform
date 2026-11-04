@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { usePhrase } from "@/app/admin/usePhrase";
+
 import { useEffect, useState, useTransition, type ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -32,6 +35,7 @@ export function ImportRosterForm() {
   const [summary, setSummary] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const tx = usePhrase();
 
   const intake = composeIntake(year, month);
 
@@ -115,13 +119,13 @@ export function ImportRosterForm() {
     <div className="flex max-w-4xl flex-col gap-6">
       <IntakeFields year={year} month={month} onYear={setYear} onMonth={setMonth} idPrefix="import-intake" />
       {intake ? (
-        <p className="text-sm text-foreground">{formatIntakeLabel(intake)}</p>
+        <p className="text-sm text-foreground"><TText text={formatIntakeLabel(intake) ?? ""} /></p>
       ) : (
-        <p className="text-sm text-muted-foreground">Choose a year and a month.</p>
+        <p className="text-sm text-muted-foreground"><T id="students.page.chooseYearMonth" /></p>
       )}
 
       <div className="flex max-w-xl flex-col gap-2">
-        <Label htmlFor="roster-file">Spreadsheet</Label>
+        <Label htmlFor="roster-file"><T id="students.page.spreadsheet" /></Label>
         <Input
           id="roster-file"
           type="file"
@@ -133,22 +137,22 @@ export function ImportRosterForm() {
         </p>
       </div>
 
-      {fileError ? <p className="text-sm text-destructive">{fileError}</p> : null}
-      {lookupError ? <p className="text-sm text-destructive">{lookupError}</p> : null}
-      {checking ? <p className="text-sm text-muted-foreground">Checking this intake…</p> : null}
+      {fileError ? <p className="text-sm text-destructive"><TText text={fileError} /></p> : null}
+      {lookupError ? <p className="text-sm text-destructive"><TText text={lookupError} /></p> : null}
+      {checking ? <p className="text-sm text-muted-foreground"><T id="students.page.checking" /></p> : null}
 
       {preview.length > 0 ? (
         <div className="space-y-3">
-          <p className="text-sm text-foreground">{previewSummary}</p>
+          <p className="text-sm text-foreground"><TText text={previewSummary ?? ""} /></p>
           <div className="max-h-[32rem] overflow-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-3 pr-4">Row</th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.row" /></th>
                   <th className="border-b py-3 pr-4">{CODE_HEADER}</th>
                   <th className="border-b py-3 pr-4">{ENGLISH_NAME_HEADER}</th>
                   <th className="border-b py-3 pr-4">{CHINESE_NAME_HEADER}</th>
-                  <th className="border-b py-3">Problems</th>
+                  <th className="border-b py-3"><T id="students.page.problems" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -169,19 +173,17 @@ export function ImportRosterForm() {
         </div>
       ) : null}
 
-      {summary ? <p className="text-sm text-foreground">{summary}</p> : null}
-      {importError ? <p className="text-sm text-destructive">{importError}</p> : null}
+      {summary ? <p className="text-sm text-foreground"><TText text={summary} /></p> : null}
+      {importError ? <p className="text-sm text-destructive"><TText text={importError} /></p> : null}
 
       <Button
         type="button"
         className="h-12 px-8 text-base"
         pending={isPending}
-        pendingLabel="Importing…"
+        pendingLabel={tx("Importing…")}
         disabled={!intake || rows.length === 0 || checking || Boolean(lookupError)}
         onClick={handleImport}
-      >
-        Import
-      </Button>
+      ><T id="shell.copy.import" /></Button>
     </div>
   );
 }

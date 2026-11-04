@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { OptionText, phraseNow } from "@/app/admin/usePhrase";
+
 import { useMemo, useState, type FormEvent } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +87,7 @@ export function TimeslotAdminClient({
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Active timeslot</CardTitle>
+          <CardTitle><T id="schedule.page.activeSlot" /></CardTitle>
           <CardDescription>
             {examName}: first scan uses the manual override when one is set,
             otherwise the automatic window.
@@ -93,9 +96,9 @@ export function TimeslotAdminClient({
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {isManual ? (
-              <Badge>Manual override</Badge>
+              <Badge><T id="schedule.page.manual" /></Badge>
             ) : (
-              <Badge variant="secondary">Automatic</Badge>
+              <Badge variant="secondary"><T id="schedule.page.automatic" /></Badge>
             )}
             {overrideSlot ? (
               <Badge variant="outline">Override: {overrideSlot.label}</Badge>
@@ -105,7 +108,7 @@ export function TimeslotAdminClient({
                 Wall-clock window: {automaticSlot.label}
               </Badge>
             ) : (
-              <Badge variant="outline">No automatic window yet</Badge>
+              <Badge variant="outline"><T id="schedule.page.noWindow" /></Badge>
             )}
           </div>
           {isManual &&
@@ -130,7 +133,7 @@ export function TimeslotAdminClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Create timeslot</CardTitle>
+          <CardTitle><T id="schedule.page.createSlot" /></CardTitle>
           <CardDescription>
             Question set must match a value already used on questions
             (free text, not a fixed list).
@@ -155,11 +158,11 @@ export function TimeslotAdminClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Timeslots</CardTitle>
+          <CardTitle><T id="schedule.page.timeslots" /></CardTitle>
         </CardHeader>
         <CardContent>
           {timeslots.length === 0 ? (
-            <p>No timeslots yet. This exam still uses the General set on scan.</p>
+            <p><T id="schedule.page.noSlots" /></p>
           ) : (
             <ul className="space-y-6">
               {timeslots.map((slot) => (
@@ -167,10 +170,10 @@ export function TimeslotAdminClient({
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{slot.label}</p>
                     {activeTimeslotOverride === slot.id ? (
-                      <Badge>Manual override</Badge>
+                      <Badge><T id="schedule.page.manual" /></Badge>
                     ) : null}
                     {automaticId === slot.id ? (
-                      <Badge variant="secondary">Wall-clock window</Badge>
+                      <Badge variant="secondary"><T id="schedule.page.wallClock" /></Badge>
                     ) : null}
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -196,9 +199,7 @@ export function TimeslotAdminClient({
                       action={deleteTimeslot}
                     />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Only an admin can delete a timeslot.
-                    </p>
+                    <p className="text-sm text-muted-foreground"><T id="schedule.page.adminDeleteSlot" /></p>
                   )}
                 </li>
               ))}
@@ -241,7 +242,7 @@ function OverrideForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-3">
-      <Label htmlFor="active_timeslot_override">Manual override</Label>
+      <Label htmlFor="active_timeslot_override"><T id="schedule.page.manual" /></Label>
       <select
         id="active_timeslot_override"
         name="active_timeslot_override"
@@ -249,14 +250,14 @@ function OverrideForm({
         value={value}
         onChange={(event) => setValue(event.target.value)}
       >
-        <option value="">None (automatic)</option>
+        <option value=""><OptionText text="None (automatic)" /></option>
         {timeslots.map((slot) => (
           <option key={slot.id} value={slot.id}>
             {slot.label}
           </option>
         ))}
       </select>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <div>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Saving…" : "Save override"}
@@ -360,7 +361,7 @@ function TimeslotForm({
   return (
     <form onSubmit={handleSubmit} className="grid max-w-xl gap-3">
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-label`}>Label</Label>
+        <Label htmlFor={`${listId}-label`}><T id="schedule.page.label" /></Label>
         <Input
           id={`${listId}-label`}
           value={label}
@@ -369,7 +370,7 @@ function TimeslotForm({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-set`}>Question set</Label>
+        <Label htmlFor={`${listId}-set`}><T id="shell.copy.questionSet" /></Label>
         <Input
           id={`${listId}-set`}
           list={listId}
@@ -388,7 +389,7 @@ function TimeslotForm({
         </p>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-start`}>Starts at</Label>
+        <Label htmlFor={`${listId}-start`}><T id="schedule.page.startsAt" /></Label>
         <Input
           id={`${listId}-start`}
           type="datetime-local"
@@ -398,7 +399,7 @@ function TimeslotForm({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-end`}>Ends at</Label>
+        <Label htmlFor={`${listId}-end`}><T id="schedule.page.endsAt" /></Label>
         <Input
           id={`${listId}-end`}
           type="datetime-local"
@@ -408,12 +409,12 @@ function TimeslotForm({
         />
       </div>
       {overlapWarning ? (
-        <p className="text-sm text-muted-foreground">{overlapWarning}</p>
+        <p className="text-sm text-muted-foreground"><TText text={overlapWarning} /></p>
       ) : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <div>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? pendingLabel : submitLabel}
+          {isSubmitting ? <TText text={pendingLabel} /> : <TText text={submitLabel} />}
         </Button>
       </div>
     </form>
@@ -437,7 +438,9 @@ function DeleteTimeslotButton({
   async function handleDelete() {
     if (
       !window.confirm(
-        `Delete timeslot “${label}”? If it is the manual override, the override will be cleared first.`,
+        phraseNow(
+          `Delete timeslot “${label}”? If it is the manual override, the override will be cleared first.`,
+        ),
       )
     ) {
       return;
@@ -461,9 +464,9 @@ function DeleteTimeslotButton({
         disabled={isSubmitting}
         onClick={() => void handleDelete()}
       >
-        {isSubmitting ? "Deleting…" : "Delete"}
+        {isSubmitting ? <T id="shell.copy.deleting" /> : <T id="shell.copy.delete" />}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }

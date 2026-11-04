@@ -1,5 +1,6 @@
 "use client";
 
+import { TText } from "@/app/admin/T";
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ export function RegradePanel({
       <input type="hidden" name="before_null" value={beforeNull ? "1" : "0"} />
       {beforeKnown && !beforeNull ? <input type="hidden" name="before" value={before} /> : null}
       <Button type="submit" disabled={pending || !canApply}>
-        {pending ? labels.applying : labels.regradeApply}
+        {pending ? <TText text={labels.applying} /> : <TText text={labels.regradeApply} />}
       </Button>
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
     </form>

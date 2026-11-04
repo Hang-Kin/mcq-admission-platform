@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,7 +46,7 @@ export function ExamForm({ action }: ExamFormProps) {
   return (
     <form onSubmit={handleSubmit} className="mt-6 flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name"><T id="shell.copy.name" /></Label>
         <Input
           id="name"
           name="name"
@@ -56,7 +58,7 @@ export function ExamForm({ action }: ExamFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+        <Label htmlFor="duration_minutes"><T id="shell.copy.durationMinutes" /></Label>
         <Input
           id="duration_minutes"
           name="duration_minutes"
@@ -72,10 +74,10 @@ export function ExamForm({ action }: ExamFormProps) {
         </p>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Creating…" : "Create exam"}
+        {isSubmitting ? <T id="shell.copy.creating" /> : <T id="shell.item.createExam" />}
       </Button>
     </form>
   );

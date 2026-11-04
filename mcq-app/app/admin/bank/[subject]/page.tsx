@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -44,7 +45,7 @@ export default async function SubjectTopicsPage({
             { label: info.title },
           ]}
         />
-        <h1 className="text-2xl">{info.title}</h1>
+        <h1 className="text-2xl"><TText text={info.title} /></h1>
         <p className="text-sm text-muted-foreground">
           Each topic should have at least {bank.perTopic} questions.
         </p>
@@ -52,7 +53,7 @@ export default async function SubjectTopicsPage({
 
       {bank.missing ? <WaitingNote /> : null}
       {bank.loadFailed ? (
-        <p className="text-sm text-destructive">Could not load topics.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.couldNotLoadTopics" /></p>
       ) : null}
 
       <AddTopicForm subject={subject} />
@@ -60,7 +61,7 @@ export default async function SubjectTopicsPage({
       {!bank.missing && !bank.loadFailed ? (
         <>
           {topics.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No topics yet.</p>
+            <p className="text-sm text-muted-foreground"><T id="shell.copy.noTopics" /></p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {topics.map((topic) => (
@@ -79,10 +80,10 @@ export default async function SubjectTopicsPage({
                     <CardHeader>
                       <CardTitle className="text-xl">{topic.name}</CardTitle>
                       <CardDescription className="text-base">
-                        {topicCountText(topic.count, bank.perTopic)}
+                        <TText text={topicCountText(topic.count, bank.perTopic)} />
                       </CardDescription>
                       {topic.short ? (
-                        <Badge variant="destructive">Needs more questions</Badge>
+                        <Badge variant="destructive"><T id="shell.copy.needsMore" /></Badge>
                       ) : null}
                     </CardHeader>
                   </Card>
@@ -98,12 +99,12 @@ export default async function SubjectTopicsPage({
             >
               <Card className="border-destructive hover:border-primary">
                 <CardHeader>
-                  <CardTitle className="text-xl">No topic yet</CardTitle>
+                  <CardTitle className="text-xl"><T id="shell.copy.noTopicYet" /></CardTitle>
                   <CardDescription className="text-base">
                     {unfiled === 1 ? "1 older question" : `${unfiled} older questions`}{" "}
                     will not be used when a sitting is prepared.
                   </CardDescription>
-                  <Badge variant="destructive">Needs a topic</Badge>
+                  <Badge variant="destructive"><T id="shell.copy.needsATopic" /></Badge>
                 </CardHeader>
               </Card>
             </Link>

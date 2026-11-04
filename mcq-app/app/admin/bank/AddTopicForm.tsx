@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ export function AddTopicForm({ subject }: { subject: SubjectId }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-3">
-      <Label htmlFor="topic-name">Topic name</Label>
+      <Label htmlFor="topic-name"><T id="shell.copy.topicName" /></Label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
           id="topic-name"
@@ -40,10 +42,10 @@ export function AddTopicForm({ subject }: { subject: SubjectId }) {
           className="h-12 text-base md:text-base"
         />
         <Button type="submit" className="h-12 px-5 text-base" disabled={isSubmitting}>
-          {isSubmitting ? "Opening…" : "Add a topic"}
+          {isSubmitting ? <T id="shell.copy.opening" /> : <T id="shell.copy.addTopic" />}
         </Button>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </form>
   );
 }

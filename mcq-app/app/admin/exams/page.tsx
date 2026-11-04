@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -18,31 +19,31 @@ export default async function ExamsPage() {
     <main className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl">Exams</h1>
+          <h1 className="text-2xl"><T id="shell.group.exams" /></h1>
           <p className="text-sm text-muted-foreground">
-            {labels.examListIntro}
+            <TText text={labels.examListIntro} />
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/exams/new">New exam</Link>
+          <Link href="/admin/exams/new"><T id="shell.copy.newExam" /></Link>
         </Button>
       </div>
       {error ? (
-        <p className="text-sm text-destructive">Failed to load exams.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.failedExams" /></p>
       ) : !exams || exams.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No exams yet</p>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.noExams" /></p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
             <thead>
               <tr>
-                <th className="border-b py-3 pr-4">Exam</th>
-                <th className="border-b py-3 pr-4">Duration</th>
-                <th className="border-b py-3 pr-4">Created</th>
-                <th className="border-b py-3 pr-4">QR codes</th>
-                <th className="border-b py-3 pr-4">{labels.sittingsColumn}</th>
-                <th className="border-b py-3 pr-4">Sections</th>
-                <th className="border-b py-3">Grades</th>
+                <th className="border-b py-3 pr-4"><T id="shell.copy.exam" /></th>
+                <th className="border-b py-3 pr-4"><T id="shell.copy.duration" /></th>
+                <th className="border-b py-3 pr-4"><T id="shell.copy.created" /></th>
+                <th className="border-b py-3 pr-4"><T id="shell.item.checklistCodes" /></th>
+                <th className="border-b py-3 pr-4"><TText text={labels.sittingsColumn} /></th>
+                <th className="border-b py-3 pr-4"><T id="shell.copy.sections" /></th>
+                <th className="border-b py-3"><T id="shell.copy.grades" /></th>
               </tr>
             </thead>
             <tbody>
@@ -72,24 +73,20 @@ export default async function ExamsPage() {
                       href={`/admin/schedule?exam=${exam.id}`}
                       className="hover:underline"
                     >
-                      {labels.openSittings}
+                      <TText text={labels.openSittings} />
                     </Link>
                   </td>
                   <td className="border-b py-3 pr-4">
                     <Link
                       href={`/admin/exams/${exam.id}/sections`}
                       className="hover:underline"
-                    >
-                      Sections
-                    </Link>
+                    ><T id="shell.copy.sections" /></Link>
                   </td>
                   <td className="border-b py-3">
                     <Link
                       href={`/admin/exams/${exam.id}/grades`}
                       className="hover:underline"
-                    >
-                      Grades
-                    </Link>
+                    ><T id="shell.copy.grades" /></Link>
                   </td>
                 </tr>
               ))}

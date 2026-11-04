@@ -271,7 +271,7 @@ export function qrChecklist(input: {
   const students = input.studentCount === 1 ? "1 student" : `${input.studentCount} students`;
   return {
     ...open,
-    status: "Created",
+    status: "Codes created",
     detail: `Codes created for ${students}.`,
     done: true,
     warn: false,

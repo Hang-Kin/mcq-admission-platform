@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 import { connection } from "next/server";
 
@@ -167,8 +168,8 @@ export default async function AdminHome() {
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-2">
-        <h1 className="text-2xl">Home</h1>
-        <p className="text-sm text-muted-foreground">Work through these in order.</p>
+        <h1 className="text-2xl"><T id="shell.nav.home" /></h1>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.homeIntro" /></p>
       </div>
       <ol className="divide-y divide-border border-y border-border">
         {steps.map((step, index) => (
@@ -191,16 +192,16 @@ function ChecklistRow({
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 className="text-lg">
-            {index}. {step.title}
+            {index}. <TText text={step.title} />
           </h2>
-          <p className="text-sm text-muted-foreground">{step.status}</p>
+          <p className="text-sm text-muted-foreground"><TText text={step.status} /></p>
         </div>
         <p className={step.warn ? "text-sm text-destructive" : "text-sm text-foreground"}>
-          {step.detail}
+          <TText text={step.detail} />
         </p>
       </div>
       <Button asChild variant={step.primary ? "default" : "outline"} className="h-12 shrink-0 px-5 text-base">
-        <Link href={step.href}>{step.action}</Link>
+        <Link href={step.href}><TText text={step.action} /></Link>
       </Button>
     </li>
   );

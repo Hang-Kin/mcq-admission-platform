@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { OptionText } from "@/app/admin/usePhrase";
+
 import { useRef, useState, type FormEvent } from "react";
 
 import { MathText } from "@/components/MathText";
@@ -206,7 +209,7 @@ export function QuestionForm({
   return (
     <form onSubmit={handleSubmit} className="mt-6 flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="question_set">Question set</Label>
+        <Label htmlFor="question_set"><T id="shell.copy.questionSet" /></Label>
         <Input
           id="question_set"
           name="question_set"
@@ -227,7 +230,7 @@ export function QuestionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="question_text">Question</Label>
+        <Label htmlFor="question_text"><T id="shell.copy.question" /></Label>
         <textarea
           id="question_text"
           name="question_text"
@@ -242,7 +245,7 @@ export function QuestionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="image">Image</Label>
+        <Label htmlFor="image"><T id="shell.copy.image" /></Label>
         {existingImage && !removeImage ? (
           // Public bucket URL. Loaded directly so it does not need a Next image host.
           // eslint-disable-next-line @next/next/no-img-element
@@ -273,7 +276,7 @@ export function QuestionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="category">Category</Label>
+        <Label htmlFor="category"><T id="shell.copy.category" /></Label>
         <Input
           id="category"
           name="category"
@@ -286,7 +289,7 @@ export function QuestionForm({
       {isMathQuestion({ subject: question?.subject, category }) &&
       questionText.trim() ? (
         <div className="rounded-md border border-border bg-background px-3 py-3">
-          <p className="mb-2 text-sm text-muted-foreground">Preview</p>
+          <p className="mb-2 text-sm text-muted-foreground"><T id="shell.copy.preview" /></p>
           <div className="text-base leading-relaxed">
             <MathText
               text={questionText}
@@ -298,7 +301,7 @@ export function QuestionForm({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="type">Type</Label>
+        <Label htmlFor="type"><T id="shell.copy.type" /></Label>
         <select
           id="type"
           name="type"
@@ -309,7 +312,7 @@ export function QuestionForm({
         >
           {typeChoices.map((choice) => (
             <option key={choice} value={choice}>
-              {choice === "text" ? "text box" : choice}
+              {choice === "text" ? <OptionText text="text box" /> : choice}
             </option>
           ))}
         </select>
@@ -317,7 +320,7 @@ export function QuestionForm({
 
       {type === "radio" ? (
         <div className="flex flex-col gap-2">
-          <Label>Options</Label>
+          <Label><T id="shell.copy.options" /></Label>
           <p className="text-sm text-muted-foreground">
             Mark exactly one option as correct.
           </p>
@@ -372,11 +375,11 @@ export function QuestionForm({
         </div>
       )}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
+      {success ? <p className="text-sm text-muted-foreground"><TText text={success} /></p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Save"}
+        {isSubmitting ? <T id="shell.copy.saving" /> : <T id="shell.copy.save" />}
       </Button>
     </form>
   );

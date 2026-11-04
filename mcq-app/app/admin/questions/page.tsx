@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { MathText } from "@/components/MathText";
@@ -81,17 +82,17 @@ export default async function AdminQuestionsPage({
     <main className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl">Older question list</h1>
+          <h1 className="text-2xl"><T id="shell.account.olderQuestions" /></h1>
           <p className="text-sm text-muted-foreground">
             Group questions into sets, then edit or import more.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button asChild variant="outline">
-            <Link href="/admin/questions/import">Import CSV</Link>
+            <Link href="/admin/questions/import"><T id="shell.copy.importCsv" /></Link>
           </Button>
           <Button asChild>
-            <Link href={newQuestionHref}>New question</Link>
+            <Link href={newQuestionHref}><T id="shell.copy.newQuestion" /></Link>
           </Button>
         </div>
       </div>
@@ -105,20 +106,20 @@ export default async function AdminQuestionsPage({
         </p>
       ) : (
         <>
-          <h2 className="text-lg">Question sets</h2>
+          <h2 className="text-lg"><T id="shell.copy.questionSets" /></h2>
           <p className="text-sm text-muted-foreground">
             A set is every question that shares the same question_set tag.
           </p>
           {summaries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No questions yet</p>
+            <p className="text-sm text-muted-foreground"><T id="shell.copy.noQuestionsYet" /></p>
           ) : (
             <div className="overflow-x-auto">
             <table className="w-full max-w-xl border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-3 pr-4">Set</th>
-                  <th className="border-b py-3 pr-4">Questions</th>
-                  <th className="border-b py-3">View</th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.set" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.nav.questions" /></th>
+                  <th className="border-b py-3"><T id="shell.copy.view" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -138,9 +139,7 @@ export default async function AdminQuestionsPage({
                             Show all
                           </Link>
                         ) : (
-                          <Link href={setHref(summary.name)} className="hover:underline">
-                            View
-                          </Link>
+                          <Link href={setHref(summary.name)} className="hover:underline"><T id="shell.copy.view" /></Link>
                         )}
                       </td>
                     </tr>
@@ -159,19 +158,19 @@ export default async function AdminQuestionsPage({
                 : "All questions"}
           </h2>
           {visible.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No questions in this view</p>
+            <p className="text-sm text-muted-foreground"><T id="shell.copy.noQuestionsView" /></p>
           ) : (
             <div className="overflow-x-auto">
             <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-3 pr-4">Question</th>
-                  <th className="border-b py-3 pr-4">Set</th>
-                  <th className="border-b py-3 pr-4">Category</th>
-                  <th className="border-b py-3 pr-4">Type</th>
-                  <th className="border-b py-3 pr-4">Image</th>
-                  <th className="border-b py-3 pr-4">Created</th>
-                  <th className="border-b py-3">Edit</th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.question" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.set" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.category" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.type" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.image" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.created" /></th>
+                  <th className="border-b py-3"><T id="shell.copy.edit" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -207,9 +206,7 @@ export default async function AdminQuestionsPage({
                         <Link
                           href={`/admin/questions/${question.id}/edit`}
                           className="hover:underline"
-                        >
-                          Edit
-                        </Link>
+                        ><T id="shell.copy.edit" /></Link>
                         {isAdmin ? (
                           <DeleteQuestionButton
                             id={question.id}

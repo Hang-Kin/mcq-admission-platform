@@ -1,3 +1,4 @@
+import { TText } from "@/app/admin/T";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ export default async function StudentGradePage({
   if (!UUID_RE.test(examId) || !UUID_RE.test(instanceId)) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.studentSittingNotFound}</h1>
+        <h1 className="text-2xl"><TText text={labels.studentSittingNotFound} /></h1>
       </main>
     );
   }
@@ -32,7 +33,7 @@ export default async function StudentGradePage({
   if (!data) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.studentSittingNotFound}</h1>
+        <h1 className="text-2xl"><TText text={labels.studentSittingNotFound} /></h1>
       </main>
     );
   }

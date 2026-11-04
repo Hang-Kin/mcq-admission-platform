@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import { notFound } from "next/navigation";
 
 import { deleteBankQuestion, updateBankQuestion } from "../../../../actions";
@@ -49,7 +50,7 @@ export default async function EditBankQuestionPage({
             { label: "Edit" },
           ]}
         />
-        <h1 className="text-2xl">Edit question</h1>
+        <h1 className="text-2xl"><T id="shell.copy.editQuestion" /></h1>
       </div>
       <BankQuestionForm
         subject={subject}

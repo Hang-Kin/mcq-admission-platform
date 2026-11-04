@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { OptionText } from "@/app/admin/usePhrase";
+
 import { useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -187,7 +190,7 @@ export function BankQuestionForm({
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6">
       {filing ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="topic">Topic</Label>
+          <Label htmlFor="topic"><T id="shell.copy.topic" /></Label>
           <Input
             id="topic"
             value={topicName}
@@ -203,7 +206,7 @@ export function BankQuestionForm({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="question_text">Question</Label>
+        <Label htmlFor="question_text"><T id="shell.copy.question" /></Label>
         <textarea
           id="question_text"
           required
@@ -214,7 +217,7 @@ export function BankQuestionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="attachment">Image or PDF</Label>
+        <Label htmlFor="attachment"><T id="shell.copy.imageOrPdf" /></Label>
         {existingAttachment && !removeAttachment ? (
           <AttachmentPreview url={existingAttachment} />
         ) : null}
@@ -241,23 +244,23 @@ export function BankQuestionForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="answer_kind">Answer type</Label>
+        <Label htmlFor="answer_kind"><T id="shell.copy.answerType" /></Label>
         <select
           id="answer_kind"
           value={kind}
           onChange={(event) => setKind(event.target.value as AnswerKind)}
           className={fieldClass}
         >
-          <option value="choice">Choice</option>
-          <option value="number">Number</option>
-          <option value="fraction">Fraction</option>
-          {allowWritten ? <option value="text">Written answer</option> : null}
+          <option value="choice"><OptionText text="Choice" /></option>
+          <option value="number"><OptionText text="Number" /></option>
+          <option value="fraction"><OptionText text="Fraction" /></option>
+          {allowWritten ? <option value="text"><OptionText text="Written answer" /></option> : null}
         </select>
       </div>
 
       {kind === "choice" ? (
         <fieldset className="flex flex-col gap-3">
-          <legend className="text-sm font-medium">Choices</legend>
+          <legend className="text-sm font-medium"><T id="shell.copy.choices" /></legend>
           <p className="text-sm text-muted-foreground">
             Enter at least two choices and mark the correct one.
           </p>
@@ -270,9 +273,7 @@ export function BankQuestionForm({
                   checked={correctOption === index}
                   onChange={() => setCorrectOption(index)}
                   aria-label={`Mark choice ${index + 1} as correct`}
-                />
-                Correct
-              </label>
+                /><T id="shell.copy.correct" /></label>
               <Input
                 value={option}
                 onChange={(event) => updateOption(index, event.target.value)}
@@ -305,7 +306,7 @@ export function BankQuestionForm({
 
       {kind === "number" ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="number_answer">Correct answer</Label>
+          <Label htmlFor="number_answer"><T id="shell.copy.correctAnswer" /></Label>
           <Input
             id="number_answer"
             inputMode="decimal"
@@ -331,7 +332,7 @@ export function BankQuestionForm({
                 onChange={(event) => setFractionA(event.target.value)}
                 className="h-12 text-base md:text-base"
               />
-              <p className="text-sm text-muted-foreground">Numerator</p>
+              <p className="text-sm text-muted-foreground"><T id="shell.copy.numerator" /></p>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="fraction_b">b</Label>
@@ -342,7 +343,7 @@ export function BankQuestionForm({
                 onChange={(event) => setFractionB(event.target.value)}
                 className="h-12 text-base md:text-base"
               />
-              <p className="text-sm text-muted-foreground">Denominator</p>
+              <p className="text-sm text-muted-foreground"><T id="shell.copy.denominator" /></p>
             </div>
           </div>
           <p
@@ -362,7 +363,7 @@ export function BankQuestionForm({
 
       {kind === "text" ? (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="written_answer">Expected answer</Label>
+          <Label htmlFor="written_answer"><T id="shell.copy.expected" /></Label>
           <Input
             id="written_answer"
             value={writtenAnswer}
@@ -375,15 +376,15 @@ export function BankQuestionForm({
         </div>
       ) : null}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       {success ? (
         <p className="text-sm text-primary" role="status">
-          {success}
+          <TText text={success} />
         </p>
       ) : null}
 
       <Button type="submit" className="h-12 px-5 text-base" disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Save question"}
+        {isSubmitting ? <T id="shell.copy.saving" /> : <T id="shell.copy.saveQuestion" />}
       </Button>
     </form>
   );

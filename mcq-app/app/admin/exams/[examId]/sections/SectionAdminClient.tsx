@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { phraseNow } from "@/app/admin/usePhrase";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -65,8 +68,8 @@ export function SectionAdminClient({
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Create section</CardTitle>
-          <CardDescription>{labels.sectionsCreateHelp}</CardDescription>
+          <CardTitle><T id="schedule.page.createSection" /></CardTitle>
+          <CardDescription><TText text={labels.sectionsCreateHelp} /></CardDescription>
         </CardHeader>
         <CardContent>
           <SectionForm
@@ -81,7 +84,7 @@ export function SectionAdminClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Sections</CardTitle>
+          <CardTitle><T id="shell.copy.sections" /></CardTitle>
         </CardHeader>
         <CardContent>
           {hasPositionGap ? (
@@ -97,9 +100,9 @@ export function SectionAdminClient({
             </div>
           ) : null}
           {loadError ? (
-            <p className="text-sm text-destructive">{loadError}</p>
+            <p className="text-sm text-destructive"><TText text={loadError} /></p>
           ) : sections.length === 0 ? (
-            <p>No sections yet. This exam still uses one timer for the whole sitting.</p>
+            <p><T id="schedule.page.noSections" /></p>
           ) : (
             <ul className="space-y-6">
               {sections.map((section, index) => (
@@ -120,13 +123,26 @@ export function SectionAdminClient({
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {sectionSourceText({
-                      subject: section.subject ?? null,
-                      questionSet: section.question_set,
-                    })}
+                    <TText
+                      text={sectionSourceText({
+                        subject: section.subject ?? null,
+                        questionSet: section.question_set,
+                      })}
+                    />
                     {" · "}
-                    {section.duration_minutes} min
-                    {section.duration_note ? ` · ${section.duration_note}` : ""}
+                    <TText
+                      text={
+                        section.duration_minutes === 1
+                          ? "1 minute"
+                          : `${section.duration_minutes} minutes`
+                      }
+                    />
+                    {section.duration_note ? (
+                      <>
+                        {" · "}
+                        <TText text={section.duration_note} />
+                      </>
+                    ) : null}
                   </p>
                   <SectionForm
                     key={`${section.id}-${section.label}-${section.question_set}-${section.duration_minutes}-${section.duration_locked ? "locked" : "open"}`}
@@ -146,9 +162,7 @@ export function SectionAdminClient({
                       action={deleteSection}
                     />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Only an admin can delete a section.
-                    </p>
+                    <p className="text-sm text-muted-foreground"><T id="schedule.page.adminDeleteSection" /></p>
                   )}
                 </li>
               ))}
@@ -226,7 +240,7 @@ function SectionForm({
   return (
     <form onSubmit={handleSubmit} className="grid max-w-xl gap-3">
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-label`}>Label</Label>
+        <Label htmlFor={`${listId}-label`}><T id="schedule.page.label" /></Label>
         <Input
           id={`${listId}-label`}
           value={label}
@@ -243,7 +257,7 @@ function SectionForm({
         </p>
       ) : (
         <div className="grid gap-2">
-          <Label htmlFor={`${listId}-set`}>{labels.legacyQuestionSet}</Label>
+          <Label htmlFor={`${listId}-set`}><TText text={labels.legacyQuestionSet} /></Label>
           <Input
             id={`${listId}-set`}
             list={listId}
@@ -256,11 +270,11 @@ function SectionForm({
               <option key={name} value={name} />
             ))}
           </datalist>
-          <p className="text-sm text-muted-foreground">{labels.legacyQuestionSetHelp}</p>
+          <p className="text-sm text-muted-foreground"><TText text={labels.legacyQuestionSetHelp} /></p>
         </div>
       )}
       <div className="grid gap-2">
-        <Label htmlFor={`${listId}-duration`}>Duration (minutes)</Label>
+        <Label htmlFor={`${listId}-duration`}><T id="shell.copy.durationMinutes" /></Label>
         <Input
           id={`${listId}-duration`}
           inputMode="numeric"
@@ -270,10 +284,10 @@ function SectionForm({
           required
         />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <div>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? pendingLabel : submitLabel}
+          {isSubmitting ? <TText text={pendingLabel} /> : <TText text={submitLabel} />}
         </Button>
       </div>
     </form>
@@ -308,9 +322,9 @@ function RenumberSectionsButton({
         disabled={isSubmitting}
         onClick={() => void handleRenumber()}
       >
-        {isSubmitting ? "Renumbering…" : "Renumber sections"}
+        {isSubmitting ? <T id="shell.copy.renumbering" /> : <T id="schedule.page.renumber" />}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }
@@ -365,7 +379,7 @@ function MoveSectionButtons({
           {pending === "down" ? "Moving…" : "Move down"}
         </Button>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }
@@ -385,7 +399,7 @@ function DeleteSectionButton({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleDelete() {
-    if (!window.confirm(`Delete section “${label}”?`)) return;
+    if (!window.confirm(phraseNow(`Delete section “${label}”?`))) return;
     setError(null);
     const formData = new FormData();
     formData.set("exam_id", examId);
@@ -405,9 +419,9 @@ function DeleteSectionButton({
         disabled={isSubmitting}
         onClick={() => void handleDelete()}
       >
-        {isSubmitting ? "Deleting…" : "Delete"}
+        {isSubmitting ? <T id="shell.copy.deleting" /> : <T id="shell.copy.delete" />}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -96,7 +98,7 @@ export function SectionTimeslotMatrix({
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle>Section question sets</CardTitle>
+        <CardTitle><T id="schedule.page.sectionSets" /></CardTitle>
         <CardDescription>
           Each cell is the question set that section draws during that
           timeslot. Leave a cell blank to use the section default shown in
@@ -105,7 +107,7 @@ export function SectionTimeslotMatrix({
       </CardHeader>
       <CardContent>
         {loadError ? (
-          <p className="text-sm text-destructive">{loadError}</p>
+          <p className="text-sm text-destructive"><TText text={loadError} /></p>
         ) : timeslots.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Add timeslots first. Until then, every section uses its own
@@ -117,7 +119,7 @@ export function SectionTimeslotMatrix({
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr>
-                    <th className="border-b py-2 pr-4">Timeslot</th>
+                    <th className="border-b py-2 pr-4"><T id="schedule.page.timeslot" /></th>
                     {sections.map((section) => (
                       <th key={section.id} className="border-b py-2 pr-4">
                         <span className="block">{section.label}</span>
@@ -169,13 +171,13 @@ export function SectionTimeslotMatrix({
                 that already has a question set.
               </p>
             )}
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
             {success ? (
-              <p className="text-sm text-muted-foreground">{success}</p>
+              <p className="text-sm text-muted-foreground"><TText text={success} /></p>
             ) : null}
             <div>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving…" : "Save section sets"}
+                {isSubmitting ? <T id="shell.copy.saving" /> : <T id="schedule.page.saveSets" />}
               </Button>
             </div>
           </form>

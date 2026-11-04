@@ -1,3 +1,4 @@
+import { TText } from "@/app/admin/T";
 import type { PreviewGroup } from "./scheduleModel";
 
 export function DrawPreview({ groups }: { groups: PreviewGroup[] }) {
@@ -7,7 +8,7 @@ export function DrawPreview({ groups }: { groups: PreviewGroup[] }) {
     <div className="space-y-6">
       {groups.map((group) => (
         <div key={group.subject} className="space-y-3">
-          <h2 className="text-lg">{group.subject}</h2>
+          <h2 className="text-lg"><TText text={group.subject} /></h2>
           {group.topics.map((topic) => (
             <div key={topic.name} className="space-y-2">
               <h3 className="text-base">{topic.name}</h3>

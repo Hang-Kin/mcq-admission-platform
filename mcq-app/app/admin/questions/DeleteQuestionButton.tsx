@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { phraseNow } from "@/app/admin/usePhrase";
+
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,7 @@ export function DeleteQuestionButton({ id, action }: DeleteQuestionButtonProps) 
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleClick() {
-    if (!window.confirm("Delete this question?")) return;
+    if (!window.confirm(phraseNow("Delete this question?"))) return;
     setError(null);
     setIsDeleting(true);
     const formData = new FormData();
@@ -34,9 +37,9 @@ export function DeleteQuestionButton({ id, action }: DeleteQuestionButtonProps) 
         disabled={isDeleting}
         onClick={() => void handleClick()}
       >
-        {isDeleting ? "Deleting…" : "Delete"}
+        {isDeleting ? <T id="shell.copy.deleting" /> : <T id="shell.copy.delete" />}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }

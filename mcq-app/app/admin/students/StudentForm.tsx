@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { usePhrase } from "@/app/admin/usePhrase";
+
 import { useRef, useState } from "react";
 
 import { SubmitButton } from "@/components/ui/button";
@@ -23,6 +26,7 @@ export function StudentForm({ action }: StudentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const tx = usePhrase();
 
   async function submit(formData: FormData) {
     setError(null);
@@ -66,7 +70,7 @@ export function StudentForm({ action }: StudentFormProps) {
       />
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Full English name</Label>
+        <Label htmlFor="name"><T id="students.page.fullEnglish" /></Label>
         <Input
           id="name"
           name="name"
@@ -79,7 +83,7 @@ export function StudentForm({ action }: StudentFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="chinese_name">Chinese name</Label>
+        <Label htmlFor="chinese_name"><T id="students.page.chineseNameField" /></Label>
         <Input
           id="chinese_name"
           name="chinese_name"
@@ -87,11 +91,11 @@ export function StudentForm({ action }: StudentFormProps) {
           onChange={(event) => setChineseName(event.target.value)}
           autoComplete="off"
         />
-        <p className="text-sm text-muted-foreground">Optional.</p>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.optional" /></p>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="application_number">提交編號</Label>
+        <Label htmlFor="application_number"><T id="students.page.code" /></Label>
         <Input
           id="application_number"
           name="application_number"
@@ -104,12 +108,10 @@ export function StudentForm({ action }: StudentFormProps) {
         />
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
+      {success ? <p className="text-sm text-muted-foreground"><TText text={success} /></p> : null}
 
-      <SubmitButton type="submit" variant="outline" pendingLabel="Adding…">
-        Add student
-      </SubmitButton>
+      <SubmitButton type="submit" variant="outline" pendingLabel={tx("Adding…")}><T id="students.page.addStudent" /></SubmitButton>
     </form>
   );
 }

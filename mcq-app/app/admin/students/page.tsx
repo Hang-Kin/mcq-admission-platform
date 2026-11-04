@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import { createClient } from "@/lib/supabase/server";
 
 import { formatAddedAt } from "./addedAt";
@@ -61,13 +62,9 @@ export default async function AdminStudentsPage({
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-4">
-        <h1 className="text-2xl">Students</h1>
+        <h1 className="text-2xl"><T id="shell.nav.students" /></h1>
         <ImportStudentsLink />
-        <p className="text-sm text-muted-foreground">
-          Each student is one intake and one 提交編號. The code is four digits
-          and can be used again in a later intake. Import a spreadsheet, or add
-          one student below.
-        </p>
+        <p className="text-sm text-muted-foreground"><T id="students.page.intro" /></p>
       </div>
 
       {!intakeReady ? (
@@ -79,27 +76,27 @@ export default async function AdminStudentsPage({
       )}
 
       <section className="space-y-2">
-        <h2 className="text-lg">Add one student</h2>
+        <h2 className="text-lg"><T id="students.page.addOne" /></h2>
         <StudentForm action={createStudent} />
       </section>
 
-      <h2 className="text-lg">Roster</h2>
+      <h2 className="text-lg"><T id="students.page.roster" /></h2>
       {error ? (
-        <p className="text-sm text-destructive">Failed to load students.</p>
+        <p className="text-sm text-destructive"><T id="students.page.loadFailed" /></p>
       ) : visible.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {selectedIntake ? "No students in this intake." : "No students yet"}
+          {selectedIntake ? <T id="schedule.page.noStudentsIntake" /> : <T id="students.page.noneYet" />}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr>
-                {intakeReady ? <th className="border-b py-3 pr-4">Intake</th> : null}
-                <th className="border-b py-3 pr-4">English Name</th>
-                {intakeReady ? <th className="border-b py-3 pr-4">Chinese Name</th> : null}
-                <th className="border-b py-3 pr-4">提交編號</th>
-                <th className="border-b py-3">Added</th>
+                {intakeReady ? <th className="border-b py-3 pr-4"><T id="shell.copy.intake" /></th> : null}
+                <th className="border-b py-3 pr-4"><T id="students.page.englishName" /></th>
+                {intakeReady ? <th className="border-b py-3 pr-4"><T id="students.page.chineseName" /></th> : null}
+                <th className="border-b py-3 pr-4"><T id="students.page.code" /></th>
+                <th className="border-b py-3"><T id="students.page.added" /></th>
               </tr>
             </thead>
             <tbody>

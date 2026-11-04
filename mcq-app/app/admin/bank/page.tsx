@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import {
@@ -27,7 +28,7 @@ export default async function QuestionBankPage({
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-4">
-        <h1 className="text-2xl">Questions</h1>
+        <h1 className="text-2xl"><T id="shell.nav.questions" /></h1>
         <QuestionTabs settings={settings} />
       </div>
       {settings ? <SettingsTab /> : <QuestionsTab />}
@@ -53,12 +54,10 @@ async function QuestionsTab() {
 
   return (
     <>
-      <p className="max-w-2xl text-sm text-muted-foreground">
-        Choose Math or Chinese, then open a topic to add questions.
-      </p>
+      <p className="max-w-2xl text-sm text-muted-foreground"><T id="shell.copy.bankIntro" /></p>
       {missing ? <WaitingNote /> : null}
       {error && !missing ? (
-        <p className="text-sm text-destructive">Could not load the question bank.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.bankFailed" /></p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         {SUBJECTS.map((subject) => {
@@ -71,9 +70,9 @@ async function QuestionsTab() {
             >
               <Card className="h-full min-h-44 hover:border-primary">
                 <CardHeader className="gap-3 p-8">
-                  <CardTitle className="text-3xl">{subject.title}</CardTitle>
+                  <CardTitle className="text-3xl"><TText text={subject.title} /></CardTitle>
                   <CardDescription className="text-base leading-7">
-                    {subject.description}
+                    <TText text={subject.description} />
                   </CardDescription>
                   {count != null ? (
                     <p className="text-sm text-muted-foreground">
@@ -93,10 +92,7 @@ async function QuestionsTab() {
 function SettingsTab() {
   return (
     <>
-      <p className="max-w-2xl text-sm text-muted-foreground">
-        Choose how many questions come from each topic, and how many minutes
-        students get.
-      </p>
+      <p className="max-w-2xl text-sm text-muted-foreground"><T id="shell.copy.settingsTabIntro" /></p>
       <SettingsBody />
     </>
   );

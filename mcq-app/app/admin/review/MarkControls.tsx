@@ -1,5 +1,7 @@
 "use client";
 
+import { TText } from "@/app/admin/T";
+
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -31,9 +33,9 @@ export function ConfirmAllButton({
     <form action={action} className="space-y-2">
       <input type="hidden" name="instance_id" value={instanceId} />
       <Button type="submit" disabled={pending || !markingReady || count === 0}>
-        {pending ? labels.saving : labels.confirmAll(count)}
+        {pending ? <TText text={labels.saving} /> : <TText text={labels.confirmAll(count)} />}
       </Button>
-      <p className="text-sm text-muted-foreground">{labels.confirmAllDetail(count)}</p>
+      <p className="text-sm text-muted-foreground"><TText text={labels.confirmAllDetail(count)} /></p>
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
     </form>
   );
@@ -68,7 +70,7 @@ export function QuestionMarkControls({
           <input type="hidden" name="id" value={responseId} />
           <input type="hidden" name="instance_id" value={instanceId} />
           <Button type="submit" variant="outline" disabled={pending || !markingReady}>
-            {confirmPending ? labels.saving : labels.confirm}
+            {confirmPending ? <TText text={labels.saving} /> : <TText text={labels.confirm} />}
           </Button>
         </form>
         <Button
@@ -78,27 +80,27 @@ export function QuestionMarkControls({
           disabled={!markingReady}
           onClick={() => setOpen((current) => !current)}
         >
-          {labels.edit}
+          <TText text={labels.edit} />
         </Button>
       </div>
-      {overridden ? <p className="text-sm text-muted-foreground">{labels.confirmClearsOverride}</p> : null}
+      {overridden ? <p className="text-sm text-muted-foreground"><TText text={labels.confirmClearsOverride} /></p> : null}
       {open ? (
         <form action={editAction} className="space-y-3">
           <input type="hidden" name="id" value={responseId} />
           <input type="hidden" name="instance_id" value={instanceId} />
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">{labels.editLegend}</legend>
+            <legend className="text-sm font-medium"><TText text={labels.editLegend} /></legend>
             <label className="flex items-center gap-2 text-sm">
               <input type="radio" name="verdict" value="correct" required />
-              {labels.markCorrect}
+              <TText text={labels.markCorrect} />
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="radio" name="verdict" value="incorrect" required />
-              {labels.markIncorrect}
+              <TText text={labels.markIncorrect} />
             </label>
           </fieldset>
           <label className="flex flex-col gap-2 text-sm">
-            {labels.note}
+            <TText text={labels.note} />
             <textarea
               name="note"
               maxLength={500}
@@ -108,7 +110,7 @@ export function QuestionMarkControls({
             />
           </label>
           <Button type="submit" disabled={pending || !markingReady}>
-            {editPending ? labels.saving : labels.saveEdit}
+            {editPending ? <TText text={labels.saving} /> : <TText text={labels.saveEdit} />}
           </Button>
         </form>
       ) : null}
@@ -134,7 +136,13 @@ export function FinalizeControl({
       <input type="hidden" name="exam_id" value={examId} />
       <input type="hidden" name="instance_id" value={instanceId} />
       <Button type="submit" disabled={pending}>
-        {pending ? labels.finalizing : alreadyFinalized ? labels.refinalize : labels.finalize}
+        {pending ? (
+          <TText text={labels.finalizing} />
+        ) : alreadyFinalized ? (
+          <TText text={labels.refinalize} />
+        ) : (
+          <TText text={labels.finalize} />
+        )}
       </Button>
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
       {state?.message ? <p className="text-sm text-muted-foreground">{state.message}</p> : null}

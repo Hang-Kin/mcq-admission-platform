@@ -9,6 +9,13 @@ import { Window } from "happy-dom";
 import { formatAddedAt } from "./addedAt.ts";
 import { manualStudentInsert, parseManualStudent } from "./manualStudent.ts";
 
+function englishText(node: Element | null | undefined): string {
+  if (!node) return "";
+  const parts = [...node.querySelectorAll(".shell-en")];
+  if (parts.length === 0) return node.textContent ?? "";
+  return parts.map((part) => part.textContent ?? "").join("");
+}
+
 const require = createRequire(import.meta.url);
 const ts = require("typescript") as typeof import("typescript");
 const appRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -304,14 +311,14 @@ test("Import is the first and primary control on Students", async () => {
   });
   const link = container.querySelector("a");
   assert.equal(link?.getAttribute("href"), "/admin/students/import");
-  assert.equal(link?.textContent, "Import");
+  assert.equal(englishText(link), "Import");
   assert.match(link?.className ?? "", /bg-primary/);
   assert.match(link?.className ?? "", /h-12/);
   linkPending = true;
   await act(async () => {
     root.render(createElement(ImportStudentsLink));
   });
-  assert.equal(link?.textContent, "Opening…");
+  assert.equal(englishText(link), "Opening…");
   assert.equal(link?.querySelector("[data-pending-spinner]")?.getAttribute("aria-hidden"), "true");
   await act(async () => {
     root.unmount();
@@ -329,7 +336,7 @@ test("Show stays pending after the filter is submitted", async () => {
     root.render(createElement(IntakeFilterForm, { intakes: ["2027-09"], selectedIntake: "" }));
   });
   const button = container.querySelector("button");
-  assert.equal(button?.textContent, "Show");
+  assert.equal(englishText(button), "Show");
   await act(async () => {
     button?.click();
   });
@@ -375,7 +382,7 @@ test("Add student sends the Chinese name and shows Adding… while it saves", { 
   });
 
   const button = container.querySelector("button");
-  assert.equal(button?.textContent, "Add student");
+  assert.equal(englishText(button), "Add student");
   assert.match(button?.className ?? "", /border-input/);
 
   async function saveCurrentStudent() {
@@ -410,7 +417,7 @@ test("Add student sends the Chinese name and shows Adding… while it saves", { 
   assert.equal(saved[0]?.get("intake_year"), "2027");
   assert.equal(saved[0]?.get("intake_month"), "09");
   assert.match(container.textContent ?? "", /Added Ada Lovelace \(0101\), 陳大文, 2027 September Entry/);
-  assert.equal(button?.textContent, "Add student");
+  assert.equal(englishText(button), "Add student");
   assert.equal((container.querySelector("#chinese_name") as HTMLInputElement).value, "");
 
   await act(async () => {

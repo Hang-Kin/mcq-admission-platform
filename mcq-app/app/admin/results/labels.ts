@@ -38,7 +38,7 @@ export const labels = {
     "Teacher marking is waiting for a database update. Nothing was saved.",
   confirmClearsOverride: "Confirm accepts the system mark and clears an override.",
   railLegend:
-    "Light green is correct. Red is incorrect. Grey is not graded. A ring means confirmed. A dark left edge means overridden.",
+    "Filled colour is correct. Red is incorrect. Plain is not graded. A ring means confirmed. A bar on the left means overridden.",
   questionRail: "Question numbers",
   countsAs: "This question counts as",
   score: "Score",

@@ -1,5 +1,7 @@
 "use client";
 
+import { TText } from "@/app/admin/T";
+
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -69,14 +71,14 @@ export function DeleteTestData({
         disabled={pending !== null}
         onClick={() => void openPanel()}
       >
-        {pending === "count" ? labels.countingTestData : labels.deleteTestData}
+        {pending === "count" ? <TText text={labels.countingTestData} /> : <TText text={labels.deleteTestData} />}
       </Button>
       {open && summary ? (
         <div className="max-w-xl space-y-3 rounded-md border border-destructive p-4">
-          <p className="text-sm">{summary}</p>
+          <p className="text-sm"><TText text={summary} /></p>
           <p className="text-sm text-muted-foreground">{title}</p>
           <div className="flex flex-col gap-2">
-            <Label htmlFor={inputId}>{labels.deleteWordLabel}</Label>
+            <Label htmlFor={inputId}><TText text={labels.deleteWordLabel} /></Label>
             <Input
               id={inputId}
               value={typed}
@@ -91,11 +93,11 @@ export function DeleteTestData({
             disabled={!canConfirmDelete(typed) || pending !== null}
             onClick={() => void confirmDelete()}
           >
-            {pending === "delete" ? labels.deletingTestData : labels.deleteTestData}
+            {pending === "delete" ? <TText text={labels.deletingTestData} /> : <TText text={labels.deleteTestData} />}
           </Button>
         </div>
       ) : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
     </div>
   );
 }

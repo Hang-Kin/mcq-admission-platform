@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import { notFound } from "next/navigation";
 
 import { BankTrail, WaitingNote } from "../../BankTrail";
@@ -31,15 +32,12 @@ export default async function UnfiledQuestionsPage({
             { label: "No topic yet" },
           ]}
         />
-        <h1 className="text-2xl">No topic yet</h1>
-        <p className="text-sm text-muted-foreground">
-          These older questions are not used when a sitting is prepared. Edit one
-          to give it a topic.
-        </p>
+        <h1 className="text-2xl"><T id="shell.copy.noTopicYet" /></h1>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.olderHelp" /></p>
       </div>
       {bank.missing ? <WaitingNote /> : null}
       {bank.loadFailed ? (
-        <p className="text-sm text-destructive">Could not load questions.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.couldNotLoadQuestions" /></p>
       ) : null}
       {!bank.missing && !bank.loadFailed ? (
         <QuestionList

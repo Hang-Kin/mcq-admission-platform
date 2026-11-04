@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
@@ -121,30 +122,26 @@ export default async function ExamSectionsPage({
   return (
     <main className="space-y-8">
       {examError || !exam ? (
-        <h1 className="text-2xl">Exam not found</h1>
+        <h1 className="text-2xl"><T id="shell.copy.examNotFound" /></h1>
       ) : (
         <>
           <header className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              <Link href="/admin/exams" className="hover:underline">
-                Exams
-              </Link>
+              <Link href="/admin/exams" className="hover:underline"><T id="shell.group.exams" /></Link>
               {" · "}
-              <Link href={`/admin/exams/${exam.id}/qr`} className="hover:underline">
-                QR codes
-              </Link>
+              <Link href={`/admin/exams/${exam.id}/qr`} className="hover:underline"><T id="shell.item.checklistCodes" /></Link>
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
-            <p className="text-sm text-muted-foreground">Sections</p>
+            <p className="text-sm text-muted-foreground"><T id="shell.copy.sections" /></p>
             <p className="max-w-2xl text-sm text-muted-foreground">
               {startedUnknown
                 ? "These minutes cannot be changed until we know whether a student has started."
                 : minutesMessage}{" "}
               <Link href="/admin/bank?tab=settings" className="hover:underline">
-                {labels.subjectSettingsLink}
+                <TText text={labels.subjectSettingsLink} />
               </Link>
             </p>
-            <p className="max-w-2xl text-sm text-muted-foreground">{labels.sectionsIntro}</p>
+            <p className="max-w-2xl text-sm text-muted-foreground"><TText text={labels.sectionsIntro} /></p>
             {startedUnknown ? (
               <p className="text-sm text-destructive">
                 Could not check whether a student has started, so the minutes cannot be changed.
