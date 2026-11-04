@@ -1,5 +1,8 @@
 "use client";
 
+import { TText } from "@/app/admin/T";
+import { usePhrase } from "@/app/admin/usePhrase";
+
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,25 +47,26 @@ export function SittingDayGrid({
   }, [draftDay]);
 
   const timeline = buildDayTimeline({ day, slots, clashSlots, draft });
+  const tx = usePhrase();
 
   return (
-    <section className="space-y-3" aria-label={labels.dayView}>
+    <section className="space-y-3" aria-label={tx(labels.dayView)}>
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="text-base">{labels.dayView}</h3>
+        <h3 className="text-base"><TText text={labels.dayView} /></h3>
         <Button type="button" variant="outline" size="sm" onClick={() => setDay((current) => shiftDayKey(current, -1))}>
-          {labels.previousDay}
+          <TText text={labels.previousDay} />
         </Button>
         <p className="text-sm">{formatDayKey(day)}</p>
         <Button type="button" variant="outline" size="sm" onClick={() => setDay((current) => shiftDayKey(current, 1))}>
-          {labels.nextDay}
+          <TText text={labels.nextDay} />
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground">{labels.dayViewHelp}</p>
+      <p className="text-sm text-muted-foreground"><TText text={labels.dayViewHelp} /></p>
       {timeline.draftOnAnotherDay ? (
-        <p className="text-sm text-muted-foreground">{labels.draftOnAnotherDay}</p>
+        <p className="text-sm text-muted-foreground"><TText text={labels.draftOnAnotherDay} /></p>
       ) : null}
       {timeline.rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{labels.noSittingsThisDay}</p>
+        <p className="text-sm text-muted-foreground"><TText text={labels.noSittingsThisDay} /></p>
       ) : (
         <div className="overflow-x-auto">
           <div

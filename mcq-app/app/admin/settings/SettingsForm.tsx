@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -61,10 +63,7 @@ export function SettingsForm({ subjects }: { subjects: SubjectSettingValues[] })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <p className="max-w-2xl text-sm text-muted-foreground">
-        Exam sections use these minutes until a student starts. After a student
-        starts, that exam keeps its minutes.
-      </p>
+      <p className="max-w-2xl text-sm text-muted-foreground"><T id="shell.copy.settingsLock" /></p>
       <div className="grid gap-4 lg:grid-cols-2">
         {subjects.map((subject) => {
           const perTopic = parsePositiveInteger(
@@ -77,12 +76,12 @@ export function SettingsForm({ subjects }: { subjects: SubjectSettingValues[] })
           return (
             <Card key={subject.id} className="min-h-64">
               <CardHeader>
-                <CardTitle className="text-2xl">{subject.title}</CardTitle>
-                <CardDescription className="text-base">{total}</CardDescription>
+                <CardTitle className="text-2xl"><TText text={subject.title} /></CardTitle>
+                <CardDescription className="text-base"><TText text={total} /></CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor={`${subject.id}-questions`}>Questions per topic</Label>
+                  <Label htmlFor={`${subject.id}-questions`}><T id="shell.copy.questionsPerTopic" /></Label>
                   <Input
                     id={`${subject.id}-questions`}
                     inputMode="numeric"
@@ -97,7 +96,7 @@ export function SettingsForm({ subjects }: { subjects: SubjectSettingValues[] })
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor={`${subject.id}-minutes`}>Time (minutes)</Label>
+                  <Label htmlFor={`${subject.id}-minutes`}><T id="shell.copy.timeMinutes" /></Label>
                   <Input
                     id={`${subject.id}-minutes`}
                     inputMode="numeric"
@@ -116,14 +115,14 @@ export function SettingsForm({ subjects }: { subjects: SubjectSettingValues[] })
           );
         })}
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       {success ? (
         <p className="text-sm text-primary" role="status">
-          {success}
+          <TText text={success} />
         </p>
       ) : null}
       <Button type="submit" className="h-12 px-5 text-base" disabled={isSubmitting}>
-        {isSubmitting ? "Saving…" : "Save"}
+        {isSubmitting ? <T id="shell.copy.saving" /> : <T id="shell.copy.save" />}
       </Button>
     </form>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { T } from "@/app/admin/T";
+
 import Link, { useLinkStatus } from "next/link";
 
 import { Button, ButtonSpinner } from "@/components/ui/button";
@@ -16,11 +18,9 @@ export function ImportStudentsLink() {
 
 function ImportStudentsLinkLabel() {
   const { pending } = useLinkStatus();
-  if (!pending) return "Import";
+  if (!pending) return <T id="shell.copy.import" />;
   return (
     <span className="inline-flex items-center gap-2" aria-busy="true">
-      <ButtonSpinner />
-      Opening…
-    </span>
+      <ButtonSpinner /><T id="shell.copy.opening" /></span>
   );
 }

@@ -1,3 +1,4 @@
+import { TText } from "@/app/admin/T";
 import type { ReactNode } from "react";
 
 import { MathText } from "@/components/MathText";
@@ -28,7 +29,7 @@ function AnswerText({
   text: string;
   subject: string | null;
   category: string;
-  empty: string;
+  empty: ReactNode;
 }) {
   if (!text.trim()) return empty;
   return <MathText text={text} subject={subject} category={category} />;
@@ -72,12 +73,12 @@ export function ReviewPaper({
       <div className="min-w-0 flex-1 space-y-8 px-5 py-10 sm:px-8">
         {header}
         {questions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{labels.noQuestions}</p>
+          <p className="text-sm text-muted-foreground"><TText text={labels.noQuestions} /></p>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">{labels.railLegend}</p>
+            <p className="text-sm text-muted-foreground"><TText text={labels.railLegend} /></p>
             {!markingReady ? (
-              <p className="text-sm text-muted-foreground">{labels.markingWaiting}</p>
+              <p className="text-sm text-muted-foreground"><TText text={labels.markingWaiting} /></p>
             ) : (
               <ConfirmAllButton
                 instanceId={instanceId}
@@ -127,18 +128,18 @@ export function ReviewPaper({
                           : "space-y-2 rounded-md border bg-muted/40 p-4"
                       }
                     >
-                      <p className="text-sm font-medium">{labels.studentAnswer}</p>
+                      <p className="text-sm font-medium"><TText text={labels.studentAnswer} /></p>
                       <p className="whitespace-pre-wrap text-base">
                         <AnswerText
                           text={question.studentAnswer}
                           subject={question.subject}
                           category={question.category}
-                          empty={labels.emptyAnswer}
+                          empty={<TText text={labels.emptyAnswer} />}
                         />
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">{labels.systemJudgement}</p>
+                      <p className="text-sm font-medium"><TText text={labels.systemJudgement} /></p>
                       {question.systemKnown ? (
                         <Badge
                           variant="outline"
@@ -148,41 +149,43 @@ export function ReviewPaper({
                               : question.systemVerdict,
                           )}
                         >
-                          {systemText}
+                          <TText text={systemText} />
                         </Badge>
                       ) : (
-                        <p className="text-sm text-muted-foreground">{labels.systemUnknown}</p>
+                        <p className="text-sm text-muted-foreground"><TText text={labels.systemUnknown} /></p>
                       )}
                     </div>
                     <div className="space-y-2 rounded-md border p-4">
-                      <p className="text-sm font-medium">{labels.correctAnswer}</p>
+                      <p className="text-sm font-medium"><TText text={labels.correctAnswer} /></p>
                       <p className="whitespace-pre-wrap text-base">
                         <AnswerText
                           text={question.correctAnswer}
                           subject={question.subject}
                           category={question.category}
-                          empty={labels.noCorrectAnswer}
+                          empty={<TText text={labels.noCorrectAnswer} />}
                         />
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">{labels.teacherState}</p>
+                      <p className="text-sm font-medium"><TText text={labels.teacherState} /></p>
                       <p className="text-sm">
-                        {teacherStateLabel({
-                          state: question.teacherState,
-                          who: question.markedByLabel,
-                          when: formatHongKongDateTime(question.markedAt),
-                        })}
+                        <TText
+                          text={teacherStateLabel({
+                            state: question.teacherState,
+                            who: question.markedByLabel,
+                            when: formatHongKongDateTime(question.markedAt),
+                          })}
+                        />
                       </p>
                       {question.note ? (
                         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{question.note}</p>
                       ) : null}
                       {question.teacherState === "overridden" ? (
                         <p className="text-sm text-muted-foreground">
-                          {labels.countsAs} {markWord(question.finalCorrect)}.
+                          <TText text={`${labels.countsAs} ${markWord(question.finalCorrect)}.`} />
                         </p>
                       ) : null}
-                      {question.needsReview ? <Badge variant="outline">{labels.needsTeacher}</Badge> : null}
+                      {question.needsReview ? <Badge variant="outline"><TText text={labels.needsTeacher} /></Badge> : null}
                     </div>
                     {question.responseId ? (
                       <QuestionMarkControls
@@ -192,7 +195,7 @@ export function ReviewPaper({
                         overridden={question.teacherState === "overridden"}
                       />
                     ) : (
-                      <p className="text-sm text-muted-foreground">{labels.noStoredAnswer}</p>
+                      <p className="text-sm text-muted-foreground"><TText text={labels.noStoredAnswer} /></p>
                     )}
                   </li>
                 );

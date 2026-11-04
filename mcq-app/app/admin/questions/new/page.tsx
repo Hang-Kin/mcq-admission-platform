@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
@@ -21,11 +22,9 @@ export default async function NewQuestionPage({
     <main className="space-y-8">
       <div className="space-y-2">
         <p className="text-sm">
-          <Link href="/admin/questions" className="hover:underline">
-            Questions
-          </Link>
+          <Link href="/admin/questions" className="hover:underline"><T id="shell.nav.questions" /></Link>
         </p>
-        <h1 className="text-2xl">New question</h1>
+        <h1 className="text-2xl"><T id="shell.copy.newQuestion" /></h1>
       </div>
       <QuestionForm
         action={createQuestion}

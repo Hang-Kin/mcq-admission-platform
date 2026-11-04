@@ -1,3 +1,5 @@
+import { T } from "@/app/admin/T";
+import { OptionText } from "@/app/admin/usePhrase";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { formatIntakeLabel } from "@/app/admin/students/intakeLabel";
@@ -17,7 +19,7 @@ export function ExportForm({
   return (
     <form action="/admin/results/export" method="get" className="flex flex-wrap items-end gap-3">
       <div className="flex min-w-56 flex-1 flex-col gap-2">
-        <Label htmlFor="export-exam">Exam</Label>
+        <Label htmlFor="export-exam"><T id="shell.copy.exam" /></Label>
         <select
           id="export-exam"
           name="examId"
@@ -25,7 +27,7 @@ export function ExportForm({
           defaultValue={exams.length === 1 ? exams[0]?.id : ""}
           className={fieldClassName}
         >
-          {exams.length === 1 ? null : <option value="">Choose an exam</option>}
+          {exams.length === 1 ? null : <option value=""><OptionText text="Choose an exam" /></option>}
           {exams.map((exam) => (
             <option key={exam.id} value={exam.id}>
               {exam.name}
@@ -35,23 +37,19 @@ export function ExportForm({
       </div>
       {intakeReady ? (
         <div className="flex min-w-56 flex-1 flex-col gap-2">
-          <Label htmlFor="export-intake">Intake</Label>
+          <Label htmlFor="export-intake"><T id="shell.copy.intake" /></Label>
           <select id="export-intake" name="intake" defaultValue="" className={fieldClassName}>
-            <option value="">All intakes</option>
+            <option value=""><OptionText text="All intakes" /></option>
             {intakes.map((intake) => (
               <option key={intake} value={intake}>
-                {formatIntakeLabel(intake) ?? intake}
+                <OptionText text={formatIntakeLabel(intake) ?? intake} />
               </option>
             ))}
           </select>
         </div>
       ) : null}
-      <Button type="submit" name="format" value="xlsx" variant="outline">
-        Export Excel
-      </Button>
-      <Button type="submit" name="format" value="csv" variant="outline">
-        Export CSV
-      </Button>
+      <Button type="submit" name="format" value="xlsx" variant="outline"><T id="results.page.exportExcel" /></Button>
+      <Button type="submit" name="format" value="csv" variant="outline"><T id="results.page.exportCsv" /></Button>
     </form>
   );
 }

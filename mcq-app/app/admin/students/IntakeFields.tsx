@@ -1,6 +1,10 @@
 "use client";
 
+import { T } from "@/app/admin/T";
+
 import { Label } from "@/components/ui/label";
+
+import { OptionText } from "@/app/admin/usePhrase";
 
 import { fieldClassName } from "./fieldClass";
 import { INTAKE_MONTHS, INTAKE_YEARS } from "./intakeLabel";
@@ -24,7 +28,7 @@ export function IntakeFields({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="flex flex-col gap-2">
-        <Label htmlFor={yearId}>Year</Label>
+        <Label htmlFor={yearId}><T id="shell.copy.year" /></Label>
         <select
           id={yearId}
           name="intake_year"
@@ -33,7 +37,7 @@ export function IntakeFields({
           value={year}
           onChange={(event) => onYear(event.target.value)}
         >
-          <option value="">Year</option>
+          <option value=""><OptionText text="Year" /></option>
           {INTAKE_YEARS.map((value) => (
             <option key={value} value={value}>
               {value}
@@ -42,7 +46,7 @@ export function IntakeFields({
         </select>
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={monthId}>Month</Label>
+        <Label htmlFor={monthId}><T id="shell.copy.month" /></Label>
         <select
           id={monthId}
           name="intake_month"
@@ -51,10 +55,10 @@ export function IntakeFields({
           value={month}
           onChange={(event) => onMonth(event.target.value)}
         >
-          <option value="">Month</option>
+          <option value=""><OptionText text="Month" /></option>
           {INTAKE_MONTHS.map((item) => (
             <option key={item.value} value={item.value}>
-              {item.label}
+              <OptionText text={item.label} />
             </option>
           ))}
         </select>

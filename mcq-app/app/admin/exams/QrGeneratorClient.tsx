@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { OptionText } from "@/app/admin/usePhrase";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -219,7 +222,7 @@ export function QrGeneratorClient({
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Students</CardTitle>
+          <CardTitle><T id="shell.nav.students" /></CardTitle>
           <CardDescription>
             Create QR codes downloads a PDF for this intake. Students who already
             started are skipped. A student who has not started gets a new code,
@@ -230,7 +233,7 @@ export function QrGeneratorClient({
         <CardContent className="space-y-4">
           {intakes.length > 0 ? (
             <div className="flex max-w-xs flex-col gap-2">
-              <Label htmlFor="qr-intake">Intake</Label>
+              <Label htmlFor="qr-intake"><T id="shell.copy.intake" /></Label>
               <select
                 id="qr-intake"
                 className={fieldClassName}
@@ -239,7 +242,7 @@ export function QrGeneratorClient({
               >
                 {intakes.map((value) => (
                   <option key={value} value={value}>
-                    {formatIntakeLabel(value)}
+                    <OptionText text={formatIntakeLabel(value) ?? value} />
                   </option>
                 ))}
               </select>
@@ -249,7 +252,7 @@ export function QrGeneratorClient({
             Select all pending for this intake
           </Button>
           {visible.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No students in this intake.</p>
+            <p className="text-sm text-muted-foreground"><T id="schedule.page.noStudentsIntake" /></p>
           ) : (
             <ul className="space-y-3">
               {visible.map((student) => {
@@ -267,8 +270,13 @@ export function QrGeneratorClient({
                       <span className="block text-sm text-muted-foreground">
                         {intakeIdentity(student)}
                         {" · "}
-                        {statusLabel(student.instanceStatus, plainLanguage)}
-                        {blocked ? " — a new code will skip this student" : ""}
+                        <TText text={statusLabel(student.instanceStatus, plainLanguage)} />
+                        {blocked ? (
+                          <>
+                            {" — "}
+                            <TText text="a new code will skip this student" />
+                          </>
+                        ) : null}
                       </span>
                     </Label>
                   </li>
@@ -283,7 +291,7 @@ export function QrGeneratorClient({
         <Card>
           <CardContent className="space-y-4">
             {plainLanguage ? (
-              <p>Math and Chinese are already set. Choose the intake and the students, then download the PDF.</p>
+              <p><T id="schedule.page.plainCodes" /></p>
             ) : (
               <p>
                 This exam uses sections — question sets are configured on the{" "}
@@ -293,8 +301,8 @@ export function QrGeneratorClient({
                 .
               </p>
             )}
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            {message ? <p className="text-sm text-foreground">{message}</p> : null}
+            {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
+            {message ? <p className="text-sm text-foreground"><TText text={message} /></p> : null}
             <div className="flex flex-wrap gap-3">
               <Button
                 type="button"
@@ -303,7 +311,7 @@ export function QrGeneratorClient({
                 disabled={isWorking}
                 onClick={() => void downloadPdf("create")}
               >
-                {isWorking ? "Working…" : "Create QR codes"}
+                {isWorking ? <T id="shell.copy.working" /> : <T id="schedule.page.createCodes" />}
               </Button>
               <Button
                 type="button"
@@ -311,16 +319,14 @@ export function QrGeneratorClient({
                 className={plainLanguage ? "h-12 px-5 text-base" : undefined}
                 disabled={isWorking}
                 onClick={() => void downloadPdf("download")}
-              >
-                Download PDF
-              </Button>
+              ><T id="schedule.page.downloadPdf" /></Button>
             </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Question draw</CardTitle>
+            <CardTitle><T id="schedule.page.questionDraw" /></CardTitle>
             <CardDescription>
               {availableQuestionCount} question
               {availableQuestionCount === 1 ? "" : "s"} in the selected set(s).
@@ -328,7 +334,7 @@ export function QrGeneratorClient({
           </CardHeader>
           <CardContent className="space-y-4">
             {questionSets.length === 0 ? (
-              <p>No question sets found.</p>
+              <p><T id="schedule.page.noSets" /></p>
             ) : (
               <ul className="space-y-3">
                 {questionSets.map((set) => {
@@ -349,7 +355,7 @@ export function QrGeneratorClient({
               </ul>
             )}
             <div className="max-w-xs space-y-2">
-              <Label htmlFor="question-count">Questions per student</Label>
+              <Label htmlFor="question-count"><T id="schedule.page.perStudent" /></Label>
               <Input
                 id="question-count"
                 inputMode="numeric"
@@ -357,15 +363,13 @@ export function QrGeneratorClient({
                 onChange={(event) => setQuestionCount(event.target.value)}
               />
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            {message ? <p className="text-sm text-foreground">{message}</p> : null}
+            {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
+            {message ? <p className="text-sm text-foreground"><TText text={message} /></p> : null}
             <div className="flex flex-wrap gap-3">
               <Button type="button" disabled={isWorking} onClick={() => void downloadPdf("create")}>
-                {isWorking ? "Working…" : "Create QR codes"}
+                {isWorking ? <T id="shell.copy.working" /> : <T id="schedule.page.createCodes" />}
               </Button>
-              <Button type="button" variant="outline" disabled={isWorking} onClick={() => void downloadPdf("download")}>
-                Download PDF
-              </Button>
+              <Button type="button" variant="outline" disabled={isWorking} onClick={() => void downloadPdf("download")}><T id="schedule.page.downloadPdf" /></Button>
             </div>
           </CardContent>
         </Card>

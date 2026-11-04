@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -99,17 +100,15 @@ export default async function ExamGradesPage({
   return (
     <main className="space-y-8">
       {examError || !exam ? (
-        <h1 className="text-2xl">Exam not found</h1>
+        <h1 className="text-2xl"><T id="shell.copy.examNotFound" /></h1>
       ) : (
         <>
           <header className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              <Link href="/admin/exams" className="hover:underline">
-                Exams
-              </Link>
+              <Link href="/admin/exams" className="hover:underline"><T id="shell.group.exams" /></Link>
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
-            <p className="text-sm text-muted-foreground">Grades</p>
+            <p className="text-sm text-muted-foreground"><T id="shell.copy.grades" /></p>
           </header>
 
           {instancesError ? (
@@ -125,10 +124,10 @@ export default async function ExamGradesPage({
             <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
               <thead>
                 <tr>
-                  <th className="border-b py-3 pr-4">Student</th>
-                  <th className="border-b py-3 pr-4">Application number</th>
-                  <th className="border-b py-3 pr-4">Score</th>
-                  <th className="border-b py-3">Grade</th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.student" /></th>
+                  <th className="border-b py-3 pr-4"><T id="schedule.page.application" /></th>
+                  <th className="border-b py-3 pr-4"><T id="shell.copy.score" /></th>
+                  <th className="border-b py-3"><T id="shell.copy.grade" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -153,10 +152,10 @@ export default async function ExamGradesPage({
                         {row.grade ? (
                           <Badge>Finalized {Number(row.grade.final_grade)}%</Badge>
                         ) : (
-                          <Badge variant="secondary">Not finalized</Badge>
+                          <Badge variant="secondary"><T id="schedule.page.notFinalized" /></Badge>
                         )}
                         {row.stale ? (
-                          <Badge variant="destructive">Changed since finalize</Badge>
+                          <Badge variant="destructive"><T id="schedule.page.changedSince" /></Badge>
                         ) : null}
                       </div>
                     </td>

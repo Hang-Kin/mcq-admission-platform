@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import { notFound } from "next/navigation";
 
 import { createBankQuestion } from "../../../actions";
@@ -36,10 +37,8 @@ export default async function NewBankQuestionPage({
             { label: "Add question" },
           ]}
         />
-        <h1 className="text-2xl">Add question</h1>
-        <p className="text-sm text-muted-foreground">
-          The form clears after a question is saved, so you can enter the next one.
-        </p>
+        <h1 className="text-2xl"><T id="shell.copy.addQuestion" /></h1>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.formClears" /></p>
       </div>
       <BankQuestionForm subject={subject} topic={topic.name} action={createBankQuestion} />
     </main>

@@ -1,3 +1,4 @@
+import { TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { labels, markWord } from "@/app/admin/results/labels";
@@ -32,7 +33,7 @@ export default async function RegradeQuestionPage({
   if (!staff.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.regradeTitle}</h1>
+        <h1 className="text-2xl"><TText text={labels.regradeTitle} /></h1>
         <p className="text-sm text-muted-foreground">{staff.error}</p>
       </main>
     );
@@ -41,8 +42,8 @@ export default async function RegradeQuestionPage({
   if (!UUID_RE.test(questionId)) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.regradeTitle}</h1>
-        <p className="text-sm text-muted-foreground">{labels.questionNotFound}</p>
+        <h1 className="text-2xl"><TText text={labels.regradeTitle} /></h1>
+        <p className="text-sm text-muted-foreground"><TText text={labels.questionNotFound} /></p>
       </main>
     );
   }
@@ -51,7 +52,7 @@ export default async function RegradeQuestionPage({
   if (!loaded.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.regradeTitle}</h1>
+        <h1 className="text-2xl"><TText text={labels.regradeTitle} /></h1>
         <p className="text-sm text-destructive">{loaded.error}</p>
       </main>
     );
@@ -72,39 +73,39 @@ export default async function RegradeQuestionPage({
       <header className="space-y-2">
         <p className="flex flex-wrap gap-4 text-sm">
           <Link href={`/admin/questions/${questionId}/edit`} className="hover:underline">
-            {labels.editQuestion}
+            <TText text={labels.editQuestion} />
           </Link>
           <Link href="/admin/review" className="hover:underline">
-            {labels.backToResults}
+            <TText text={labels.backToResults} />
           </Link>
         </p>
-        <h1 className="text-2xl">{labels.regradeTitle}</h1>
+        <h1 className="text-2xl"><TText text={labels.regradeTitle} /></h1>
         <p className="max-w-2xl text-sm text-muted-foreground">{loaded.question.text}</p>
       </header>
 
       {done && Number.isFinite(changed) && Number.isFinite(kept) ? (
-        <p className="text-sm">{labels.regradeDone(changed, kept)}</p>
+        <p className="text-sm"><TText text={labels.regradeDone(changed, kept)} /></p>
       ) : (
-        <p className="max-w-2xl text-sm text-muted-foreground">{labels.regradeNotYet}</p>
+        <p className="max-w-2xl text-sm text-muted-foreground"><TText text={labels.regradeNotYet} /></p>
       )}
 
       {!loaded.markingReady ? (
-        <p className="text-sm text-muted-foreground">{labels.markingWaiting}</p>
+        <p className="text-sm text-muted-foreground"><TText text={labels.markingWaiting} /></p>
       ) : null}
 
       <section className="max-w-2xl space-y-2 text-sm">
         {beforeKnown ? (
           <p>
-            <span className="font-medium">{labels.previousCorrect}: </span>
+            <span className="font-medium"><TText text={labels.previousCorrect} />: </span>
             {beforeNull ? labels.noCorrectAnswer : answerText(before)}
           </p>
         ) : null}
         <p>
-          <span className="font-medium">{labels.newCorrect}: </span>
+          <span className="font-medium"><TText text={labels.newCorrect} />: </span>
           {answerText(loaded.question.correctAnswer)}
         </p>
-        <p>{labels.wouldChange(preview.students, preview.changes.length)}</p>
-        <p>{labels.preservedOverrides(preview.preservedOverrides)}</p>
+        <p><TText text={labels.wouldChange(preview.students, preview.changes.length)} /></p>
+        <p><TText text={labels.preservedOverrides(preview.preservedOverrides)} /></p>
       </section>
 
       {preview.changes.length > 0 ? (
@@ -112,10 +113,10 @@ export default async function RegradeQuestionPage({
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr>
-                <th className="border-b py-3 pr-4">{labels.student}</th>
-                <th className="border-b py-3 pr-4">{labels.answer}</th>
-                <th className="border-b py-3 pr-4">{labels.now}</th>
-                <th className="border-b py-3">{labels.after}</th>
+                <th className="border-b py-3 pr-4"><TText text={labels.student} /></th>
+                <th className="border-b py-3 pr-4"><TText text={labels.answer} /></th>
+                <th className="border-b py-3 pr-4"><TText text={labels.now} /></th>
+                <th className="border-b py-3"><TText text={labels.after} /></th>
               </tr>
             </thead>
             <tbody>

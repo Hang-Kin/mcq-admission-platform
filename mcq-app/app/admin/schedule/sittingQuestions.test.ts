@@ -8,6 +8,13 @@ import { Window } from "happy-dom";
 
 import { groupDrawPreview, type PreviewGroup } from "./scheduleModel.ts";
 
+function englishText(node: Element | null | undefined): string {
+  if (!node) return "";
+  const parts = [...node.querySelectorAll(".shell-en")];
+  if (parts.length === 0) return node.textContent ?? "";
+  return parts.map((part) => part.textContent ?? "").join("");
+}
+
 const require = createRequire(import.meta.url);
 const ts = require("typescript") as typeof import("typescript");
 const appRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -121,7 +128,7 @@ test("activating Show questions reveals only that slot", async () => {
   for (const button of buttons) {
     assert.equal(button.tagName, "BUTTON");
     assert.equal(button.getAttribute("type"), "button");
-    assert.equal(button.textContent, "Show questions");
+    assert.equal(englishText(button), "Show questions");
     assert.equal(button.getAttribute("aria-expanded"), "false");
     assert.equal(document.getElementById(button.getAttribute("aria-controls") ?? ""), null);
   }
@@ -134,9 +141,9 @@ test("activating Show questions reveals only that slot", async () => {
     buttons[0]?.click();
   });
 
-  assert.equal(buttons[0]?.textContent, "Hide questions");
+  assert.equal(englishText(buttons[0]), "Hide questions");
   assert.equal(buttons[0]?.getAttribute("aria-expanded"), "true");
-  assert.equal(buttons[1]?.textContent, "Show questions");
+  assert.equal(englishText(buttons[1]), "Show questions");
   assert.equal(buttons[1]?.getAttribute("aria-expanded"), "false");
   const openPanel = document.getElementById(buttons[0]?.getAttribute("aria-controls") ?? "");
   assert.equal(openPanel?.textContent?.includes("Slot one fraction"), true);
@@ -155,7 +162,7 @@ test("activating Show questions reveals only that slot", async () => {
   await act(async () => {
     buttons[0]?.click();
   });
-  assert.equal(buttons[0]?.textContent, "Show questions");
+  assert.equal(englishText(buttons[0]), "Show questions");
   assert.equal(buttons[0]?.getAttribute("aria-expanded"), "false");
   assert.equal(container.textContent?.includes("First idiom"), false);
   assert.equal(container.textContent?.includes("Slot one fraction"), false);

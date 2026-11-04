@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
@@ -76,18 +77,14 @@ export default async function ExamQrPage({
   return (
     <main className="space-y-8">
       {examError || !exam ? (
-        <h1 className="text-2xl">Exam not found</h1>
+        <h1 className="text-2xl"><T id="shell.copy.examNotFound" /></h1>
       ) : (
         <>
           <header className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              <Link href="/admin/exams" className="hover:underline">
-                Exams
-              </Link>
+              <Link href="/admin/exams" className="hover:underline"><T id="shell.group.exams" /></Link>
               {" · "}
-              <Link href={`/admin/exams/${exam.id}/timeslots`} className="hover:underline">
-                Timeslots
-              </Link>
+              <Link href={`/admin/exams/${exam.id}/timeslots`} className="hover:underline"><T id="schedule.page.timeslots" /></Link>
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
             <p className="text-sm text-muted-foreground">
@@ -100,7 +97,7 @@ export default async function ExamQrPage({
               page until that update is applied.
             </p>
           ) : studentError ? (
-            <p className="text-sm text-destructive">Could not load the students.</p>
+            <p className="text-sm text-destructive"><T id="schedule.page.couldNotLoadStudents" /></p>
           ) : (
             <QrGeneratorClient
               examId={exam.id}

@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ export function QuestionList({
   emptyLabel?: string;
 }) {
   if (questions.length === 0) {
-    return <p className="text-sm text-muted-foreground">{emptyLabel}</p>;
+    return <p className="text-sm text-muted-foreground"><TText text={emptyLabel} /></p>;
   }
 
   return (
@@ -43,15 +44,15 @@ export function QuestionList({
           <div className="min-w-0 space-y-1">
             <p className="text-base text-foreground">{question.question_text}</p>
             <p className="text-sm text-muted-foreground">
-              {answerKindLabel(question.type)}
+              <TText text={answerKindLabel(question.type)} />
               {" · "}
-              {preview(question)}
+              <TText text={preview(question)} />
               {question.image_url ? " · File attached" : ""}
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button asChild variant="outline" className="h-12 px-4 text-base">
-              <Link href={editHref(question.id)}>Edit</Link>
+              <Link href={editHref(question.id)}><T id="shell.copy.edit" /></Link>
             </Button>
             <DeleteBankQuestionButton
               id={question.id}

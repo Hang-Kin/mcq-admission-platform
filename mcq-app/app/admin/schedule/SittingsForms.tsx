@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -43,7 +45,7 @@ export function CreateExamForm({
   return (
     <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="exam-name">Exam name</Label>
+        <Label htmlFor="exam-name"><T id="schedule.page.examName" /></Label>
         <Input
           id="exam-name"
           value={name}
@@ -52,14 +54,14 @@ export function CreateExamForm({
           required
         />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <Button
         type="submit"
         variant={prominent ? "default" : "outline"}
         className="h-12 w-fit px-5 text-base"
         disabled={pending}
       >
-        {pending ? "Creating…" : "Create exam"}
+        {pending ? <T id="shell.copy.creating" /> : <T id="shell.item.createExam" />}
       </Button>
     </form>
   );
@@ -93,14 +95,14 @@ export function AddSubjectsForm({
       <p className="text-sm text-muted-foreground">
         Math and Chinese are not on this exam yet.
       </p>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <Button
         type="submit"
         variant={prominent ? "default" : "outline"}
         className="h-12 px-5 text-base"
         disabled={pending}
       >
-        {pending ? "Adding…" : "Add Math and Chinese"}
+        {pending ? <T id="shell.copy.adding" /> : <T id="schedule.page.addSubjects" />}
       </Button>
     </form>
   );
@@ -166,7 +168,7 @@ export function AddTimeForm({
   return (
     <form onSubmit={onSubmit} className="grid max-w-xl gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="time-name">Name</Label>
+        <Label htmlFor="time-name"><T id="shell.copy.name" /></Label>
         <Input
           id="time-name"
           value={label}
@@ -178,7 +180,7 @@ export function AddTimeForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time-start">Starts (HKT)</Label>
+          <Label htmlFor="time-start"><T id="schedule.page.starts" /></Label>
           <Input
             id="time-start"
             type="datetime-local"
@@ -192,7 +194,7 @@ export function AddTimeForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="time-end">Ends (HKT)</Label>
+          <Label htmlFor="time-end"><T id="schedule.page.ends" /></Label>
           <Input
             id="time-end"
             type="datetime-local"
@@ -206,19 +208,19 @@ export function AddTimeForm({
           />
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">Hong Kong time (HKT).</p>
+      <p className="text-sm text-muted-foreground"><T id="schedule.page.hkt" /></p>
       {examNeedsLabel(examMinutes) ? (
         <p className="text-sm text-muted-foreground">{examNeedsLabel(examMinutes)}</p>
       ) : null}
-      {liveOverlap ? <p className="text-sm text-destructive">{liveOverlap}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {liveOverlap ? <p className="text-sm text-destructive"><TText text={liveOverlap} /></p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <Button
         type="submit"
         variant={prominent ? "default" : "outline"}
         className="h-12 w-fit px-5 text-base"
         disabled={pending}
       >
-        {pending ? "Adding…" : "Add a time"}
+        {pending ? <T id="shell.copy.adding" /> : <T id="schedule.page.addTime" />}
       </Button>
     </form>
   );
@@ -276,7 +278,7 @@ export function EditTimeForm({
   return (
     <form onSubmit={onSubmit} className="grid max-w-xl gap-4 pt-3">
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`edit-name-${sittingId}`}>Name</Label>
+        <Label htmlFor={`edit-name-${sittingId}`}><T id="shell.copy.name" /></Label>
         <Input
           id={`edit-name-${sittingId}`}
           value={label}
@@ -287,7 +289,7 @@ export function EditTimeForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`edit-start-${sittingId}`}>Starts (HKT)</Label>
+          <Label htmlFor={`edit-start-${sittingId}`}><T id="schedule.page.starts" /></Label>
           <Input
             id={`edit-start-${sittingId}`}
             type="datetime-local"
@@ -297,7 +299,7 @@ export function EditTimeForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`edit-end-${sittingId}`}>Ends (HKT)</Label>
+          <Label htmlFor={`edit-end-${sittingId}`}><T id="schedule.page.ends" /></Label>
           <Input
             id={`edit-end-${sittingId}`}
             type="datetime-local"
@@ -307,11 +309,11 @@ export function EditTimeForm({
           />
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">{labels.hongKongTime}</p>
-      {liveOverlap ? <p className="text-sm text-destructive">{liveOverlap}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <p className="text-sm text-muted-foreground"><TText text={labels.hongKongTime} /></p>
+      {liveOverlap ? <p className="text-sm text-destructive"><TText text={liveOverlap} /></p> : null}
+      {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
       <Button type="submit" variant="outline" className="h-12 w-fit px-5 text-base" disabled={pending}>
-        {pending ? labels.savingTime : labels.saveTime}
+        {pending ? <TText text={labels.savingTime} /> : <TText text={labels.saveTime} />}
       </Button>
     </form>
   );

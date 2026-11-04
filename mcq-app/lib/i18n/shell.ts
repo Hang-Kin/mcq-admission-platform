@@ -1,4 +1,6 @@
 import type { Locale } from "./locale";
+import { phraseTree } from "./phraseTree";
+import { shellCopy } from "./shellCopy";
 
 const en = {
   brand: "MCQ Admission",
@@ -36,7 +38,7 @@ const en = {
   settings: {
     title: "Settings",
     language: "Language",
-    languageHelp: "English or Traditional Chinese for the navbar, menus, and this panel.",
+    languageHelp: "English or Traditional Chinese for the navbar, menus, settings, and admin pages.",
     english: "English",
     traditionalChinese: "繁體中文",
     colour: "Colour",
@@ -111,7 +113,7 @@ const zhHant = {
   settings: {
     title: "設定",
     language: "語言",
-    languageHelp: "英文或繁體中文。會更改導覽列、選單和這個面板。",
+    languageHelp: "英文或繁體中文。會更改導覽列、選單、設定和管理頁面。",
     english: "English",
     traditionalChinese: "繁體中文",
     colour: "色彩",
@@ -146,7 +148,7 @@ const zhHant = {
   },
 } satisfies MessageTree<typeof en>;
 
-export const shell: Record<Locale, MessageTree<typeof en>> = {
-  en,
-  "zh-Hant": zhHant,
+export const shell: Record<Locale, MessageTree<typeof en> & Record<string, unknown>> = {
+  en: { ...en, ...phraseTree(shellCopy, "en") },
+  "zh-Hant": { ...zhHant, ...phraseTree(shellCopy, "zh-Hant") },
 };

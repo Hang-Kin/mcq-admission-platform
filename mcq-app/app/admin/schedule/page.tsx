@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -328,7 +329,7 @@ export default async function SchedulePage({
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-2">
-        <h1 className="text-2xl">Sittings</h1>
+        <h1 className="text-2xl"><T id="shell.nav.sittings" /></h1>
         <p className="text-sm text-muted-foreground">
           {selected
             ? `${selected.name?.trim() || "Exam"}. Math, then Chinese. Minutes come from Subject settings.`
@@ -365,13 +366,13 @@ export default async function SchedulePage({
         </p>
       ) : null}
       {resolvedSlots.error ? (
-        <p className="text-sm text-destructive">Could not load the sittings.</p>
+        <p className="text-sm text-destructive"><T id="schedule.page.loadSittings" /></p>
       ) : null}
       {drawsResult.error && !drawsMissing ? (
-        <p className="text-sm text-destructive">Could not load the prepared questions.</p>
+        <p className="text-sm text-destructive"><T id="schedule.page.loadPrepared" /></p>
       ) : null}
       {sectionsResult.error && !subjectColumnMissing ? (
-        <p className="text-sm text-destructive">Could not check Math and Chinese.</p>
+        <p className="text-sm text-destructive"><T id="schedule.page.checkSubjects" /></p>
       ) : null}
       {checkFailed ? (
         <p className="text-sm text-destructive">
@@ -392,13 +393,9 @@ export default async function SchedulePage({
         <CreateExamForm prominent={focus === "create"} />
       ) : (
         <p className="text-sm">
-          <Link href={`/admin/schedule?exam=${selectedId ?? ""}&new=1`} className="hover:underline">
-            Create another exam
-          </Link>
+          <Link href={`/admin/schedule?exam=${selectedId ?? ""}&new=1`} className="hover:underline"><T id="schedule.page.createAnother" /></Link>
           {" · "}
-          <Link href="/admin/exams" className="hover:underline">
-            Exam list
-          </Link>
+          <Link href="/admin/exams" className="hover:underline"><T id="shell.item.examList" /></Link>
         </p>
       )}
 
@@ -409,16 +406,16 @@ export default async function SchedulePage({
       {selected ? (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg">{labels.timesHeading}</h2>
+            <h2 className="text-lg"><TText text={labels.timesHeading} /></h2>
             {archiveSupported ? (
               <Link
                 href={scheduleHref(selectedId, !showArchived)}
                 className="text-sm hover:underline"
               >
-                {showArchived ? labels.hideArchived : labels.showArchived}
+                {showArchived ? <TText text={labels.hideArchived} /> : <TText text={labels.showArchived} />}
               </Link>
             ) : (
-              <p className="text-sm text-muted-foreground">{labels.archiveUnavailable}</p>
+              <p className="text-sm text-muted-foreground"><TText text={labels.archiveUnavailable} /></p>
             )}
           </div>
           {settingsResult.error && !isMissingSchema(settingsResult.error) ? (
@@ -427,7 +424,7 @@ export default async function SchedulePage({
             </p>
           ) : null}
           {overlapWarning ? (
-            <p className="text-sm text-destructive">{overlapWarning}</p>
+            <p className="text-sm text-destructive"><TText text={overlapWarning} /></p>
           ) : null}
           <SittingSchedule
             examId={String(selected.id)}
@@ -439,15 +436,15 @@ export default async function SchedulePage({
             nowMs={nowMs}
           >
             {activeSelected.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No times yet.</p>
+              <p className="text-sm text-muted-foreground"><T id="schedule.page.noTimes" /></p>
             ) : (
               activeSelected.map((slot) => renderSitting(slot, false))
             )}
             {showArchived ? (
               <div className="space-y-4">
-                <h3 className="text-base">{labels.archivedHeading}</h3>
+                <h3 className="text-base"><TText text={labels.archivedHeading} /></h3>
                 {archivedSelected.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{labels.noArchived}</p>
+                  <p className="text-sm text-muted-foreground"><TText text={labels.noArchived} /></p>
                 ) : (
                   archivedSelected.map((slot) => renderSitting(slot, true))
                 )}
@@ -459,17 +456,17 @@ export default async function SchedulePage({
 
       {selected && selectedHasSubjects ? (
         <section id="codes" className="space-y-4">
-          <h2 className="text-lg">QR codes</h2>
+          <h2 className="text-lg"><T id="shell.item.checklistCodes" /></h2>
           {intakeMissing ? (
             <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground">
               QR codes are waiting for a database update. You can leave this
               page until that update is applied.
             </p>
           ) : studentsResult.error || instancesResult.error ? (
-            <p className="text-sm text-destructive">Could not load the codes.</p>
+            <p className="text-sm text-destructive"><T id="schedule.page.loadCodes" /></p>
           ) : students.length === 0 ? (
             <Button asChild variant={focus === "students" ? "default" : "outline"} className="h-12 px-5 text-base">
-              <Link href="/admin/students">Add students</Link>
+              <Link href="/admin/students"><T id="shell.copy.addStudents" /></Link>
             </Button>
           ) : (
             <QrGeneratorClient

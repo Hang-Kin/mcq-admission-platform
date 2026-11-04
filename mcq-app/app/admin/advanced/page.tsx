@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import {
@@ -36,10 +37,8 @@ export default function AdvancedPage() {
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-2">
-        <h1 className="text-2xl">Advanced</h1>
-        <p className="text-sm text-muted-foreground">
-          Older setup screens stay here.
-        </p>
+        <h1 className="text-2xl"><T id="shell.account.advanced" /></h1>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.advancedIntro" /></p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {links.map((link) => (
@@ -50,9 +49,9 @@ export default function AdvancedPage() {
           >
             <Card className="h-full min-h-28 hover:border-primary">
               <CardHeader>
-                <CardTitle className="text-base">{link.title}</CardTitle>
+                <CardTitle className="text-base"><TText text={link.title} /></CardTitle>
                 <CardDescription className="text-base leading-6">
-                  {link.description}
+                  <TText text={link.description} />
                 </CardDescription>
               </CardHeader>
             </Card>

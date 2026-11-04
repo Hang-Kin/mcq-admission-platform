@@ -1,5 +1,8 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+import { phraseNow } from "@/app/admin/usePhrase";
+
 import { useState, type FormEvent, type ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +71,7 @@ export function SittingCard({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (cannotRun) return;
-    if (button.force && !window.confirm(`Replace the questions for ${title}?`)) return;
+    if (button.force && !window.confirm(phraseNow(`Replace the questions for ${title}?`))) return;
     setError(null);
     setIsSubmitting(true);
     const formData = new FormData();
@@ -85,7 +88,7 @@ export function SittingCard({
   async function handleArchive(nextArchived: boolean) {
     if (!examId) return;
     const message = nextArchived ? labels.archiveConfirm(title) : labels.restoreConfirm(title);
-    if (!window.confirm(message)) return;
+    if (!window.confirm(phraseNow(message))) return;
     setError(null);
     setIsArchiving(true);
     const formData = new FormData();
@@ -102,7 +105,7 @@ export function SittingCard({
 
   async function handleDelete() {
     if (!showDelete || !examId) return;
-    if (!window.confirm(labels.deleteTimeConfirm(title))) return;
+    if (!window.confirm(phraseNow(labels.deleteTimeConfirm(title)))) return;
     setError(null);
     setIsDeleting(true);
     const formData = new FormData();
@@ -122,18 +125,18 @@ export function SittingCard({
         <div className="flex flex-wrap items-center gap-3">
           <CardTitle className="text-xl">{title}</CardTitle>
           <Badge variant={status === "Prepared" ? "default" : status === "Locked" ? "outline" : "secondary"}>
-            {status}
+            <TText text={status} />
           </Badge>
-          {archived ? <Badge variant="outline">{labels.archived}</Badge> : null}
+          {archived ? <Badge variant="outline"><TText text={labels.archived} /></Badge> : null}
           {startWarning ? (
-            <Badge variant="destructive">Within 24 hours</Badge>
+            <Badge variant="destructive"><T id="schedule.page.within24" /></Badge>
           ) : null}
         </div>
         <p className="text-sm text-muted-foreground">
           {examName}
           {when ? ` · ${when}` : ""}
         </p>
-        {lengthWarning ? <p className="text-sm text-destructive">{lengthWarning}</p> : null}
+        {lengthWarning ? <p className="text-sm text-destructive"><TText text={lengthWarning} /></p> : null}
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleSubmit}>
@@ -144,7 +147,7 @@ export function SittingCard({
               className="h-12 px-5 text-base"
               disabled={cannotRun || isSubmitting}
             >
-              {isSubmitting ? "Preparing…" : button.label}
+              {isSubmitting ? <TText text="Preparing…" /> : <TText text={button.label} />}
             </Button>
             {showDelete && examId ? (
               <Button
@@ -154,7 +157,7 @@ export function SittingCard({
                 disabled={isDeleting}
                 onClick={() => void handleDelete()}
               >
-                {isDeleting ? "Deleting…" : "Delete"}
+                {isDeleting ? <T id="shell.copy.deleting" /> : <T id="shell.copy.delete" />}
               </Button>
             ) : null}
             {showArchive && examId ? (
@@ -165,7 +168,7 @@ export function SittingCard({
                 disabled={isArchiving}
                 onClick={() => void handleArchive(true)}
               >
-                {isArchiving ? labels.archiving : labels.archive}
+                {isArchiving ? <TText text={labels.archiving} /> : <TText text={labels.archive} />}
               </Button>
             ) : null}
             {showRestore && examId ? (
@@ -176,7 +179,7 @@ export function SittingCard({
                 disabled={isArchiving}
                 onClick={() => void handleArchive(false)}
               >
-                {isArchiving ? labels.restoring : labels.restore}
+                {isArchiving ? <TText text={labels.restoring} /> : <TText text={labels.restore} />}
               </Button>
             ) : null}
           </div>
@@ -186,7 +189,7 @@ export function SittingCard({
         ) : null}
         {showEdit && examId ? (
           <details className="max-w-xl">
-            <summary className="cursor-pointer text-sm text-primary">{labels.changeTime}</summary>
+            <summary className="cursor-pointer text-sm text-primary"><TText text={labels.changeTime} /></summary>
             <EditTimeForm
               key={`${sittingId}-${startsAt ?? ""}-${endsAt ?? ""}-${title}`}
               examId={examId}
@@ -199,7 +202,7 @@ export function SittingCard({
             />
           </details>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
         {children}
       </CardContent>
     </Card>

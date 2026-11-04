@@ -94,11 +94,13 @@ test("verdict follows the saved mark, and a missing answer is incorrect", () => 
   assert.equal(reviewVerdict({ hasResponse: true, isCorrect: true }), "correct");
 });
 
-test("the question rail is rectangular and light green when the final mark is correct", () => {
+test("the question rail is rectangular and uses the accent token when the final mark is correct", () => {
   const correct = railCellClass("correct", "unconfirmed");
   assert.match(correct, /rounded-none/);
-  assert.match(correct, /bg-green-100/);
+  assert.match(correct, /bg-accent/);
+  assert.match(correct, /text-accent-foreground/);
   assert.equal(correct.includes("bg-primary"), false);
+  assert.equal(correct.includes("bg-green-100"), false);
   assert.match(railCellClass("incorrect", "unconfirmed"), /bg-destructive/);
   assert.match(railCellClass("not-graded", "unconfirmed"), /bg-muted/);
   assert.match(railCellClass("correct", "confirmed"), /ring-2/);

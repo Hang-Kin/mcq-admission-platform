@@ -1,3 +1,4 @@
+import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -50,20 +51,20 @@ export default async function TopicQuestionsPage({
           />
           <h1 className="text-2xl">{topic.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {topicCountText(questions.length, bank.perTopic)}
+            <TText text={topicCountText(questions.length, bank.perTopic)} />
           </p>
           {short && !bank.missing && !bank.loadFailed ? (
-            <Badge variant="destructive">Needs more questions</Badge>
+            <Badge variant="destructive"><T id="shell.copy.needsMore" /></Badge>
           ) : null}
         </div>
         <Button asChild className="h-12 px-5 text-base">
-          <Link href={`${listHref}/new`}>Add question</Link>
+          <Link href={`${listHref}/new`}><T id="shell.copy.addQuestion" /></Link>
         </Button>
       </div>
 
       {bank.missing ? <WaitingNote /> : null}
       {bank.loadFailed ? (
-        <p className="text-sm text-destructive">Could not load questions.</p>
+        <p className="text-sm text-destructive"><T id="shell.copy.couldNotLoadQuestions" /></p>
       ) : null}
       {!bank.missing && !bank.loadFailed ? (
         <QuestionList

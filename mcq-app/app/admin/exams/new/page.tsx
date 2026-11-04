@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { connection } from "next/server";
@@ -14,11 +15,9 @@ export default async function NewExamPage() {
     <main className="space-y-8">
       <div className="max-w-2xl space-y-2">
         <p className="text-sm">
-          <Link href="/admin/exams" className="hover:underline">
-            Exams
-          </Link>
+          <Link href="/admin/exams" className="hover:underline"><T id="shell.group.exams" /></Link>
         </p>
-        <h1 className="text-2xl">New exam</h1>
+        <h1 className="text-2xl"><T id="shell.copy.newExam" /></h1>
         <p className="text-sm text-muted-foreground">
         The exam is available as soon as you create it. Next you can add
         sections and timeslots.

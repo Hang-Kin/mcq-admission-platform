@@ -1,5 +1,7 @@
 "use client";
 
+import { TText } from "@/app/admin/T";
+
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ export function ReviewActions({
           variant={primary ? "default" : "outline"}
           disabled={pending}
         >
-          {pending ? labels.saving : labels.queueMarkCorrect}
+          {pending ? <TText text={labels.saving} /> : <TText text={labels.queueMarkCorrect} />}
         </Button>
         <Button
           type="submit"
@@ -39,7 +41,7 @@ export function ReviewActions({
           variant="outline"
           disabled={pending}
         >
-          {labels.queueMarkIncorrect}
+          <TText text={labels.queueMarkIncorrect} />
         </Button>
       </div>
       {state?.error ? (

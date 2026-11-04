@@ -1,3 +1,4 @@
+import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { INTAKE_WAITING_READ, isMissingSchema } from "@/app/admin/students/schemaError";
@@ -148,7 +149,7 @@ export default async function ReviewQueuePage() {
   if (!staff.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">Results</h1>
+        <h1 className="text-2xl"><T id="shell.nav.results" /></h1>
         <p className="text-sm text-muted-foreground">{staff.error}</p>
       </main>
     );
@@ -250,14 +251,14 @@ export default async function ReviewQueuePage() {
   return (
     <main className="space-y-10">
       <div className="max-w-2xl space-y-2">
-        <h1 className="text-2xl">Results</h1>
+        <h1 className="text-2xl"><T id="shell.nav.results" /></h1>
         <p className="text-sm text-muted-foreground">
           Scores for submitted sittings, then written answers that still need a teacher.
         </p>
       </div>
 
       <section className="max-w-3xl space-y-3">
-        <h2 className="text-lg">Export</h2>
+        <h2 className="text-lg"><T id="shell.copy.export" /></h2>
         <p className="text-sm text-muted-foreground">
           Download submitted results for one exam. Times are Hong Kong time.
         </p>
@@ -265,23 +266,23 @@ export default async function ReviewQueuePage() {
           <p className="text-sm text-muted-foreground">{INTAKE_WAITING_READ}</p>
         ) : null}
         {intakeFailed ? (
-          <p className="text-sm text-destructive">Could not load intakes.</p>
+          <p className="text-sm text-destructive"><T id="results.page.loadIntakes" /></p>
         ) : null}
         {examsFailed ? (
-          <p className="text-sm text-destructive">Could not load exams for export.</p>
+          <p className="text-sm text-destructive"><T id="results.page.loadExamsExport" /></p>
         ) : exams.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No exams to export.</p>
+          <p className="text-sm text-muted-foreground"><T id="results.page.noExamsExport" /></p>
         ) : (
           <ExportForm exams={exams} intakes={intakes} intakeReady={!intakeMissing} />
         )}
       </section>
 
       <section className="space-y-6">
-        <h2 className="text-lg">Grades</h2>
+        <h2 className="text-lg"><T id="shell.copy.grades" /></h2>
         {grades.failed ? (
-          <p className="text-sm text-destructive">Could not load grades.</p>
+          <p className="text-sm text-destructive"><T id="results.page.loadGrades" /></p>
         ) : grades.groups.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No students have submitted yet.</p>
+          <p className="text-sm text-muted-foreground"><T id="results.page.noneSubmitted" /></p>
         ) : (
           grades.groups.map((group) => (
             <div key={group.examId} className="space-y-3">
@@ -290,10 +291,10 @@ export default async function ReviewQueuePage() {
                 <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
                   <thead>
                     <tr>
-                      <th className="border-b py-3 pr-4">Student</th>
-                      <th className="border-b py-3 pr-4">Application number</th>
-                      <th className="border-b py-3 pr-4">Score</th>
-                      <th className="border-b py-3">Grade</th>
+                      <th className="border-b py-3 pr-4"><T id="shell.copy.student" /></th>
+                      <th className="border-b py-3 pr-4"><T id="schedule.page.application" /></th>
+                      <th className="border-b py-3 pr-4"><T id="shell.copy.score" /></th>
+                      <th className="border-b py-3"><T id="shell.copy.grade" /></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,10 +317,10 @@ export default async function ReviewQueuePage() {
                             {row.finalized != null ? (
                               <Badge>Finalized {row.finalized}%</Badge>
                             ) : (
-                              <Badge variant="secondary">Not finalized</Badge>
+                              <Badge variant="secondary"><T id="schedule.page.notFinalized" /></Badge>
                             )}
                             {row.stale ? (
-                              <Badge variant="destructive">Changed since finalize</Badge>
+                              <Badge variant="destructive"><T id="schedule.page.changedSince" /></Badge>
                             ) : null}
                           </div>
                         </td>
@@ -335,7 +336,7 @@ export default async function ReviewQueuePage() {
 
       <section className="space-y-6">
         <div className="max-w-2xl space-y-2">
-          <h2 className="text-lg">Written answers waiting</h2>
+          <h2 className="text-lg"><T id="results.page.writtenWaiting" /></h2>
           <p className="text-sm text-muted-foreground">
             Text answers waiting for a teacher to mark correct or incorrect.
           </p>
@@ -346,9 +347,7 @@ export default async function ReviewQueuePage() {
           Failed to load responses waiting for review.
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No written answers to mark.
-        </p>
+        <p className="text-sm text-muted-foreground"><T id="shell.copy.noWrittenWaiting" /></p>
       ) : (
         <ul className="space-y-6">
           {rows.map((row, index) => {
@@ -381,13 +380,13 @@ export default async function ReviewQueuePage() {
                         : "space-y-2 rounded-md border bg-muted/40 p-4"
                     }
                   >
-                    <p className="text-sm font-medium">Student answer</p>
+                    <p className="text-sm font-medium"><T id="results.page.studentAnswer" /></p>
                     <p className="whitespace-pre-wrap text-base">
                       {row.student_answer?.trim() ? row.student_answer : "(empty answer)"}
                     </p>
                   </div>
                   <div className="space-y-2 rounded-md border p-4">
-                    <p className="text-sm font-medium">Correct answer</p>
+                    <p className="text-sm font-medium"><T id="shell.copy.correctAnswer" /></p>
                     <p className="whitespace-pre-wrap text-base">
                       {row.correct_answer?.trim() ? (
                         <MathText

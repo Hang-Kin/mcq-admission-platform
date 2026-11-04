@@ -1,3 +1,4 @@
+import { TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,7 @@ export default async function ReviewSittingPage({
   if (!staff.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.review}</h1>
+        <h1 className="text-2xl"><TText text={labels.review} /></h1>
         <p className="text-sm text-muted-foreground">{staff.error}</p>
       </main>
     );
@@ -33,8 +34,8 @@ export default async function ReviewSittingPage({
   if (!UUID_RE.test(instanceId)) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.review}</h1>
-        <p className="text-sm text-muted-foreground">{labels.sittingNotFound}</p>
+        <h1 className="text-2xl"><TText text={labels.review} /></h1>
+        <p className="text-sm text-muted-foreground"><TText text={labels.sittingNotFound} /></p>
       </main>
     );
   }
@@ -43,7 +44,7 @@ export default async function ReviewSittingPage({
   if (!loaded.ok) {
     return (
       <main className="space-y-2">
-        <h1 className="text-2xl">{labels.review}</h1>
+        <h1 className="text-2xl"><TText text={labels.review} /></h1>
         <p className="text-sm text-destructive">{loaded.error}</p>
       </main>
     );
@@ -77,7 +78,7 @@ export default async function ReviewSittingPage({
       <header className="space-y-2">
         <p className="text-sm">
           <Link href="/admin/review" className="hover:underline">
-            {labels.backToResults}
+            <TText text={labels.backToResults} />
           </Link>
         </p>
         <h1 className="text-2xl">{title}</h1>
@@ -87,27 +88,27 @@ export default async function ReviewSittingPage({
             .join(" · ")}
         </p>
         {sitting.status !== "submitted" ? (
-          <p className="text-sm text-muted-foreground">{labels.notSubmitted}</p>
+          <p className="text-sm text-muted-foreground"><TText text={labels.notSubmitted} /></p>
         ) : null}
       </header>
 
       <section className="space-y-3 rounded-md border border-border p-4">
-        <h2 className="text-lg">{labels.score}</h2>
-        <p>{labels.scoreLine(score.correct, score.total, score.percent)}</p>
-        <p className="text-sm text-muted-foreground">{labels.scoreDetail}</p>
+        <h2 className="text-lg"><TText text={labels.score} /></h2>
+        <p><TText text={labels.scoreLine(score.correct, score.total, score.percent)} /></p>
+        <p className="text-sm text-muted-foreground"><TText text={labels.scoreDetail} /></p>
         {unanswered > 0 ? (
-          <p className="text-sm text-muted-foreground">{labels.unanswered(unanswered)}</p>
+          <p className="text-sm text-muted-foreground"><TText text={labels.unanswered(unanswered)} /></p>
         ) : null}
         {score.pendingReview > 0 ? (
-          <p className="text-sm text-destructive">{labels.pendingReview(score.pendingReview)}</p>
+          <p className="text-sm text-destructive"><TText text={labels.pendingReview(score.pendingReview)} /></p>
         ) : null}
         <div className="flex flex-wrap gap-2">
           {sitting.finalizedPercent != null ? (
-            <Badge>{labels.finalizedBadge(sitting.finalizedPercent, finalizedWhen)}</Badge>
+            <Badge><TText text={labels.finalizedBadge(sitting.finalizedPercent, finalizedWhen)} /></Badge>
           ) : (
-            <Badge variant="secondary">{labels.notFinalized}</Badge>
+            <Badge variant="secondary"><TText text={labels.notFinalized} /></Badge>
           )}
-          {stale ? <Badge variant="destructive">{labels.changedSinceFinalize}</Badge> : null}
+          {stale ? <Badge variant="destructive"><TText text={labels.changedSinceFinalize} /></Badge> : null}
         </div>
         {isAdmin && sitting.status === "submitted" && sitting.examId ? (
           <FinalizeControl

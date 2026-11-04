@@ -1,5 +1,7 @@
 "use client";
 
+import { T, TText } from "@/app/admin/T";
+
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,9 +26,9 @@ export function SittingQuestions({ groups }: { groups: PreviewGroup[] }) {
           aria-controls={panelId}
           onClick={() => setOpen((current) => !current)}
         >
-          {open ? "Hide questions" : "Show questions"}
+          {open ? <T id="schedule.page.hideQuestions" /> : <T id="schedule.page.showQuestions" />}
         </Button>
-        <p className="text-sm text-muted-foreground">{summary}</p>
+        <p className="text-sm text-muted-foreground"><TText text={summary} /></p>
       </div>
       {open ? (
         <div id={panelId}>
