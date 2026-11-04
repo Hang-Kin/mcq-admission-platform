@@ -25,40 +25,87 @@ export const themeVariables = {
     "chart-3": "0 0% 45%",
     "chart-4": "0 0% 70%",
     "chart-5": "0 72% 42%",
+    success: "142.03 78.05% 20.54%",
+    warning: "36.49 99.2% 24.07%",
+    "menu-border": "214.46 23.90% 40.05%",
+    "menu-highlight": "212.79 76.48% 91.03%",
+    "menu-highlight-foreground": "0 0% 18%",
+    scrim: "0 0% 0%",
   },
-  contrast: {
-    background: "0 0% 0%",
-    foreground: "52 100% 50%",
-    card: "0 0% 0%",
-    "card-foreground": "52 100% 50%",
-    popover: "0 0% 0%",
-    "popover-foreground": "52 100% 50%",
-    primary: "52 100% 50%",
-    "primary-foreground": "0 0% 0%",
-    secondary: "0 0% 0%",
-    "secondary-foreground": "52 100% 50%",
-    muted: "0 0% 0%",
-    "muted-foreground": "52 100% 50%",
-    accent: "52 100% 50%",
-    "accent-foreground": "0 0% 0%",
-    destructive: "0 100% 50%",
-    "destructive-foreground": "0 0% 0%",
-    border: "52 100% 50%",
-    input: "52 100% 50%",
-    ring: "52 100% 50%",
-    "chart-1": "52 100% 50%",
-    "chart-2": "48 100% 50%",
-    "chart-3": "45 100% 50%",
-    "chart-4": "0 0% 100%",
-    "chart-5": "0 100% 50%",
+  dark: {
+    background: "217.4 50.24% 8.28%",
+    foreground: "207 38% 95.93%",
+    card: "217.72 46.36% 13.58%",
+    "card-foreground": "207 38% 95.93%",
+    popover: "217.72 46.36% 13.58%",
+    "popover-foreground": "207 38% 95.93%",
+    primary: "214.22 99.25% 74.36%",
+    "primary-foreground": "216.2 69.93% 8.48%",
+    secondary: "216.98 41.09% 21.03%",
+    "secondary-foreground": "207 38% 95.93%",
+    muted: "217.72 46.36% 13.58%",
+    "muted-foreground": "215.07 26% 76.52%",
+    accent: "217.62 40.25% 27.3%",
+    "accent-foreground": "207 38% 95.93%",
+    destructive: "359.45 99.3% 80.24%",
+    "destructive-foreground": "216.2 69.93% 8.48%",
+    border: "217.47 19.97% 44.36%",
+    input: "217.47 19.97% 44.36%",
+    ring: "41.76 99.8% 70.05%",
+    "chart-1": "214.22 99.25% 74.36%",
+    "chart-2": "144.39 71.8% 67.01%",
+    "chart-3": "215.07 26% 76.52%",
+    "chart-4": "217.47 19.97% 44.36%",
+    "chart-5": "359.45 99.3% 80.24%",
+    success: "144.39 71.8% 67.01%",
+    warning: "41.76 99.8% 70.05%",
+    "menu-border": "217.47 19.97% 44.36%",
+    "menu-highlight": "215.25 40.43% 33.97%",
+    "menu-highlight-foreground": "207 38% 95.93%",
+    scrim: "0 0% 0%",
+  },
+  "light-contrast": {
+    background: "0 0% 100%",
+    foreground: "0 0% 3.92%",
+    card: "214.5 48% 96.71%",
+    "card-foreground": "0 0% 3.92%",
+    popover: "214.5 48% 96.71%",
+    "popover-foreground": "0 0% 3.92%",
+    primary: "216.93 87.65% 30.24%",
+    "primary-foreground": "0 0% 100%",
+    secondary: "212.29 52.84% 93.77%",
+    "secondary-foreground": "0 0% 3.92%",
+    muted: "214.5 48% 96.71%",
+    "muted-foreground": "214.53 19.69% 28.09%",
+    accent: "214.53 57.68% 90.44%",
+    "accent-foreground": "0 0% 3.92%",
+    destructive: "359.6 80.56% 35.34%",
+    "destructive-foreground": "0 0% 100%",
+    border: "216.2 33.11% 17.89%",
+    input: "216.2 33.11% 17.89%",
+    ring: "17.22 87.9% 40.44%",
+    "chart-1": "216.93 87.65% 30.24%",
+    "chart-2": "142.03 78.05% 20.54%",
+    "chart-3": "214.53 19.69% 28.09%",
+    "chart-4": "216.2 33.11% 17.89%",
+    "chart-5": "359.6 80.56% 35.34%",
+    success: "142.03 78.05% 20.54%",
+    // #794900. Specified #7A4B00 is 6.84:1 on the card, short of 7:1.
+    warning: "35.75 99.45% 23.88%",
+    "menu-border": "216.2 33.11% 17.89%",
+    "menu-highlight": "215.51 67.15% 90.05%",
+    "menu-highlight-foreground": "0 0% 3.92%",
+    scrim: "0 0% 0%",
   },
 } as const;
 
 export type ThemeVariableName = keyof typeof themeVariables.normal;
 
 export const TEXT_CONTRAST_MINIMUM = 4.5;
+export const HIGH_CONTRAST_TEXT_MINIMUM = 7;
+export const CONTROL_CONTRAST_MINIMUM = 3;
 
-/** Text (or link) colour on its background. Both themes must clear 4.5:1. */
+/** Text (or link) colour on its background. Normal must clear 4.5:1. */
 export const textPairs: ReadonlyArray<{
   fg: ThemeVariableName;
   bg: ThemeVariableName;
@@ -74,6 +121,37 @@ export const textPairs: ReadonlyArray<{
   { fg: "destructive", bg: "background" },
   { fg: "card-foreground", bg: "card" },
   { fg: "popover-foreground", bg: "popover" },
+  { fg: "menu-highlight-foreground", bg: "menu-highlight" },
+];
+
+/** Text pairs for Dark and Light high contrast. Both must clear 7:1. */
+export const highContrastTextPairs: ReadonlyArray<{
+  fg: ThemeVariableName;
+  bg: ThemeVariableName;
+}> = [
+  ...textPairs,
+  { fg: "foreground", bg: "card" },
+  { fg: "muted-foreground", bg: "card" },
+  { fg: "primary", bg: "card" },
+  { fg: "success", bg: "background" },
+  { fg: "success", bg: "card" },
+  { fg: "warning", bg: "background" },
+  { fg: "warning", bg: "card" },
+  { fg: "destructive", bg: "card" },
+];
+
+/** Borders and focus rings. High contrast themes must clear 3:1. */
+export const controlPairs: ReadonlyArray<{
+  fg: ThemeVariableName;
+  bg: ThemeVariableName;
+}> = [
+  { fg: "border", bg: "background" },
+  { fg: "border", bg: "card" },
+  { fg: "input", bg: "background" },
+  { fg: "ring", bg: "background" },
+  { fg: "ring", bg: "card" },
+  { fg: "menu-border", bg: "background" },
+  { fg: "menu-border", bg: "card" },
 ];
 
 export function hslChannelsToRgb(channels: string): [number, number, number] {

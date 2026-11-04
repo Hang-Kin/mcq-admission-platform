@@ -23,6 +23,12 @@ test("language switch changes the shell strings", () => {
   assert.equal(t("shell.settings.traditionalChinese", "en"), "繁體中文");
   assert.equal(t("shell.settings.traditionalChinese", "zh-Hant"), "繁體中文");
   assert.notEqual(t("shell.settings.colour", "en"), t("shell.settings.colour", "zh-Hant"));
+  assert.equal(t("shell.settings.normal", "en"), "Normal");
+  assert.equal(t("shell.settings.normal", "zh-Hant"), "一般");
+  assert.equal(t("shell.settings.dark", "en"), "Dark high contrast");
+  assert.equal(t("shell.settings.dark", "zh-Hant"), "深色高對比");
+  assert.equal(t("shell.settings.lightContrast", "en"), "Light high contrast");
+  assert.equal(t("shell.settings.lightContrast", "zh-Hant"), "淺色高對比");
   assert.notEqual(t("shell.nav.questions", "en"), t("shell.nav.questions", "zh-Hant"));
   assert.notEqual(t("shell.item.mathBank", "en"), t("shell.item.mathBank", "zh-Hant"));
   assert.notEqual(t("shell.group.subjectSettings", "en"), t("shell.group.subjectSettings", "zh-Hant"));

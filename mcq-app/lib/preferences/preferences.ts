@@ -9,8 +9,11 @@ export const PREFERENCE_MAX_AGE = 60 * 60 * 24 * 365;
 export const UI_SIZES = [50, 75, 100, 125, 150, 175, 200] as const;
 export type UiSize = (typeof UI_SIZES)[number];
 
-export const THEMES = ["normal", "contrast"] as const;
+export const THEMES = ["normal", "dark", "light-contrast"] as const;
 export type ThemeName = (typeof THEMES)[number];
+
+/** Previous high-contrast id. Readers map it to Dark. */
+export const LEGACY_CONTRAST_THEME = "contrast";
 
 export type Preferences = {
   locale: Locale;
@@ -29,7 +32,19 @@ export function isUiSize(value: number): value is UiSize {
 }
 
 export function isThemeName(value: string): value is ThemeName {
-  return value === "normal" || value === "contrast";
+  return (THEMES as readonly string[]).includes(value);
+}
+
+/** `contrast` is the removed black-and-yellow theme. It now means Dark. */
+export function canonicalTheme(value: string): ThemeName | null {
+  if (value === LEGACY_CONTRAST_THEME) return "dark";
+  return isThemeName(value) ? value : null;
+}
+
+export function usesLegacyContrastTheme(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  const parts = raw.trim().split(".");
+  return parts.length === 3 && parts[1] === LEGACY_CONTRAST_THEME;
 }
 
 /** A valid stored value, or null when the string is missing or broken. */
@@ -38,9 +53,10 @@ export function parsePreferences(raw: string | null | undefined): Preferences | 
   const text = raw.trim();
   const parts = text.split(".");
   if (parts.length !== 3) return null;
-  const [locale, theme, sizeText] = parts;
+  const [locale, themeText, sizeText] = parts;
   if (!locale || !isLocale(locale)) return null;
-  if (!theme || !isThemeName(theme)) return null;
+  const theme = themeText ? canonicalTheme(themeText) : null;
+  if (!theme) return null;
   const size = Number(sizeText);
   if (!isUiSize(size)) return null;
   return { locale, theme, size };
