@@ -1,5 +1,8 @@
 -- migration_025_delete_sitting_cascade.sql
--- Proposed. Do not apply until reviewed.
+-- Already applied live. Do not re-apply.
+-- The start_session text matches live SQL: both "does this exam have
+-- timeslots" checks count archived sittings. Archived filtering stays in
+-- the picker.
 -- Depends on migration_023 (the current start_session) and migration_017
 -- (timeslot_draws). Does not edit any earlier migration file.
 --
@@ -9,9 +12,11 @@
 --   teacher can set archived_at. That is intentional.
 -- * Replaces public.resolve_exam_timeslot so an archived sitting is not
 --   chosen for a new student. Grants on that function stay revoked.
--- * Replaces start_session. The body is migration_023 with one extra
---   predicate on both "does this exam have timeslots" checks:
---   and archived_at is null. Grants are restated and not widened:
+-- * Replaces start_session. The body matches live: migration_023, including
+--   the two "does this exam have timeslots" checks with no archived_at
+--   filter. An archived sitting still means the exam has timeslots.
+--   Archived filtering stays in the picker (resolve_exam_timeslot below,
+--   and the schedule list). Grants are restated and not widened:
 --   anon may execute it; public and authenticated may not.
 -- * Adds public.delete_sitting_test_data(uuid, text). SECURITY DEFINER.
 --   EXECUTE is granted to authenticated and revoked from anon and public.
@@ -184,7 +189,6 @@ begin
       select exists(
         select 1 from timeslots
         where exam_id = v_exam.id
-          and archived_at is null
       ) into v_has_timeslots;
 
       if v_has_timeslots then
@@ -349,7 +353,6 @@ begin
       select exists(
         select 1 from timeslots
         where exam_id = v_exam.id
-          and archived_at is null
       ) into v_has_timeslots;
 
       v_assigned := v_instance.assigned_question_ids;
