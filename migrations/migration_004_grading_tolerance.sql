@@ -1,10 +1,13 @@
 -- migration_004_grading_tolerance.sql
+-- Historical snapshot. Superseded. Do not apply.
+--
 -- What: documents a change to submit_answer() that was applied directly to the
 -- live database (not through a tracked migration) at some point after
--- migration_003_student_rpc.sql. This file exists to make that change
--- reproducible — it is NOT a new change being introduced. It is a snapshot
--- of what is CURRENTLY LIVE in production, verified via
--- pg_get_functiondef(oid) on 2026-09-11.
+-- migration_003_student_rpc.sql. This file is a snapshot of that function as
+-- it stood on 2026-09-11, verified then via pg_get_functiondef(oid). It is
+-- not in the live migration history. Later migrations changed grading
+-- after this snapshot (019 exact numeric, 022, 024). Re-applying this
+-- file would overwrite a newer submit_answer. Do not apply.
 --
 -- Confirmed via live click-through testing (Test Student Three,
 -- token bee481bce0bb4d94bc2f52b4283c307a):
