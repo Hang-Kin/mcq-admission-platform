@@ -120,9 +120,23 @@ export function formatSubmittedAt(iso: string | null): string {
 }
 
 // Excel opens a CSV number as a number, which drops the leading zero in 0101.
-// ="0101" is text when Excel opens the file, and the characters stay 0101.
+// ="0101" is a quoted string formula, so the characters stay 0101 and the
+// code cannot run as a command. Quotes inside the code are doubled, and
+// line breaks are flattened so they cannot close the formula early.
 export function csvTextCode(code: string): string {
-  return `="${code.replace(/"/g, '""')}"`;
+  const literal = code.replace(/[\r\n]+/g, " ").replace(/"/g, '""');
+  return `="${literal}"`;
+}
+
+// A cell that starts with one of these is a formula when Excel opens a CSV,
+// and some spreadsheet tools treat the same prefix as a formula in xlsx.
+// A leading apostrophe forces the value to text. Tab and carriage return are
+// included because Excel ignores them and then reads the next character.
+const SPREADSHEET_FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
+export function escapeSpreadsheetText(value: string): string {
+  if (SPREADSHEET_FORMULA_PREFIX.test(value)) return `'${value}`;
+  return value;
 }
 
 // Same total and percentage as the grades page: unanswered assigned questions
@@ -198,17 +212,17 @@ export type SheetCell = string | number | null;
 
 export function resultCells(row: ResultRow, mode: "xlsx" | "csv"): SheetCell[] {
   return [
-    mode === "csv" ? csvTextCode(row.submissionCode) : row.submissionCode,
-    row.englishName,
-    row.chineseName,
-    row.intake,
-    row.slot,
+    mode === "csv" ? csvTextCode(row.submissionCode) : escapeSpreadsheetText(row.submissionCode),
+    escapeSpreadsheetText(row.englishName),
+    escapeSpreadsheetText(row.chineseName),
+    escapeSpreadsheetText(row.intake),
+    escapeSpreadsheetText(row.slot),
     row.mathScore,
     row.chineseScore,
     row.total,
     row.percentage,
-    row.timeTaken,
-    row.submittedAt,
+    escapeSpreadsheetText(row.timeTaken),
+    escapeSpreadsheetText(row.submittedAt),
   ];
 }
 
@@ -235,7 +249,7 @@ export async function resultsWorkbook(rows: ResultRow[]): Promise<Uint8Array> {
   for (const row of rows) {
     const added = sheet.addRow(resultCells(row, "xlsx"));
     const code = added.getCell(1);
-    code.value = row.submissionCode;
+    code.value = escapeSpreadsheetText(row.submissionCode);
     code.numFmt = TEXT_FORMAT;
   }
 

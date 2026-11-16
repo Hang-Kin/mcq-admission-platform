@@ -6,7 +6,7 @@ import ExcelJS from "exceljs";
 
 import { RESULT_HEADERS, buildResultRow, resultsWorkbook, type SittingExport } from "./columns.ts";
 
-function sitting(): SittingExport {
+function sitting(overrides: Partial<SittingExport> = {}): SittingExport {
   return {
     submissionCode: "0101",
     englishName: "Ada Wong",
@@ -23,6 +23,7 @@ function sitting(): SittingExport {
       { questionId: "m1", isCorrect: true },
       { questionId: "c1", isCorrect: false },
     ],
+    ...overrides,
   };
 }
 
@@ -68,4 +69,35 @@ test("excel stores 0101 as text and the summary sheet", async () => {
   assert.equal(summary.getRow(2).getCell(2).value, 50);
   assert.equal(summary.getRow(3).getCell(2).value, 50);
   assert.equal(summary.getRow(4).getCell(2).value, 50);
+});
+
+test("excel stores a formula-like name as text", async () => {
+  const bytes = await resultsWorkbook([
+    buildResultRow(
+      sitting({
+        submissionCode: "=0101",
+        englishName: "=1+1",
+        chineseName: "+陳",
+        intake: "-2026",
+        slot: "@Morning",
+      }),
+    ),
+  ]);
+  const files = unzipSync(bytes);
+  const sheetXml = strFromU8(files["xl/worksheets/sheet1.xml"] ?? new Uint8Array());
+  assert.doesNotMatch(sheetXml, /<f[ >]/);
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(bytes));
+  const sheet = workbook.getWorksheet("Results");
+  assert.ok(sheet);
+  const row = sheet.getRow(2);
+  assert.equal(cellText(row.getCell(1).value), "'=0101");
+  assert.equal(row.getCell(1).numFmt, "@");
+  assert.equal(cellText(row.getCell(2).value), "'=1+1");
+  assert.equal(cellText(row.getCell(3).value), "'+陳");
+  assert.equal(cellText(row.getCell(4).value), "'-2026");
+  assert.equal(cellText(row.getCell(5).value), "'@Morning");
+  assert.equal(row.getCell(2).formula, undefined);
+  assert.notEqual(row.getCell(2).type, 6);
 });

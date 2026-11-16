@@ -8,6 +8,7 @@ import {
   RESULT_HEADERS,
   buildResultRow,
   csvTextCode,
+  escapeSpreadsheetText,
   filterByIntake,
   formatDuration,
   formatSubmittedAt,
@@ -107,6 +108,39 @@ test("csv is utf-8 with a bom, keeps Chinese, and keeps 0101 as text for Excel",
   assert.equal(first.percentage, "50");
   assert.match(csv, /陳大文/);
   assert.match(csv, /提交編號/);
+});
+
+test("csv keeps a hostile code inside a string formula and neutralizes other text", () => {
+  assert.equal(csvTextCode('1"+2'), '="1""+2"');
+  assert.equal(csvTextCode("0101\n=cmd"), '="0101 =cmd"');
+  assert.equal(escapeSpreadsheetText("Ada Wong"), "Ada Wong");
+  assert.equal(escapeSpreadsheetText("=HYPERLINK(\"http://evil\",\"x\")"), "'=HYPERLINK(\"http://evil\",\"x\")");
+  assert.equal(escapeSpreadsheetText("+1+1"), "'+1+1");
+  assert.equal(escapeSpreadsheetText("-2+3"), "'-2+3");
+  assert.equal(escapeSpreadsheetText("@SUM(A1)"), "'@SUM(A1)");
+  assert.equal(escapeSpreadsheetText("\t=1+1"), "'\t=1+1");
+  assert.equal(escapeSpreadsheetText("\r=1+1"), "'\r=1+1");
+
+  const csv = resultsCsv([
+    buildResultRow(
+      sitting({
+        submissionCode: "0101",
+        englishName: "=cmd|'/c calc'!A0",
+        chineseName: "+陳",
+        intake: "-2026",
+        slot: "@Morning",
+      }),
+    ),
+  ]);
+  const parsed = Papa.parse<Record<string, string>>(csv.slice(1), { header: true });
+  const row = parsed.data[0];
+  assert.ok(row);
+  assert.equal(row["提交編號"], '="0101"');
+  assert.equal(row["English name"], "'=cmd|'/c calc'!A0");
+  assert.equal(row["Chinese name"], "'+陳");
+  assert.equal(row.intake, "'-2026");
+  assert.equal(row.slot, "'@Morning");
+  assert.equal(row["English name"]?.[0], "'");
 });
 
 test("intake filter and summary skip a sitting with no percentage", () => {
