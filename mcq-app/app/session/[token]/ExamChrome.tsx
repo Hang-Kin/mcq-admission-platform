@@ -204,8 +204,8 @@ export function ExamChrome({
   const locked = advanceBusy;
 
   return (
-    <main className="-mx-5 -my-10 flex min-h-[calc(100svh-3.5rem)] min-w-0 flex-col sm:-mx-8">
-      <header className="sticky top-14 z-20 border-b border-border bg-background px-5 py-4 sm:px-8">
+    <main className="-mx-5 -my-10 flex min-h-svh min-w-0 flex-col sm:-mx-8">
+      <header className="sticky top-0 z-20 border-b border-border bg-background px-5 py-4 sm:px-8">
         <div className="mx-auto w-full max-w-3xl">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">

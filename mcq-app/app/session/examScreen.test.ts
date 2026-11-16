@@ -258,7 +258,7 @@ test("earlier questions hide Finish and the last question asks before finishing"
   assert.equal(nextButton?.querySelector(".shell-zh")?.textContent, "下一題");
   assert.equal(
     view.container.querySelector("main")?.className,
-    "-mx-5 -my-10 flex min-h-[calc(100svh-3.5rem)] min-w-0 flex-col sm:-mx-8",
+    "-mx-5 -my-10 flex min-h-svh min-w-0 flex-col sm:-mx-8",
   );
   assert.ok(view.container.querySelector(".grid.grid-cols-2"));
 
