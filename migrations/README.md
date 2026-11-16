@@ -4,12 +4,11 @@ These files are the record of what is live. Do not apply this folder as a
 batch, and do not re-apply a file that is already live.
 
 Applied live: 001 to 003 (as the phase_b and role migrations) and 006 to
-028, except where a number has no file. 004 is a snapshot only. Do not
-apply it.
+026 and 028, except 010, which has no file. 004 is a snapshot only. Do not
+apply it. 027 and 029 are in this repository and are not applied.
 
-There is no migration 010. There is no migration 027 file in this
-repository, so 027 is not recorded here as applied. 005 was committed and
-then removed; it was never applied.
+There is no migration 010. 005 was committed and then removed; it was
+never applied.
 
 `supabase_schema.sql` and `rls_setup.sql` are the original setup scripts,
 not this history. `rls_setup.sql` still contains the policy that 028
@@ -49,11 +48,13 @@ from those headers.
 | 024 | Yes. The file header still says "Not applied"; that line is stale. | Revokes anon `SELECT` on `questions.correct_answer`. Does not replace `submit_answer`. | Not superseded. Later than the 004 snapshot. |
 | 025 | Yes. Already applied. Do not re-apply. | Archive column, archived sittings are skipped by `resolve_exam_timeslot`, and `delete_sitting_test_data`. `start_session` matches live SQL: both "does this exam have timeslots" checks do not filter `archived_at`. Archived filtering stays in the picker (`resolve_exam_timeslot`, and the schedule list). | Not superseded. This is the current `start_session` in the repo. |
 | 026 | Yes. The file header still says "Not applied"; that line is stale. | Teacher confirm, override, and regrade tables and functions. Does not replace `submit_answer`. | Not superseded. |
-| 027 | No file in this repository. | — | — |
+| 027 | No. UNAPPLIED. Do not apply until reviewed. HIGH RISK. | Refuses confirming an ungraded answer. Revokes direct writes on `response_marks` and `regrade_log`. Regrade recomputes the mark on the server. | Not applied. 026 remains the live marking functions until this is reviewed. |
 | 028 | Yes. Already applied live on 5 Nov 2026. Do not run it again. | Drops policy "Allow public read on test_instances". | Not superseded. |
+| 029 | No. UNAPPLIED. Do not apply until reviewed. HIGH RISK. | Indexes for unindexed foreign keys. Wraps `auth.uid()` in the flagged policies. Removes duplicate permissive policies on `questions`, `exams`, and `profiles`. | Not applied. |
 
 ## Do not apply
 
 - 004. Historical snapshot. Superseded. Do not apply.
 - 005. Never applied. 011 already added those columns.
 - 025 and 028. Already live. The files match that history. Running them again is not this record.
+- 027 and 029. Drafts only. Not applied. Do not run them until they are reviewed.
