@@ -103,9 +103,15 @@ export function isExamPath(pathname: string): boolean {
   return pathname === "/session" || pathname.startsWith("/session/");
 }
 
-/** What the page should show. The exam screen keeps the defaults. */
+/** Exam paper keeps the default theme and size. Language still follows the setting. */
 export function viewPreferences(stored: Preferences, pathname: string): Preferences {
-  if (isExamPath(pathname)) return DEFAULT_PREFERENCES;
+  if (isExamPath(pathname)) {
+    return {
+      locale: stored.locale,
+      theme: DEFAULT_PREFERENCES.theme,
+      size: DEFAULT_PREFERENCES.size,
+    };
+  }
   return stored;
 }
 

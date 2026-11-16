@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { examLabels } from "./labels.js";
+import { ExamCopy } from "./ExamCopy";
+import { examLabels, examLabelsZh, translateExamText } from "./labels.js";
 
 type FractionAnswerFieldsProps = {
   numerator: string;
@@ -24,12 +25,12 @@ export function FractionAnswerFields({
   return (
     <fieldset className="space-y-3">
       <legend className="text-base font-medium text-foreground">
-        {examLabels.fractionLegend}
+        <ExamCopy en={examLabels.fractionLegend} zh={examLabelsZh.fractionLegend} />
       </legend>
       <div className="flex w-full max-w-md items-end gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <Label htmlFor="fraction-numerator" className="text-base">
-            {examLabels.fractionNumerator}
+            <ExamCopy en={examLabels.fractionNumerator} zh={examLabelsZh.fractionNumerator} />
           </Label>
           <Input
             id="fraction-numerator"
@@ -48,7 +49,7 @@ export function FractionAnswerFields({
         </span>
         <div className="min-w-0 flex-1 space-y-2">
           <Label htmlFor="fraction-denominator" className="text-base">
-            {examLabels.fractionDenominator}
+            <ExamCopy en={examLabels.fractionDenominator} zh={examLabelsZh.fractionDenominator} />
           </Label>
           <Input
             id="fraction-denominator"
@@ -65,7 +66,7 @@ export function FractionAnswerFields({
       </div>
       {message ? (
         <p id={messageId} className="break-words text-base text-muted-foreground">
-          {message}
+          <ExamCopy en={message} zh={translateExamText(message)} />
         </p>
       ) : null}
     </fieldset>

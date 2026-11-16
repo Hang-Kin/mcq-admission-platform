@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ReactNode } from "react";
+
 import { publicQuestionImagePath } from "@/app/admin/questions/questionImages";
 import { MathText } from "@/components/MathText";
 import { cn } from "@/lib/utils";
@@ -22,13 +24,16 @@ import {
   unansweredCount,
   type SessionQuestion,
 } from "./examProgress";
+import { ExamCopy } from "./ExamCopy";
 import { FractionAnswerFields } from "./FractionAnswerFields";
 import {
   examLabels,
-  finishSectionButtonLabel,
-  questionJumpLabel,
-  questionProgressLabel,
-  unansweredCountLabel,
+  examLabelsZh,
+  finishSectionButtonCopy,
+  questionJumpCopy,
+  questionProgressCopy,
+  translateExamText,
+  unansweredCountCopy,
 } from "./labels.js";
 import type { ExamSectionState } from "./sectionSession";
 
@@ -104,12 +109,12 @@ function ConfirmDialog({
   onConfirm,
 }: {
   titleId: string;
-  title: string;
-  body: string;
-  extra: string | null;
-  unanswered: string | null;
-  cancelLabel: string;
-  confirmLabel: string;
+  title: ReactNode;
+  body: ReactNode;
+  extra: ReactNode | null;
+  unanswered: ReactNode | null;
+  cancelLabel: ReactNode;
+  confirmLabel: ReactNode;
   busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -188,7 +193,12 @@ export function ExamChrome({
   const hasSection = section !== null;
   const showFinish = canFinishSection(index, total, hasSection);
   const showSubmit = canSubmitExam(index, total, hasSection);
-  const unanswered = unansweredCountLabel(unansweredCount(questions, answers));
+  const unansweredCopy = unansweredCountCopy(unansweredCount(questions, answers));
+  const unanswered = unansweredCopy ? (
+    <ExamCopy en={unansweredCopy.en} zh={unansweredCopy.zh} />
+  ) : null;
+  const progress = questionProgressCopy(index + 1, total);
+  const finishCopy = section ? finishSectionButtonCopy(section.label) : null;
   const options = optionList(question.options);
   const value = answers[question.id] ?? "";
   const locked = advanceBusy;
@@ -205,30 +215,33 @@ export function ExamChrome({
               </p>
             ) : null}
             <p className="text-sm text-muted-foreground">
-              {questionProgressLabel(index + 1, total)}
+              <ExamCopy en={progress.en} zh={progress.zh} />
             </p>
           </div>
           <p className="shrink-0 text-2xl font-medium tabular-nums text-primary sm:text-3xl">
-            <span className="sr-only">{examLabels.timeRemaining} </span>
+            <span className="sr-only"><ExamCopy en={examLabels.timeRemaining} zh={examLabelsZh.timeRemaining} /> </span>
             {remainingLabel}
           </p>
         </div>
         <p className="mt-2 min-h-5 break-words text-sm text-muted-foreground">
-          {autosaveLabel}
+          {autosaveLabel ? <ExamCopy en={autosaveLabel} zh={translateExamText(autosaveLabel)} /> : null}
         </p>
         <nav
-          aria-label={examLabels.questions}
+          aria-labelledby="exam-question-nav"
           className="mt-3 flex max-h-40 flex-wrap gap-2 overflow-y-auto overscroll-contain"
         >
+          <span id="exam-question-nav" className="sr-only">
+            <ExamCopy en={examLabels.questions} zh={examLabelsZh.questions} />
+          </span>
           {questions.map((item, itemIndex) => {
             const current = itemIndex === index;
             const answered = !isBlankAnswer(answers[item.id]);
+            const jump = questionJumpCopy(itemIndex + 1, answered);
             return (
               <button
                 key={item.id}
                 type="button"
                 aria-current={current ? "true" : undefined}
-                aria-label={questionJumpLabel(itemIndex + 1, answered)}
                 disabled={locked}
                 onClick={() => onSelectQuestion(itemIndex)}
                 className={cn(
@@ -242,7 +255,10 @@ export function ExamChrome({
                       : "border-border bg-background text-foreground",
                 )}
               >
-                {itemIndex + 1}
+                <span className="sr-only">
+                  <ExamCopy en={jump.en} zh={jump.zh} />
+                </span>
+                <span aria-hidden="true">{itemIndex + 1}</span>
               </button>
             );
           })}
@@ -254,7 +270,7 @@ export function ExamChrome({
         <div className="mx-auto w-full max-w-3xl">
         {sectionNotice ? (
           <p className="mb-4 break-words text-base text-muted-foreground">
-            {sectionNotice}
+            <ExamCopy en={sectionNotice} zh={translateExamText(sectionNotice)} />
           </p>
         ) : null}
         <Card className="w-full">
@@ -280,7 +296,7 @@ export function ExamChrome({
             ) : null}
             {question.type === "radio" ? (
               <fieldset className="space-y-3">
-                <legend className="sr-only">{examLabels.chooseAnswer}</legend>
+                <legend className="sr-only"><ExamCopy en={examLabels.chooseAnswer} zh={examLabelsZh.chooseAnswer} /></legend>
                 {options.map((option) => {
                   const id = `${question.id}-${option}`;
                   const selected = value === option;
@@ -323,7 +339,7 @@ export function ExamChrome({
             {question.type === "numeric" ? (
               <div className="space-y-2">
                 <Label htmlFor="numeric-answer" className="text-base">
-                  {examLabels.numericAnswer}
+                  <ExamCopy en={examLabels.numericAnswer} zh={examLabelsZh.numericAnswer} />
                 </Label>
                 <Input
                   id="numeric-answer"
@@ -353,7 +369,7 @@ export function ExamChrome({
             {question.type === "text" ? (
               <div className="space-y-2">
                 <Label htmlFor="text-answer" className="text-base">
-                  {examLabels.textAnswer}
+                  <ExamCopy en={examLabels.textAnswer} zh={examLabelsZh.textAnswer} />
                 </Label>
                 <textarea
                   id="text-answer"
@@ -379,7 +395,7 @@ export function ExamChrome({
             disabled={index === 0 || locked}
             onClick={onPrevious}
           >
-            {examLabels.previous}
+            <ExamCopy en={examLabels.previous} zh={examLabelsZh.previous} />
           </Button>
           <Button
             type="button"
@@ -388,7 +404,7 @@ export function ExamChrome({
             disabled={index >= total - 1 || locked}
             onClick={onNext}
           >
-            {examLabels.next}
+            <ExamCopy en={examLabels.next} zh={examLabelsZh.next} />
           </Button>
         </div>
         {showFinish && section ? (
@@ -399,7 +415,11 @@ export function ExamChrome({
               disabled={locked}
               onClick={onOpenFinish}
             >
-              {locked ? examLabels.finishing : finishSectionButtonLabel(section.label)}
+              {locked ? (
+                <ExamCopy en={examLabels.finishing} zh={examLabelsZh.finishing} />
+              ) : finishCopy ? (
+                <ExamCopy en={finishCopy.en} zh={finishCopy.zh} />
+              ) : null}
             </Button>
           </div>
         ) : null}
@@ -411,7 +431,11 @@ export function ExamChrome({
               disabled={submitBusy}
               onClick={onOpenSubmit}
             >
-              {submitBusy ? examLabels.submitting : examLabels.submitExam}
+              {submitBusy ? (
+                <ExamCopy en={examLabels.submitting} zh={examLabelsZh.submitting} />
+              ) : (
+                <ExamCopy en={examLabels.submitExam} zh={examLabelsZh.submitExam} />
+              )}
             </Button>
           </div>
         ) : null}
@@ -421,12 +445,12 @@ export function ExamChrome({
       {finishConfirmOpen && showFinish && section ? (
         <ConfirmDialog
           titleId="finish-section-title"
-          title={examLabels.finishTitle}
-          body={examLabels.finishBody}
-          extra={section.isLast ? examLabels.finishSubmitsExam : null}
+          title={<ExamCopy en={examLabels.finishTitle} zh={examLabelsZh.finishTitle} />}
+          body={<ExamCopy en={examLabels.finishBody} zh={examLabelsZh.finishBody} />}
+          extra={section.isLast ? <ExamCopy en={examLabels.finishSubmitsExam} zh={examLabelsZh.finishSubmitsExam} /> : null}
           unanswered={unanswered}
-          cancelLabel={examLabels.cancel}
-          confirmLabel={advanceBusy ? examLabels.finishing : examLabels.finishNow}
+          cancelLabel={<ExamCopy en={examLabels.cancel} zh={examLabelsZh.cancel} />}
+          confirmLabel={advanceBusy ? <ExamCopy en={examLabels.finishing} zh={examLabelsZh.finishing} /> : <ExamCopy en={examLabels.finishNow} zh={examLabelsZh.finishNow} />}
           busy={advanceBusy}
           onCancel={onCancelFinish}
           onConfirm={onConfirmFinish}
@@ -436,12 +460,12 @@ export function ExamChrome({
       {submitConfirmOpen && showSubmit ? (
         <ConfirmDialog
           titleId="submit-exam-title"
-          title={examLabels.submitTitle}
-          body={examLabels.submitBody}
+          title={<ExamCopy en={examLabels.submitTitle} zh={examLabelsZh.submitTitle} />}
+          body={<ExamCopy en={examLabels.submitBody} zh={examLabelsZh.submitBody} />}
           extra={null}
           unanswered={unanswered}
-          cancelLabel={examLabels.cancel}
-          confirmLabel={submitBusy ? examLabels.submitting : examLabels.submitNow}
+          cancelLabel={<ExamCopy en={examLabels.cancel} zh={examLabelsZh.cancel} />}
+          confirmLabel={submitBusy ? <ExamCopy en={examLabels.submitting} zh={examLabelsZh.submitting} /> : <ExamCopy en={examLabels.submitNow} zh={examLabelsZh.submitNow} />}
           busy={submitBusy}
           onCancel={onCancelSubmit}
           onConfirm={onConfirmSubmit}

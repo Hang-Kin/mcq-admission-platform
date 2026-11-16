@@ -202,6 +202,13 @@ export function hourLabel(hour: number): string {
   return `${pad(hour)}:00`;
 }
 
+/** Wide bars keep the name inside. Narrow bars put it beside the bar so it stays readable. */
+export function dayBlockLabelSide(block: { left: number; width: number }): "inside" | "before" | "after" {
+  if (!(block.width < 12)) return "inside";
+  if (block.left > 24 && block.left + block.width > 70) return "before";
+  return "after";
+}
+
 export type DayBlock = {
   id: string;
   label: string;
