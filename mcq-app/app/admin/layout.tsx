@@ -1,5 +1,7 @@
 import { connection } from "next/server";
 
+import { SiteFrame } from "@/components/site-frame";
+
 export const instant = false;
 
 export default async function AdminLayout({
@@ -11,5 +13,5 @@ export default async function AdminLayout({
   // supported way to refuse a prerendered shell and wait for a real request,
   // so the CDN cannot serve /admin without the proxy role check.
   await connection();
-  return children;
+  return <SiteFrame pathname="/admin">{children}</SiteFrame>;
 }

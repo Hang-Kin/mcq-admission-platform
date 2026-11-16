@@ -12,8 +12,22 @@ import { createClient } from "@/lib/supabase/client";
 
 import { ExamChrome } from "./ExamChrome";
 import { ExamCopy } from "./ExamCopy";
+import { bindExamLeaveGuard } from "./examLeaveGuard";
 import type { SessionQuestion } from "./examProgress";
 import { fractionAnswer, readFractionParts } from "./fractionAnswer";
+import {
+  clearResumeStorage,
+  examLeaveGuardActive,
+  restoredQuestionIndex,
+  resumeClearReason,
+  savedAnswersFromPayload,
+  startSessionArgs,
+  readSessionId,
+  startSessionOnce,
+  writeQuestionPlace,
+  writeSessionId,
+  type ResumeClearReason,
+} from "./sessionResume";
 import { autosaveStatusLabel, examErrorCopy, examLabels, examLabelsZh } from "./labels.js";
 import {
   countdownEndsAtMs,
@@ -40,6 +54,7 @@ type StartSessionSuccess = {
   questions: SessionQuestion[];
   section?: unknown;
   is_last?: boolean;
+  saved_answers?: unknown;
 };
 
 type RpcFailure = {
@@ -50,7 +65,7 @@ type RpcFailure = {
 type AutosaveState = "idle" | "saving" | "saved" | "error";
 
 const statusFrame =
-  "-mx-5 -my-10 flex min-h-[calc(100svh-3.5rem)] items-center justify-center px-5 py-10 sm:-mx-8 sm:px-8";
+  "-mx-5 -my-10 flex min-h-svh items-center justify-center px-5 py-10 sm:-mx-8 sm:px-8";
 
 function classifyError(code: string | undefined): RpcErrorCode {
   switch (code) {
@@ -180,6 +195,29 @@ export function SessionExam({ token }: { token: string }) {
     setFinishConfirmOpen(false);
   }, []);
 
+  const forgetResume = useCallback(
+    (input: { submitted?: boolean; error?: string | null; status?: string | null }) => {
+      const reason: ResumeClearReason | null = resumeClearReason(input);
+      if (!reason) return;
+      clearResumeStorage(window.localStorage, window.sessionStorage, token);
+    },
+    [token],
+  );
+
+  const rememberSession = useCallback(
+    (sessionId: string | null | undefined) => {
+      if (typeof sessionId !== "string") return;
+      writeSessionId(window.localStorage, token, sessionId);
+    },
+    [token],
+  );
+
+  const applySavedAnswers = useCallback((payload: unknown) => {
+    const restored = savedAnswersFromPayload(payload);
+    if (!restored) return;
+    setAnswers(restored);
+  }, []);
+
   const timerEndsAtMs = countdownEndsAtMs(currentSection, expiresAtMs);
   const remainingMs =
     timerEndsAtMs === null ? null : timerEndsAtMs - (nowMs + clockOffsetMs);
@@ -215,37 +253,50 @@ export function SessionExam({ token }: { token: string }) {
     async function start() {
       setLoading(true);
       const offsetPromise = measureClockOffsetMs();
-      const { data, error } = await supabase.rpc("start_session", {
-        p_token: token,
-        p_session_id: null,
-      });
+      const storedSessionId = readSessionId(window.localStorage, token);
+      const { data, error } = await startSessionOnce(token, storedSessionId, () =>
+        supabase.rpc("start_session", {
+          p_token: token,
+          ...startSessionArgs(storedSessionId),
+        }),
+      );
       const offset = await offsetPromise;
+      const payload = parseRpcPayload(data);
+      if (payload && payload.ok === true) rememberSession(payload.session_id);
       if (cancelled) return;
 
-      const payload = parseRpcPayload(data);
       if (error || !payload || payload.ok === false) {
-        stopExam(
-          classifyError(
-            extractErrorCode(
-              payload && payload.ok === false ? payload : null,
-              error,
-            ),
-          ),
+        const code = extractErrorCode(
+          payload && payload.ok === false ? payload : null,
+          error,
         );
+        forgetResume({ error: code });
+        stopExam(classifyError(code));
         setLoading(false);
         return;
       }
 
       sessionIdRef.current = payload.session_id;
+      applySavedAnswers(payload);
       const startedSection = sectionFromPayload(payload);
+      const incoming = payload.questions ?? [];
       if (startedSection) {
-        adoptServerSection(startedSection, payload.questions ?? []);
+        adoptServerSection(startedSection, incoming);
+        setIndex(
+          restoredQuestionIndex(
+            window.sessionStorage,
+            token,
+            sectionKey(startedSection),
+            incoming.length,
+          ),
+        );
       } else {
         sectionKeyRef.current = null;
         sectionIndexRef.current = null;
         setCurrentSection(null);
-        setQuestions(payload.questions ?? []);
+        setQuestions(incoming);
         setExpiresAtMs(new Date(payload.expires_at).getTime());
+        setIndex(restoredQuestionIndex(window.sessionStorage, token, null, incoming.length));
       }
       setClockOffsetMs(offset);
       setNowMs(Date.now());
@@ -257,7 +308,7 @@ export function SessionExam({ token }: { token: string }) {
     return () => {
       cancelled = true;
     };
-  }, [adoptServerSection, stopExam, supabase, token]);
+  }, [adoptServerSection, applySavedAnswers, forgetResume, rememberSession, stopExam, supabase, token]);
 
   useEffect(() => {
     if (loading || blockingError || submitted || timerEndsAtMs === null) return;
@@ -287,25 +338,24 @@ export function SessionExam({ token }: { token: string }) {
       const payload = parseRpcPayload(data);
 
       if (error || (payload && payload.ok === false)) {
-        stopExam(
-          classifyError(
-            extractErrorCode(
-              payload && payload.ok === false ? payload : null,
-              error,
-            ),
-          ),
+        const code = extractErrorCode(
+          payload && payload.ok === false ? payload : null,
+          error,
         );
+        forgetResume({ error: code });
+        stopExam(classifyError(code));
         submittingRef.current = false;
         setSubmitBusy(false);
         return;
       }
 
+      forgetResume({ submitted: true });
       setSubmitted(true);
       setConfirmOpen(false);
       setSubmitBusy(false);
       submittingRef.current = false;
     },
-    [stopExam, submitted, supabase, token],
+    [forgetResume, stopExam, submitted, supabase, token],
   );
 
   useEffect(() => {
@@ -326,10 +376,13 @@ export function SessionExam({ token }: { token: string }) {
 
     const payload = parseRpcPayload(data);
     if (payload && payload.ok === true) {
+      rememberSession(payload.session_id);
       if (payload.status === "submitted" || payload.is_last === true) {
+        forgetResume({ submitted: true, status: payload.status });
         setSubmitted(true);
         return;
       }
+      applySavedAnswers(payload);
       const nextSection = sectionFromPayload(payload);
       if (nextSection) {
         adoptServerSection(nextSection, payload.questions ?? []);
@@ -349,13 +402,17 @@ export function SessionExam({ token }: { token: string }) {
       error,
     );
     if (code === "already_submitted") {
+      forgetResume({ error: code });
       setSubmitted(true);
       return;
     }
     if (code === "section_locked") return;
     const classified = classifyError(code);
-    if (classified !== "unknown") stopExam(classified);
-  }, [adoptServerSection, stopExam, supabase, token]);
+    if (classified !== "unknown") {
+      forgetResume({ error: code });
+      stopExam(classified);
+    }
+  }, [adoptServerSection, applySavedAnswers, forgetResume, rememberSession, stopExam, supabase, token]);
 
   const advanceSection = useCallback(async () => {
     if (
@@ -392,6 +449,7 @@ export function SessionExam({ token }: { token: string }) {
 
     const interpreted = interpretAdvancePayload(data, error);
     if (interpreted.type === "submitted") {
+      forgetResume({ submitted: true });
       setSubmitted(true);
       setConfirmOpen(false);
       setFinishConfirmOpen(false);
@@ -416,6 +474,7 @@ export function SessionExam({ token }: { token: string }) {
     }
 
     if (interpreted.type === "blocked") {
+      forgetResume({ error: interpreted.code });
       stopExam(interpreted.code);
       advancingRef.current = false;
       setAdvanceBusy(false);
@@ -432,7 +491,7 @@ export function SessionExam({ token }: { token: string }) {
     setSectionNotice(interpreted.message);
     advancingRef.current = false;
     setAdvanceBusy(false);
-  }, [adoptServerSection, resyncSession, stopExam, submitted, supabase, token]);
+  }, [adoptServerSection, forgetResume, resyncSession, stopExam, submitted, supabase, token]);
 
   useEffect(() => {
     if (!shouldAutoAdvance(currentSection, remainingMs)) return;
@@ -481,6 +540,7 @@ export function SessionExam({ token }: { token: string }) {
             return;
           }
           if (rawCode === "expired" && sectionIndexRef.current !== null) {
+            forgetResume({ error: rawCode, submitted: true });
             setSubmitted(true);
             setAutosave("idle");
             return;
@@ -495,6 +555,7 @@ export function SessionExam({ token }: { token: string }) {
             code === "question_not_assigned" ||
             code === "invalid_session_id"
           ) {
+            forgetResume({ error: rawCode });
             stopExam(code);
             return;
           }
@@ -505,8 +566,30 @@ export function SessionExam({ token }: { token: string }) {
         setAutosave("saved");
       }, 800);
     },
-    [resyncSession, stopExam, submitted, supabase, token],
+    [forgetResume, resyncSession, stopExam, submitted, supabase, token],
   );
+
+  useEffect(() => {
+    if (loading || blockingError || submitted) return;
+    writeQuestionPlace(
+      window.sessionStorage,
+      token,
+      currentSection ? sectionKey(currentSection) : null,
+      index,
+    );
+  }, [blockingError, currentSection, index, loading, submitted, token]);
+
+  useEffect(() => {
+    return bindExamLeaveGuard(
+      window,
+      examLeaveGuardActive({
+        loading,
+        blockingError: blockingError !== null,
+        submitted,
+        questionCount: questions.length,
+      }),
+    );
+  }, [blockingError, loading, questions.length, submitted]);
 
   function updateAnswer(questionId: string, value: string) {
     setAnswers((current) => ({ ...current, [questionId]: value }));
