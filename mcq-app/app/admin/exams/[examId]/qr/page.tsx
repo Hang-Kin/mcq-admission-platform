@@ -84,7 +84,7 @@ export default async function ExamQrPage({
             <p className="text-sm text-muted-foreground">
               <Link href="/admin/exams" className="hover:underline"><T id="shell.group.exams" /></Link>
               {" · "}
-              <Link href={`/admin/exams/${exam.id}/timeslots`} className="hover:underline"><T id="schedule.page.timeslots" /></Link>
+              <Link href={`/admin/exams/${exam.id}/timeslots`} className="hover:underline"><T id="shell.item.checklistSittings" /></Link>
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
             <p className="text-sm text-muted-foreground">

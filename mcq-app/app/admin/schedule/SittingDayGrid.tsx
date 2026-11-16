@@ -11,11 +11,13 @@ import { parseHongKongDateTime } from "@/lib/hongKongTime";
 import { labels } from "./labels";
 import {
   buildDayTimeline,
+  dayBlockLabelSide,
   defaultTimelineDay,
   formatDayKey,
   hongKongDayKeyFromMs,
   hourLabel,
   shiftDayKey,
+  type DayBlock,
   type SittingWindow,
 } from "./sittingRules";
 
@@ -86,38 +88,9 @@ export function SittingDayGrid({
                   className="relative h-10 border-b border-border"
                   style={{ gridColumn: `2 / span ${timeline.hours.length}` }}
                 >
-                  {row.blocks.map((block) => {
-                    const className = block.overlaps
-                      ? "border-destructive bg-destructive/15 text-destructive"
-                      : "border-primary bg-primary/10 text-primary";
-                    const style = {
-                      left: `${block.left}%`,
-                      width: `${Math.max(block.width, 1.5)}%`,
-                    };
-                    if (!block.href) {
-                      return (
-                        <div
-                          key={block.id}
-                          title={block.label}
-                          className={`absolute top-1 flex h-8 items-center overflow-hidden rounded-md border border-dashed px-2 text-xs ${className}`}
-                          style={style}
-                        >
-                          {block.label}
-                        </div>
-                      );
-                    }
-                    return (
-                      <a
-                        key={block.id}
-                        href={block.href}
-                        title={block.label}
-                        className={`absolute top-1 flex h-8 items-center overflow-hidden rounded-md border px-2 text-xs hover:no-underline ${className}`}
-                        style={style}
-                      >
-                        {block.label}
-                      </a>
-                    );
-                  })}
+                  {row.blocks.map((block) => (
+                    <DayBlockView key={block.id} block={block} />
+                  ))}
                 </div>
               </div>
             ))}
@@ -125,6 +98,49 @@ export function SittingDayGrid({
         </div>
       )}
     </section>
+  );
+}
+
+function DayBlockView({ block }: { block: DayBlock }) {
+  const side = dayBlockLabelSide(block);
+  const tone = block.overlaps
+    ? "border-destructive bg-destructive/15 text-destructive"
+    : "border-primary bg-primary/10 text-primary";
+  const style = {
+    left: `${block.left}%`,
+    width: `${Math.max(block.width, 1.5)}%`,
+  };
+  const className = [
+    "absolute top-1 flex h-8 items-center rounded-md border text-xs",
+    block.href ? "hover:no-underline" : "border-dashed",
+    side === "inside" ? "overflow-hidden px-2" : "overflow-visible",
+    tone,
+  ].join(" ");
+  const label =
+    side === "inside" ? (
+      block.label
+    ) : (
+      <span
+        className={
+          side === "before"
+            ? "absolute right-full top-0 flex h-8 max-w-[10rem] items-center truncate whitespace-nowrap pr-1"
+            : "absolute left-full top-0 flex h-8 max-w-[10rem] items-center truncate whitespace-nowrap pl-1"
+        }
+      >
+        {block.label}
+      </span>
+    );
+  if (!block.href) {
+    return (
+      <div title={block.label} className={className} style={style}>
+        {label}
+      </div>
+    );
+  }
+  return (
+    <a href={block.href} title={block.label} className={className} style={style}>
+      {label}
+    </a>
   );
 }
 

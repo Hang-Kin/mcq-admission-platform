@@ -111,6 +111,7 @@ export type SittingFact = {
   startsAt: string | null;
   prepared: boolean;
   locked: boolean;
+  archived?: boolean;
 };
 
 export function isStartInNext24Hours(startsAt: string | null, nowMs: number): boolean {
@@ -151,7 +152,8 @@ export function sittingsChecklist(input: {
       warn: false,
     };
   }
-  if (input.sittings.length === 0) {
+  const sittings = input.sittings.filter((sitting) => sitting.archived !== true);
+  if (sittings.length === 0) {
     return {
       ...base,
       status: "No sittings",
@@ -161,7 +163,7 @@ export function sittingsChecklist(input: {
     };
   }
 
-  const warnings = input.sittings.filter((sitting) => {
+  const warnings = sittings.filter((sitting) => {
     const status = sittingState(sitting.prepared, sitting.locked);
     return status === "Not prepared" && isStartInNext24Hours(sitting.startsAt, input.nowMs);
   });
@@ -201,11 +203,12 @@ export type ExamFact = {
 export type SlotFact = {
   examId: string | null;
   endsAt: string | null;
+  archived?: boolean;
 };
 
 export function nextExamId(slots: SlotFact[], exams: ExamFact[], nowMs: number): string | null {
   const future = slots
-    .filter((slot) => slot.examId && slot.endsAt && Date.parse(slot.endsAt) > nowMs)
+    .filter((slot) => slot.archived !== true && slot.examId && slot.endsAt && Date.parse(slot.endsAt) > nowMs)
     .sort((a, b) => Date.parse(a.endsAt ?? "") - Date.parse(b.endsAt ?? ""));
   if (future[0]?.examId) return future[0].examId;
 

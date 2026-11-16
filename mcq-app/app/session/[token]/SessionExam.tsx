@@ -11,9 +11,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 import { ExamChrome } from "./ExamChrome";
+import { ExamCopy } from "./ExamCopy";
 import type { SessionQuestion } from "./examProgress";
 import { fractionAnswer, readFractionParts } from "./fractionAnswer";
-import { autosaveStatusLabel, examLabels } from "./labels.js";
+import { autosaveStatusLabel, examErrorCopy, examLabels, examLabelsZh } from "./labels.js";
 import {
   countdownEndsAtMs,
   interpretAdvancePayload,
@@ -526,23 +527,23 @@ export function SessionExam({ token }: { token: string }) {
   if (loading) {
     return (
       <main className={statusFrame}>
-        <p className="text-base text-muted-foreground">{examLabels.opening}</p>
+        <p className="text-base text-muted-foreground"><ExamCopy en={examLabels.opening} zh={examLabelsZh.opening} /></p>
       </main>
     );
   }
 
   if (blockingError) {
-    const copy = examLabels.errors[blockingError];
+    const copy = examErrorCopy(blockingError);
     return (
       <main className={statusFrame}>
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle className={copy.body ? "text-xl leading-snug" : "text-xl leading-normal"}>
-              {copy.title}
+            <CardTitle className={copy.body.en ? "text-xl leading-snug" : "text-xl leading-normal"}>
+              <ExamCopy en={copy.title.en} zh={copy.title.zh} />
             </CardTitle>
-            {copy.body ? (
+            {copy.body.en ? (
               <CardDescription className="text-base leading-relaxed">
-                {copy.body}
+                <ExamCopy en={copy.body.en} zh={copy.body.zh} />
               </CardDescription>
             ) : null}
           </CardHeader>
@@ -556,9 +557,9 @@ export function SessionExam({ token }: { token: string }) {
       <main className={statusFrame}>
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle className="text-xl leading-snug">{examLabels.submittedTitle}</CardTitle>
+            <CardTitle className="text-xl leading-snug"><ExamCopy en={examLabels.submittedTitle} zh={examLabelsZh.submittedTitle} /></CardTitle>
             <CardDescription className="text-base leading-relaxed">
-              {examLabels.submittedBody}
+              <ExamCopy en={examLabels.submittedBody} zh={examLabelsZh.submittedBody} />
             </CardDescription>
           </CardHeader>
         </Card>
@@ -571,9 +572,9 @@ export function SessionExam({ token }: { token: string }) {
       <main className={statusFrame}>
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle className="text-xl leading-snug">{examLabels.noQuestionsTitle}</CardTitle>
+            <CardTitle className="text-xl leading-snug"><ExamCopy en={examLabels.noQuestionsTitle} zh={examLabelsZh.noQuestionsTitle} /></CardTitle>
             <CardDescription className="text-base leading-relaxed">
-              {examLabels.noQuestionsBody}
+              <ExamCopy en={examLabels.noQuestionsBody} zh={examLabelsZh.noQuestionsBody} />
             </CardDescription>
           </CardHeader>
         </Card>

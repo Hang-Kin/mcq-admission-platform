@@ -69,12 +69,17 @@ test("the exam screen keeps the default theme and size", () => {
   assert.equal(staff.shell, "staff");
   assert.equal(staff.lang, "zh-Hant");
   const exam = documentPreferenceState(saved, "/session/token");
-  assert.deepEqual(viewPreferences(saved, "/session/token"), DEFAULT_PREFERENCES);
+  assert.deepEqual(viewPreferences(saved, "/session/token"), {
+    locale: "zh-Hant",
+    theme: "normal",
+    size: 100,
+  });
   assert.equal(exam.theme, "normal");
-  assert.equal(exam.locale, "en");
+  assert.equal(exam.locale, "zh-Hant");
   assert.equal(exam.fontSize, "100%");
   assert.equal(exam.shell, "exam");
-  assert.equal(exam.lang, "en");
+  assert.equal(exam.lang, "zh-Hant");
+  assert.deepEqual(viewPreferences(DEFAULT_PREFERENCES, "/session/token"), DEFAULT_PREFERENCES);
 });
 
 test("normal text stays at least 4.5:1 and the menu border is at least 3:1", () => {
@@ -178,12 +183,18 @@ test("the boot script applies a saved theme and skips the exam", () => {
     { theme: exam.theme, locale: exam.locale, shell: exam.shell, lang: exam.lang, fontSize: exam.fontSize },
     {
       theme: "normal",
-      locale: "en",
+      locale: "zh-Hant",
       shell: "exam",
-      lang: "en",
+      lang: "zh-Hant",
       fontSize: "100%",
     },
   );
+  assert.equal(exam.writes.cookie, null);
+  const plainExam = runBoot("/session/plain", "", null);
+  assert.equal(plainExam.locale, "en");
+  assert.equal(plainExam.lang, "en");
+  assert.equal(plainExam.theme, "normal");
+  assert.equal(plainExam.fontSize, "100%");
 });
 
 test("an old contrast value maps to dark with no error", () => {
@@ -217,6 +228,9 @@ test("an old contrast value maps to dark with no error", () => {
   assert.equal(fromStorage.writes.storage, "en.dark.200");
   const exam = runBoot("/session/abc", "mcq-prefs=zh-Hant.contrast.150", "zh-Hant.contrast.150");
   assert.equal(exam.theme, "normal");
+  assert.equal(exam.locale, "zh-Hant");
+  assert.equal(exam.lang, "zh-Hant");
+  assert.equal(exam.fontSize, "100%");
   assert.equal(exam.writes.cookie, null);
   assert.equal(exam.writes.storage, null);
 });

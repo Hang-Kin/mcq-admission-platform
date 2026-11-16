@@ -19,9 +19,9 @@ export default async function NewExamPage() {
         </p>
         <h1 className="text-2xl"><T id="shell.copy.newExam" /></h1>
         <p className="text-sm text-muted-foreground">
-        The exam is available as soon as you create it. Next you can add
-        sections and timeslots.
-      </p>
+          The exam is available as soon as you create it. Next you can add
+          sections and sittings.
+        </p>
       </div>
       <ExamForm action={createExam} />
     </main>

@@ -9,6 +9,7 @@ import {
   canConfirmDelete,
   clashMessage,
   countStudents,
+  dayBlockLabelSide,
   defaultTimelineDay,
   existingOverlapWarning,
   findClashes,
@@ -188,6 +189,14 @@ test("the day grid is Hong Kong time and marks overlaps, not touching edges", ()
 
   const warning = existingOverlapWarning([morning, overlap, next]);
   assert.equal(warning, "Morning overlaps Overlap. Overlap overlaps Late morning.");
+});
+
+test("narrow day-grid bars keep their names beside the bar", () => {
+  assert.equal(dayBlockLabelSide({ left: 10, width: 40 }), "inside");
+  assert.equal(dayBlockLabelSide({ left: 0, width: 12 }), "inside");
+  assert.equal(dayBlockLabelSide({ left: 4, width: 3 }), "after");
+  assert.equal(dayBlockLabelSide({ left: 80, width: 4 }), "before");
+  assert.equal(dayBlockLabelSide({ left: 10, width: 4 }), "after");
 });
 
 test("the default day prefers today, then the next sitting", () => {

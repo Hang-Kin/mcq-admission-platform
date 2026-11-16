@@ -155,7 +155,9 @@ const { ExamChrome } = loadSource(
 };
 
 function buttonText(button: Element) {
-  return (button.textContent ?? "").replace(/\s+/g, " ").trim();
+  const clone = button.cloneNode(true) as Element;
+  clone.querySelectorAll(".shell-zh, .sr-only").forEach((node) => node.remove());
+  return (clone.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
 function buttons(root: ParentNode) {
@@ -247,8 +249,18 @@ test("earlier questions hide Finish and the last question asks before finishing"
   assert.equal(labels(view.container).includes("Finish Section A"), false);
   assert.equal(labels(view.container).includes("Submit exam"), false);
   assert.equal(view.container.querySelector("[role='dialog']"), null);
-  assert.ok(buttonByText(view.container, "Previous"));
-  assert.ok(buttonByText(view.container, "Next"));
+  const previousButton = buttonByText(view.container, "Previous");
+  const nextButton = buttonByText(view.container, "Next");
+  assert.ok(previousButton);
+  assert.ok(nextButton);
+  assert.equal(previousButton?.querySelector(".shell-en")?.textContent, "Previous");
+  assert.equal(previousButton?.querySelector(".shell-zh")?.textContent, "上一題");
+  assert.equal(nextButton?.querySelector(".shell-zh")?.textContent, "下一題");
+  assert.equal(
+    view.container.querySelector("main")?.className,
+    "-mx-5 -my-10 flex min-h-[calc(100svh-3.5rem)] min-w-0 flex-col sm:-mx-8",
+  );
+  assert.ok(view.container.querySelector(".grid.grid-cols-2"));
 
   await click(view.container, "2");
   assert.equal(labels(view.container).includes("Finish Section A"), false);

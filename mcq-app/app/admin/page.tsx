@@ -64,7 +64,7 @@ export default async function AdminHome() {
   ] = await Promise.all([
     supabase.from("questions").select("subject, category").in("subject", ["Math", "Chinese"]),
     supabase.from("subject_settings").select("subject, questions_per_category"),
-    supabase.from("timeslots").select("id, label, starts_at, ends_at, exam_id"),
+    supabase.from("timeslots").select("id, label, starts_at, ends_at, exam_id, archived_at"),
     supabase.from("timeslot_draws").select("timeslot_id"),
     supabase.from("test_instances").select("timeslot_id").not("started_at", "is", null),
     supabase.from("exams").select("id, created_at"),
@@ -95,10 +95,27 @@ export default async function AdminHome() {
     category: row.category == null ? null : String(row.category),
   }));
 
+  let slotRows: Array<{
+    id: string;
+    label: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+    exam_id: string | null;
+    archived_at?: string | null;
+  }> = slotsResult.data ?? [];
+  let slotsError = slotsResult.error;
+  if (slotsError && isMissingSchema(slotsError)) {
+    const plainSlots = await supabase
+      .from("timeslots")
+      .select("id, label, starts_at, ends_at, exam_id");
+    slotRows = plainSlots.data ?? [];
+    slotsError = plainSlots.error;
+  }
+
   const drawsMissing = isMissingSchema(drawsResult.error);
   const sittingsMissing = drawsMissing;
   const sittingsFailed =
-    Boolean(slotsResult.error) ||
+    Boolean(slotsError) ||
     (Boolean(drawsResult.error) && !drawsMissing) ||
     (Boolean(startedResult.error) && !isMissingSchema(startedResult.error));
   const preparedIds = new Set(
@@ -110,16 +127,18 @@ export default async function AdminHome() {
       .filter((id): id is string => Boolean(id))
       .map(String),
   );
-  const sittings: SittingFact[] = (slotsResult.data ?? []).map((slot) => ({
+  const sittings: SittingFact[] = slotRows.map((slot) => ({
     label: String(slot.label ?? ""),
     startsAt: slot.starts_at,
     prepared: preparedIds.has(String(slot.id)),
     locked: lockedIds.has(String(slot.id)),
+    archived: "archived_at" in slot && Boolean(slot.archived_at),
   }));
 
-  const slots: SlotFact[] = (slotsResult.data ?? []).map((slot) => ({
+  const slots: SlotFact[] = slotRows.map((slot) => ({
     examId: slot.exam_id,
     endsAt: slot.ends_at,
+    archived: "archived_at" in slot && Boolean(slot.archived_at),
   }));
   const exams: ExamFact[] = (examsResult.data ?? []).map((exam) => ({
     id: String(exam.id),
@@ -137,7 +156,7 @@ export default async function AdminHome() {
     Boolean(studentsResult.error) ||
     Boolean(instancesResult.error) ||
     Boolean(examsResult.error) ||
-    Boolean(slotsResult.error);
+    Boolean(slotsError);
 
   const steps = markPrimary([
     questionsChecklist({

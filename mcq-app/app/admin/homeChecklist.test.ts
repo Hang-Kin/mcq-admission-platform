@@ -93,6 +93,31 @@ test("a sitting warns only when it starts in the next 24 hours and is not prepar
     sittingsChecklist({ missing: false, failed: false, nowMs: now, when: () => "", sittings: [] }).detail,
     "No sittings yet.",
   );
+
+  const archivedOnly = sittingsChecklist({
+    missing: false,
+    failed: false,
+    nowMs: now,
+    when: () => "today at 9:00",
+    sittings: [
+      { label: "Old", startsAt: hours(2), prepared: false, locked: false, archived: true },
+    ],
+  });
+  assert.equal(archivedOnly.detail, "No sittings yet.");
+  assert.equal(archivedOnly.warn, false);
+
+  const archivedIgnored = sittingsChecklist({
+    missing: false,
+    failed: false,
+    nowMs: now,
+    when: () => "today at 9:00",
+    sittings: [
+      { label: "Old", startsAt: hours(2), prepared: false, locked: false, archived: true },
+      { label: "Morning", startsAt: hours(2), prepared: true, locked: false },
+    ],
+  });
+  assert.equal(archivedIgnored.done, true);
+  assert.equal(archivedIgnored.detail, "Sittings in the next day are prepared.");
 });
 
 test("the next exam is the earliest sitting still open, otherwise the newest exam", () => {
@@ -120,6 +145,25 @@ test("the next exam is the earliest sitting still open, otherwise the newest exa
     "newest",
   );
   assert.equal(nextExamId([], [], now), null);
+  assert.equal(
+    nextExamId(
+      [
+        { examId: "archived", endsAt: hours(1), archived: true },
+        { examId: "open", endsAt: hours(5) },
+      ],
+      [{ id: "newest", createdAt: hours(0) }],
+      now,
+    ),
+    "open",
+  );
+  assert.equal(
+    nextExamId(
+      [{ examId: "archived", endsAt: hours(1), archived: true }],
+      [{ id: "newest", createdAt: hours(-1) }],
+      now,
+    ),
+    "newest",
+  );
 });
 
 test("QR codes are done only when every student has a code", () => {
