@@ -68,9 +68,9 @@ Pass: both timers show 5 minutes from the moment of the scan, not the minutes le
 
 ### Slot one minute shorter
 
-On the same 5-minute exam, create a slot from 10:00 to 10:04 Hong Kong time. A student scans at 10:00.
+On the same 5-minute exam, try to create a slot from 10:00 to 10:04 Hong Kong time.
 
-Pass: the timer shows 5 minutes, not 4. At 10:04 the exam is still open. It ends when the 5 minutes are up, or when the student submits. The shorter slot does not cut the exam off one minute early.
+Pass: the slot is refused with a message, and nothing is saved. A slot shorter than the exam is refused with a message, which is the intended rule.
 
 ### Empty file
 
