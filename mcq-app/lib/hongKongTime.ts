@@ -47,9 +47,6 @@ export function hongKongEnglishDate(utcMs: number): string {
   return `${parts.day} ${MONTHS_EN[parts.month - 1] ?? ""} ${parts.year}`;
 }
 
-function zoneOffsetMs(_utcMs: number): number {
-  return HONG_KONG_OFFSET_MS;
-}
 
 // A value that already has a zone is an absolute instant.
 // A datetime-local value has no zone. Read that wall clock as Hong Kong
@@ -83,9 +80,7 @@ export function parseHongKongDateTime(value: string): number | null {
   }
 
   const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute, second);
-  let utc = wallAsUtc - zoneOffsetMs(wallAsUtc);
-  const refined = wallAsUtc - zoneOffsetMs(utc);
-  if (refined !== utc) utc = refined;
+  const utc = wallAsUtc - HONG_KONG_OFFSET_MS;
 
   const back = hongKongParts(utc);
   if (
