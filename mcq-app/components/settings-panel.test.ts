@@ -112,6 +112,7 @@ function pointer(type: "mouseover" | "mouseout", target: HTMLElement) {
 
 async function hoverCycle(button: HTMLButtonElement, region: HTMLElement) {
   await act(async () => {
+    pointer("mouseout", region);
     pointer("mouseover", button);
   });
   assert.ok(panel(), "hover should open settings");
@@ -143,8 +144,9 @@ test("Escape closes settings on the second hover open", async () => {
   await act(async () => {
     button.focus();
     button.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    pointer("mouseover", button);
   });
-  assert.equal(panel(), null, "the first Escape after reopening should close the panel");
+  assert.equal(panel(), null, "Escape stays closed when the panel was under the pointer");
 
   await hoverCycle(button, region);
   await act(async () => {

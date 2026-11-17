@@ -48,6 +48,7 @@ export function SettingsPanel({
   const pointerType = useRef("mouse");
   const onOpenRef = useRef(onOpen);
   const dispatchRef = useRef<(event: PanelEvent, hoverCapable?: boolean) => void>(() => {});
+  const ignoreHover = useRef(false);
 
   useEffect(() => {
     onOpenRef.current = onOpen;
@@ -82,8 +83,11 @@ export function SettingsPanel({
   }
 
   function dispatch(event: PanelEvent, hoverCapable = canHover()) {
+    if (event.type === "pointer-outside") ignoreHover.current = false;
+    if (event.type === "pointer-inside" && ignoreHover.current) return;
     const wasOpen = modelRef.current.open;
     const step = reducePanel(modelRef.current, event, hoverCapable);
+    if (event.type === "escape") ignoreHover.current = true;
     commit(step.model, step.focusTrigger);
     if (!wasOpen && step.model.open) onOpenRef.current();
   }
