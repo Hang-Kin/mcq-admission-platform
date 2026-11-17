@@ -4,6 +4,9 @@ import test from "node:test";
 import {
   formatHongKongDateTime,
   formatHongKongRange,
+  formatHongKongStamp,
+  hongKongEnglishDate,
+  hongKongWeekdayShort,
   parseHongKongDateTime,
 } from "./hongKongTime.ts";
 
@@ -23,6 +26,15 @@ test("a time just after midnight stays on the Hong Kong date", () => {
     formatHongKongRange("2026-11-02T00:10", "2026-11-02T00:26"),
     "2 Nov 2026, 00:10–00:26 HKT",
   );
+});
+
+test("staff dates stay the same on the server and in the browser", () => {
+  const ms = Date.parse("2026-11-02T05:46:00.000Z");
+  assert.equal(hongKongWeekdayShort(ms), "Mon");
+  assert.equal(hongKongEnglishDate(ms), "2 Nov 2026");
+  assert.equal(formatHongKongStamp(ms), "2 Nov 2026, 13:46");
+  assert.equal(formatHongKongStamp(ms, "zh-Hant"), "2026年11月2日 13:46");
+  assert.equal(formatHongKongDateTime("2026-11-02T13:46"), formatHongKongStamp(ms) + " HKT");
 });
 
 test("a value that already has a zone is left as that instant", () => {

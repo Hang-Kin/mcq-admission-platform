@@ -17,44 +17,38 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+/** Hong Kong has had no daylight saving since 1979. A fixed offset keeps server and browser text identical. */
+const HONG_KONG_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
 export function hongKongParts(utcMs: number): HongKongParts {
-  const formatted = new Intl.DateTimeFormat("en-GB", {
-    timeZone: HONG_KONG_TIME_ZONE,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const bag: Record<string, string> = {};
-  for (const part of formatted.formatToParts(new Date(utcMs))) {
-    if (part.type !== "literal") bag[part.type] = part.value;
-  }
-  let hour = Number(bag.hour);
-  if (hour === 24) hour = 0;
+  const shifted = new Date(utcMs + HONG_KONG_OFFSET_MS);
   return {
-    year: Number(bag.year),
-    month: Number(bag.month),
-    day: Number(bag.day),
-    hour,
-    minute: Number(bag.minute),
-    second: Number(bag.second),
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes(),
+    second: shifted.getUTCSeconds(),
   };
 }
 
-function zoneOffsetMs(utcMs: number): number {
+export function hongKongWeekdayShort(utcMs: number): string {
   const parts = hongKongParts(utcMs);
-  const asUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second,
-  );
-  return asUtc - utcMs;
+  const index = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
+  return WEEKDAYS_EN[index] ?? "";
+}
+
+export function hongKongEnglishDate(utcMs: number): string {
+  const parts = hongKongParts(utcMs);
+  return `${parts.day} ${MONTHS_EN[parts.month - 1] ?? ""} ${parts.year}`;
+}
+
+function zoneOffsetMs(_utcMs: number): number {
+  return HONG_KONG_OFFSET_MS;
 }
 
 // A value that already has a zone is an absolute instant.
@@ -110,16 +104,9 @@ export function parseHongKongDateTime(value: string): number | null {
 export type ClockLocale = "en" | "zh-Hant";
 
 function dayLabel(utcMs: number, locale: ClockLocale = "en"): string {
-  if (locale === "zh-Hant") {
-    const parts = hongKongParts(utcMs);
-    return `${parts.year}年${parts.month}月${parts.day}日`;
-  }
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: HONG_KONG_TIME_ZONE,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(utcMs));
+  const parts = hongKongParts(utcMs);
+  if (locale === "zh-Hant") return `${parts.year}年${parts.month}月${parts.day}日`;
+  return hongKongEnglishDate(utcMs);
 }
 
 /** Hour and minute in Hong Kong, with a Chinese date when the UI language asks for it. */

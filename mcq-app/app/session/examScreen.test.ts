@@ -306,6 +306,15 @@ test("a finished section with every answer omits the unanswered count", async ()
   await view.unmount();
 });
 
+test("the exam paper has one header and one Next button", async () => {
+  const view = await mount({ section: sectionA, answers: {} });
+  assert.equal(view.container.querySelectorAll("header").length, 1);
+  assert.equal(view.container.querySelectorAll("footer").length, 1);
+  const nextButtons = buttons(view.container).filter((button) => buttonText(button) === "Next");
+  assert.equal(nextButtons.length, 1);
+  await view.unmount();
+});
+
 test("final submit is only on the last question and counts blanks", async () => {
   let submitted = 0;
   const view = await mount({
