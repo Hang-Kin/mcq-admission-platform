@@ -113,11 +113,11 @@ export default async function ExamGradesPage({
 
           {instancesError ? (
             <p className="text-sm text-destructive">
-              Failed to load submitted exams.
+              <T id="shell.copy.failedSubmitted" />
             </p>
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No students have submitted this exam yet.
+              <T id="shell.copy.noSubmissions" />
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -142,15 +142,24 @@ export default async function ExamGradesPage({
                       {row.application_number}
                     </td>
                     <td className="border-b py-3 pr-4">
-                      {row.score.correct}/{row.score.total} correct
-                      {row.score.pendingReview > 0
-                        ? ` · ${row.score.pendingReview} to review`
-                        : ""}
+                      <T id="results.page.scoreLine" values={{ correct: row.score.correct, total: row.score.total }} />
+                      {row.score.pendingReview > 0 ? (
+                        <>
+                          {" · "}
+                          {row.score.pendingReview === 1 ? (
+                            <T id="results.page.oneToReview" />
+                          ) : (
+                            <T id="results.page.nToReview" values={{ count: row.score.pendingReview }} />
+                          )}
+                        </>
+                      ) : null}
                     </td>
                     <td className="border-b py-3">
                       <div className="flex flex-wrap gap-2">
                         {row.grade ? (
-                          <Badge>Finalized {Number(row.grade.final_grade)}%</Badge>
+                          <Badge>
+                            <T id="results.page.finalizedShort" values={{ percent: Number(row.grade.final_grade) }} />
+                          </Badge>
                         ) : (
                           <Badge variant="secondary"><T id="schedule.page.notFinalized" /></Badge>
                         )}

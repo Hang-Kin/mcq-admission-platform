@@ -88,13 +88,16 @@ export default async function ExamQrPage({
             </p>
             <h1 className="text-2xl">{exam.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {exam.duration_minutes} minute{exam.duration_minutes === 1 ? "" : "s"}
+              {exam.duration_minutes === 1 ? (
+                <T id="shell.copy.oneMinute" />
+              ) : (
+                <T id="shell.copy.nMinutes" values={{ count: exam.duration_minutes }} />
+              )}
             </p>
           </header>
           {intakeMissing ? (
             <p className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground">
-              QR codes are waiting for a database update. You can leave this
-              page until that update is applied.
+              <T id="shell.copy.codesLeave" />
             </p>
           ) : studentError ? (
             <p className="text-sm text-destructive"><T id="schedule.page.couldNotLoadStudents" /></p>

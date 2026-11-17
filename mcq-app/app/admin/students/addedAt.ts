@@ -1,15 +1,7 @@
-const addedAtFormat = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Hong_Kong",
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
+import { formatHongKongStamp } from "@/lib/hongKongTime";
 
-export function formatAddedAt(value: string): string {
+export function formatAddedAt(value: string, locale: "en" | "zh-Hant" = "en"): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return addedAtFormat.format(date);
+  return formatHongKongStamp(date.getTime(), locale);
 }

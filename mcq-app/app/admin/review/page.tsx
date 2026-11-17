@@ -139,9 +139,9 @@ async function loadGrades(
 }
 
 function marker(isCorrect: boolean | null) {
-  if (isCorrect === true) return "Correct";
-  if (isCorrect === false) return "Incorrect";
-  return "Not graded";
+  if (isCorrect === true) return <T id="shell.copy.correct" />;
+  if (isCorrect === false) return <T id="shell.copy.incorrect" />;
+  return <T id="shell.copy.notGraded" />;
 }
 
 export default async function ReviewQueuePage() {
@@ -253,14 +253,14 @@ export default async function ReviewQueuePage() {
       <div className="max-w-2xl space-y-2">
         <h1 className="text-2xl"><T id="shell.nav.results" /></h1>
         <p className="text-sm text-muted-foreground">
-          Scores for submitted sittings, then written answers that still need a teacher.
+          <T id="shell.copy.reviewIntro" />
         </p>
       </div>
 
       <section className="max-w-3xl space-y-3">
         <h2 className="text-lg"><T id="shell.copy.export" /></h2>
         <p className="text-sm text-muted-foreground">
-          Download submitted results for one exam. Times are Hong Kong time.
+          <T id="shell.copy.exportIntro" />
         </p>
         {intakeMissing ? (
           <p className="text-sm text-muted-foreground">{INTAKE_WAITING_READ}</p>
@@ -309,13 +309,24 @@ export default async function ReviewQueuePage() {
                         </td>
                         <td className="border-b py-3 pr-4">{row.applicationNumber}</td>
                         <td className="border-b py-3 pr-4">
-                          {row.correct}/{row.total} correct
-                          {row.pendingReview > 0 ? ` · ${row.pendingReview} to review` : ""}
+                          <T id="results.page.scoreLine" values={{ correct: row.correct, total: row.total }} />
+                          {row.pendingReview > 0 ? (
+                            <>
+                              {" · "}
+                              {row.pendingReview === 1 ? (
+                                <T id="results.page.oneToReview" />
+                              ) : (
+                                <T id="results.page.nToReview" values={{ count: row.pendingReview }} />
+                              )}
+                            </>
+                          ) : null}
                         </td>
                         <td className="border-b py-3">
                           <div className="flex flex-wrap gap-2">
                             {row.finalized != null ? (
-                              <Badge>Finalized {row.finalized}%</Badge>
+                              <Badge>
+                            <T id="results.page.finalizedShort" values={{ percent: row.finalized }} />
+                          </Badge>
                             ) : (
                               <Badge variant="secondary"><T id="schedule.page.notFinalized" /></Badge>
                             )}
@@ -338,7 +349,7 @@ export default async function ReviewQueuePage() {
         <div className="max-w-2xl space-y-2">
           <h2 className="text-lg"><T id="results.page.writtenWaiting" /></h2>
           <p className="text-sm text-muted-foreground">
-            Text answers waiting for a teacher to mark correct or incorrect.
+            <T id="shell.copy.writtenQueue" />
           </p>
         </div>
 

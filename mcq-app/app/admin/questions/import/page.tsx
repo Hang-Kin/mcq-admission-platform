@@ -17,7 +17,7 @@ export default async function ImportQuestionsPage() {
         </p>
         <h1 className="text-2xl"><T id="shell.account.importQuestions" /></h1>
         <p className="text-sm text-muted-foreground">
-          Upload a CSV. Rows are checked before anything is saved.
+          <T id="shell.copy.uploadCsv" />
         </p>
       </div>
       <ImportForm />

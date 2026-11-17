@@ -1,7 +1,7 @@
 "use client";
 
 import { T, TText } from "@/app/admin/T";
-import { OptionText } from "@/app/admin/usePhrase";
+import { OptionText, usePhrase } from "@/app/admin/usePhrase";
 
 import { useRef, useState, type FormEvent } from "react";
 
@@ -64,6 +64,7 @@ export function QuestionForm({
   questionSetNames,
   initialQuestionSet = "",
 }: QuestionFormProps) {
+  const tx = usePhrase();
   const listId = "question-set-names";
   const imageRef = useRef<HTMLInputElement>(null);
   const allowNumeric = question?.type === "numeric";
@@ -217,7 +218,7 @@ export function QuestionForm({
           required
           value={questionSet}
           onChange={(event) => setQuestionSet(event.target.value)}
-          placeholder="Type a new set name or pick an existing one"
+          placeholder={tx("Type a new set name or pick an existing one")}
         />
         <datalist id={listId}>
           {questionSetNames.map((name) => (
@@ -225,7 +226,7 @@ export function QuestionForm({
           ))}
         </datalist>
         <p className="text-sm text-muted-foreground">
-          A set is the shared question_set tag. Type a new name to create one.
+          <T id="shell.copy.setTagHelp" />
         </p>
       </div>
 
@@ -240,7 +241,7 @@ export function QuestionForm({
           className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
         />
         <p className="text-sm text-muted-foreground">
-          Required even when you attach an image. Use it as the instruction or caption.
+          <T id="shell.copy.imageCaption" />
         </p>
       </div>
 
@@ -270,7 +271,7 @@ export function QuestionForm({
               checked={removeImage}
               onChange={(event) => setRemoveImage(event.target.checked)}
             />
-            Remove current image
+            <T id="shell.copy.removeImage" />
           </label>
         ) : null}
       </div>
@@ -322,7 +323,7 @@ export function QuestionForm({
         <div className="flex flex-col gap-2">
           <Label><T id="shell.copy.options" /></Label>
           <p className="text-sm text-muted-foreground">
-            Mark exactly one option as correct.
+            <T id="shell.copy.markOne" />
           </p>
           {options.map((option, index) => (
             <div key={index} className="flex items-center gap-2">
@@ -331,12 +332,12 @@ export function QuestionForm({
                 name="correct_option"
                 checked={correctOptionIndex === index}
                 onChange={() => setCorrectOptionIndex(index)}
-                aria-label={`Mark option ${index + 1} as correct`}
+                aria-label={tx(`Mark option ${index + 1} as correct`)}
               />
               <Input
                 value={option}
                 onChange={(event) => updateOption(index, event.target.value)}
-                placeholder={`Option ${index + 1}`}
+                placeholder={tx(`Option ${index + 1}`)}
               />
               <Button
                 type="button"
@@ -344,13 +345,13 @@ export function QuestionForm({
                 disabled={options.length <= 2}
                 onClick={() => removeOption(index)}
               >
-                Remove
+                <T id="shell.copy.remove" />
               </Button>
             </div>
           ))}
           {options.length < MAX_OPTIONS ? (
             <Button type="button" variant="outline" onClick={addOption}>
-              Add option
+              <T id="shell.copy.addOption" />
             </Button>
           ) : null}
         </div>

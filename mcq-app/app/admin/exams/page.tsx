@@ -2,6 +2,8 @@ import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { formatHongKongStamp } from "@/lib/hongKongTime";
+import { readServerPreferences } from "@/lib/preferences/server";
 import { createClient } from "@/lib/supabase/server";
 
 import { labels } from "../schedule/labels";
@@ -9,6 +11,7 @@ import { labels } from "../schedule/labels";
 export const instant = false;
 
 export default async function ExamsPage() {
+  const prefs = await readServerPreferences();
   const supabase = await createClient();
   const { data: exams, error } = await supabase
     .from("exams")
@@ -53,11 +56,11 @@ export default async function ExamsPage() {
                     {exam.name}
                   </td>
                   <td className="border-b py-3 pr-4">
-                    {exam.duration_minutes} min
+                    <T id="shell.copy.nMin" values={{ count: exam.duration_minutes }} />
                   </td>
                   <td className="border-b py-3 pr-4">
                     {exam.created_at
-                      ? new Date(exam.created_at).toLocaleString()
+                      ? formatHongKongStamp(new Date(exam.created_at).getTime(), prefs.locale)
                       : ""}
                   </td>
                   <td className="border-b py-3 pr-4">
@@ -65,7 +68,7 @@ export default async function ExamsPage() {
                       href={`/admin/exams/${exam.id}/qr`}
                       className="hover:underline"
                     >
-                      Generate QR
+                      <T id="shell.copy.generateQr" />
                     </Link>
                   </td>
                   <td className="border-b py-3 pr-4">

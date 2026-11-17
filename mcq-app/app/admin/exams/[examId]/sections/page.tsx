@@ -134,9 +134,11 @@ export default async function ExamSectionsPage({
             <h1 className="text-2xl">{exam.name}</h1>
             <p className="text-sm text-muted-foreground"><T id="shell.copy.sections" /></p>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              {startedUnknown
-                ? "These minutes cannot be changed until we know whether a student has started."
-                : minutesMessage}{" "}
+              {startedUnknown ? (
+                <T id="schedule.page.minutesUnknown" />
+              ) : (
+                <TText text={minutesMessage} />
+              )}{" "}
               <Link href="/admin/bank?tab=settings" className="hover:underline">
                 <TText text={labels.subjectSettingsLink} />
               </Link>
@@ -144,12 +146,12 @@ export default async function ExamSectionsPage({
             <p className="max-w-2xl text-sm text-muted-foreground"><TText text={labels.sectionsIntro} /></p>
             {startedUnknown ? (
               <p className="text-sm text-destructive">
-                Could not check whether a student has started, so the minutes cannot be changed.
+                <T id="schedule.page.minutesCannot" />
               </p>
             ) : null}
             {!started && !startedUnknown && settingsResult.error ? (
               <p className="text-sm text-destructive">
-                Could not load Subject settings, so the saved section minutes are shown.
+                <T id="schedule.page.minutesShown" />
               </p>
             ) : null}
           </header>

@@ -122,9 +122,15 @@ export function matchPhrase(text: string): PhraseMatch | null {
     const found = entry.regex?.exec(normalized);
     if (!found) continue;
     const values: Record<string, string> = {};
+    let crossesSentence = false;
     entry.names.forEach((name, index) => {
-      values[name] = found[index + 1] ?? "";
+      const value = found[index + 1] ?? "";
+      if (value.includes(". ")) crossesSentence = true;
+      values[name] = value;
     });
+    // A placeholder must not swallow the next sentence. Otherwise
+    // "A overlaps B. C overlaps D." becomes one pair and stays half English.
+    if (crossesSentence) continue;
     if (fill(t(entry.id, "en"), values) !== normalized) continue;
     return { id: entry.id, values };
   }
@@ -138,16 +144,23 @@ export function fill(template: string, values: Record<string, string | number> =
 export function phrase(text: string, locale: Locale, depth = 0): string {
   const normalized = normalizeCopy(text);
   const hit = matchPhrase(normalized);
-  if (!hit || depth > 5) return text;
-  const template = t(hit.id, locale);
-  if (template === hit.id) return text;
-  const filled = template.replace(/\{(\w+)\}/g, (_, name: string) => {
-    const raw = hit.values[name] ?? "";
-    const nested = depth < 5 ? matchPhrase(raw) : null;
-    if (!nested || nested.id === hit.id) return raw;
-    return phrase(raw, locale, depth + 1);
-  });
-  return filled;
+  if (hit && depth <= 5) {
+    const template = t(hit.id, locale);
+    if (template !== hit.id) {
+      return template.replace(/\{(\w+)\}/g, (_, name: string) => {
+        const raw = hit.values[name] ?? "";
+        const nested = depth < 5 ? matchPhrase(raw) : null;
+        if (!nested || nested.id === hit.id) return raw;
+        return phrase(raw, locale, depth + 1);
+      });
+    }
+  }
+  if (hit || depth > 5 || !normalized.includes(". ")) return text;
+  const parts = normalized.split(/(?<=\.)\s+/);
+  if (parts.length < 2) return text;
+  const translated = parts.map((part) => phrase(part, locale, depth + 1));
+  if (translated.every((part, index) => part === parts[index])) return text;
+  return translated.join(" ");
 }
 
 export function phraseParts(text: string): Array<{ text: string } | PhraseMatch> {

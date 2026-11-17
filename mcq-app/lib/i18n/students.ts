@@ -25,7 +25,10 @@ const phrases: PhraseMap = {
   "page.addStudent": ["Add student", "新增學生"],
   "page.chooseYearMonth": ["Choose a year and a month.", "請選擇年份和月份。"],
   "page.spreadsheet": ["Spreadsheet", "試算表"],
-  "page.columns": ["Columns used: {columns}. ID and 參考編號 are ignored.", "使用的欄：{columns}。ID 和參考編號會被忽略。"],
+  "page.columns": [
+    "Columns used: {code}, {english}, and {chinese}. ID and 參考編號 are ignored.",
+    "使用的欄：{code}、{english}和{chinese}。ID 和參考編號會被忽略。",
+  ],
   "page.checking": ["Checking this intake…", "正在檢查這個入學期…"],
   "page.problems": ["Problems", "問題"],
   "page.blank": ["Blank", "空白"],

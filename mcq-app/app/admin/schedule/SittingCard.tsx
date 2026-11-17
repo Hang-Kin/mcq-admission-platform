@@ -1,7 +1,7 @@
 "use client";
 
 import { T, TText } from "@/app/admin/T";
-import { phraseNow } from "@/app/admin/usePhrase";
+import { phraseNow, useLiveLocale } from "@/app/admin/usePhrase";
 
 import { useState, type FormEvent, type ReactNode } from "react";
 
@@ -56,7 +56,8 @@ export function SittingCard({
   children?: ReactNode;
 }) {
   const button = sittingButton(status);
-  const when = formatHongKongRange(startsAt, endsAt);
+  const locale = useLiveLocale();
+  const when = formatHongKongRange(startsAt, endsAt, locale);
   const cannotRun = button.disabled || unavailable;
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

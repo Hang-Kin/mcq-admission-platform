@@ -420,7 +420,7 @@ export default async function SchedulePage({
           </div>
           {settingsResult.error && !isMissingSchema(settingsResult.error) ? (
             <p className="text-sm text-destructive">
-              Could not read Subject settings, so the length check uses the saved section minutes.
+              <T id="schedule.page.lengthUnread" />
             </p>
           ) : null}
           {overlapWarning ? (

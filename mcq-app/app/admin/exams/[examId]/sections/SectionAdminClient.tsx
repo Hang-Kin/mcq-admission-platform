@@ -250,10 +250,12 @@ function SectionForm({
       </div>
       {bankSubject ? (
         <p className="text-sm text-muted-foreground">
-          {sectionSourceText({
-            subject: initial?.subject ?? null,
-            questionSet: questionSet,
-          })}
+          <TText
+            text={sectionSourceText({
+              subject: initial?.subject ?? null,
+              questionSet: questionSet,
+            })}
+          />
         </p>
       ) : (
         <div className="grid gap-2">
@@ -367,7 +369,7 @@ function MoveSectionButtons({
           disabled={isFirst || pending !== null}
           onClick={() => void move("up")}
         >
-          {pending === "up" ? "Moving…" : "Move up"}
+          {pending === "up" ? <T id="schedule.page.moving" /> : <T id="schedule.page.moveUp" />}
         </Button>
         <Button
           type="button"
@@ -376,7 +378,7 @@ function MoveSectionButtons({
           disabled={isLast || pending !== null}
           onClick={() => void move("down")}
         >
-          {pending === "down" ? "Moving…" : "Move down"}
+          {pending === "down" ? <T id="schedule.page.moving" /> : <T id="schedule.page.moveDown" />}
         </Button>
       </div>
       {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}
