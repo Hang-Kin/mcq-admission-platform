@@ -52,6 +52,7 @@ const phrases: PhraseMap = {
   "page.badCsv": ["Could not read that CSV file.", "未能讀取該 CSV 檔案。"],
   "page.cellNumber": ["A cell was read as a number. The code must stay text.", "有儲存格被讀成數字。編號必須保持為文字。"],
   "page.tooBig": ["The file is larger than 5 MB.", "檔案大於 5 MB。"],
+  "page.tooManyStudents": ["Import {count} students or fewer at a time.", "每次最多匯入 {count} 名學生。"],
   "page.uploadType": ["Upload a .xlsx or .csv file.", "請上載 .xlsx 或 .csv 檔案。"],
   "page.addedPlain": ["Added {name} ({number}).", "已加入 {name}（{number}）。"],
   "page.addedExtra": ["Added {name} ({number}), {extra}.", "已加入 {name}（{number}），{extra}。"],

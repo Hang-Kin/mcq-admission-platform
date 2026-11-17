@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { phrase } from "../translate.ts";
 import {
   classifyRosterRows,
   formatImportSummary,
   mapRosterSheet,
+  MAX_IMPORT_ROWS,
   normalizeImportRows,
   rowsToInsert,
   tallyRoster,
@@ -121,4 +123,10 @@ test("Full English name is accepted in any case and English Name wins when both 
 test("a missing header is reported", () => {
   const mapped = mapRosterSheet(["Name"], [{ line: 2, cells: ["Ada"] }]);
   assert.equal(mapped.ok, false);
+});
+
+test("the 5001-row refusal is Traditional Chinese, not the English sentence in the Chinese span", () => {
+  const english = `Import ${MAX_IMPORT_ROWS} students or fewer at a time.`;
+  assert.equal(english, "Import 5000 students or fewer at a time.");
+  assert.equal(phrase(english, "zh-Hant"), "每次最多匯入 5000 名學生。");
 });
