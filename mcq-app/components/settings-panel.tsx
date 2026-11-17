@@ -49,6 +49,7 @@ export function SettingsPanel({
   const onOpenRef = useRef(onOpen);
   const dispatchRef = useRef<(event: PanelEvent, hoverCapable?: boolean) => void>(() => {});
   const ignoreHover = useRef(false);
+  const openedByHover = useRef(false);
 
   useEffect(() => {
     onOpenRef.current = onOpen;
@@ -87,7 +88,16 @@ export function SettingsPanel({
     if (event.type === "pointer-inside" && ignoreHover.current) return;
     const wasOpen = modelRef.current.open;
     const step = reducePanel(modelRef.current, event, hoverCapable);
-    if (event.type === "escape") ignoreHover.current = true;
+    if (event.type === "pointer-inside" && !wasOpen && step.model.open) {
+      openedByHover.current = true;
+      window.setTimeout(() => {
+        openedByHover.current = false;
+      }, 500);
+    }
+    if (event.type === "escape") {
+      ignoreHover.current = true;
+      openedByHover.current = false;
+    }
     commit(step.model, step.focusTrigger);
     if (!wasOpen && step.model.open) onOpenRef.current();
   }
@@ -155,6 +165,7 @@ export function SettingsPanel({
         onBlur={(event) => {
           const next = event.relatedTarget;
           const stillInside = next instanceof Node && (regionRef.current?.contains(next) ?? false);
+          if (!stillInside && regionRef.current?.matches(":hover")) return;
           dispatch({ type: "focus-out", stillInside });
         }}
       >
@@ -172,6 +183,13 @@ export function SettingsPanel({
           onClick={() => {
             if (skipClick.current) {
               skipClick.current = false;
+              return;
+            }
+            ignoreHover.current = false;
+            const showing = document.getElementById("settings-panel");
+            if (!showing || (openedByHover.current && modelRef.current.open)) {
+              openedByHover.current = false;
+              if (!modelRef.current.open || !showing) dispatch({ type: "pointer-inside" }, true);
               return;
             }
             dispatch({ type: "toggle" });

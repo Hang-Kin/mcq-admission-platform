@@ -147,6 +147,13 @@ test("Escape closes settings on the second hover open", async () => {
     pointer("mouseover", button);
   });
   assert.equal(panel(), null, "Escape stays closed when the panel was under the pointer");
+  await act(async () => {
+    button.click();
+  });
+  assert.ok(panel(), "a click opens settings after Escape");
+  await act(async () => {
+    pointer("mouseout", region);
+  });
 
   await hoverCycle(button, region);
   await act(async () => {
