@@ -12,9 +12,9 @@ export function StaffNavGate({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
+    <div className="flex min-h-svh min-w-0 flex-col bg-background text-foreground">
       {staffNavVisible(pathname) ? nav ?? null : null}
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
         {children}
       </div>
     </div>
