@@ -4,9 +4,9 @@ import path from "node:path";
 
 import type { Page, TestInfo } from "@playwright/test";
 
-export const MEDIA_DIR =
-  process.env.STAGING_E2E_MEDIA ??
-  "/cursor/stores/bc-92314f63-d670-4644-be86-ba5aeb6af75c/media/staging-e2e";
+import { stagingMediaDir } from "./mediaDir";
+
+export const MEDIA_DIR = stagingMediaDir(process.env.STAGING_E2E_MEDIA);
 
 export const OUTPUT_DIR = path.resolve(__dirname, "../output");
 export const STATE_PATH = path.join(OUTPUT_DIR, "state.json");
