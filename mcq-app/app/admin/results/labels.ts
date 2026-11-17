@@ -73,6 +73,8 @@ export const labels = {
       : count === 1
         ? "1 unconfirmed answer will be confirmed."
         : `${count} unconfirmed answers will be confirmed.`,
+  confirmAllResult: (confirmed: number, skipped: number) =>
+    `${confirmed} confirmed, ${skipped} skipped because they have no mark. A person must mark those.`,
   regradeTitle: "Regrade affected students",
   regradeApply: "Regrade affected students",
   applying: "Regrading…",
