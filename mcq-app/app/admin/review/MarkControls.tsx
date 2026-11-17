@@ -75,7 +75,15 @@ export function QuestionMarkControls({
     overrideResponse,
     null,
   );
+  const router = useRouter();
+  const refreshedEdit = useRef<ReviewActionState>(null);
   const pending = confirmPending || editPending;
+
+  useEffect(() => {
+    if (!editState?.notice || editState === refreshedEdit.current) return;
+    refreshedEdit.current = editState;
+    router.refresh();
+  }, [editState, router]);
 
   return (
     <div className="space-y-3">
@@ -127,6 +135,12 @@ export function QuestionMarkControls({
             {editPending ? <TText text={labels.saving} /> : <TText text={labels.saveEdit} />}
           </Button>
         </form>
+      ) : null}
+      {editState?.notice && !overridden ? (
+        <p className="text-sm"><TText text={editState.notice} /></p>
+      ) : null}
+      {editState?.note && !overridden ? (
+        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{editState.note}</p>
       ) : null}
       {confirmState?.error ? <p className="text-sm text-destructive">{confirmState.error}</p> : null}
       {editState?.error ? <p className="text-sm text-destructive">{editState.error}</p> : null}
