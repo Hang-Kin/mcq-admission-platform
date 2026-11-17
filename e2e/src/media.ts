@@ -71,11 +71,25 @@ export async function shot(page: Page, name: string) {
     (window as unknown as { __e2eRedact?: typeof saved }).__e2eRedact = saved;
   });
   const tall = await page.evaluate(() => document.documentElement.scrollHeight > 6000);
-  try {
-    await page.screenshot({ path: file, fullPage: !tall });
-  } catch {
-    await page.screenshot({ path: file, fullPage: false });
+  let saved = false;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3 && !saved; attempt += 1) {
+    await mkdir(path.dirname(file), { recursive: true });
+    try {
+      await page.screenshot({ path: file, fullPage: !tall });
+      saved = true;
+    } catch (error) {
+      lastError = error;
+      try {
+        await page.screenshot({ path: file, fullPage: false });
+        saved = true;
+      } catch (retryError) {
+        lastError = retryError;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
   }
+  if (!saved) throw lastError;
   await page.evaluate(() => {
     const saved = (window as unknown as { __e2eRedact?: Array<{ node: Text; value: string }> })
       .__e2eRedact;
