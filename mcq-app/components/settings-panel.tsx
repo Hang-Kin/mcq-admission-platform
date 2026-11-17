@@ -47,6 +47,7 @@ export function SettingsPanel({
   const restoringFocus = useRef(false);
   const pointerType = useRef("mouse");
   const onOpenRef = useRef(onOpen);
+  const dispatchRef = useRef<(event: PanelEvent, hoverCapable?: boolean) => void>(() => {});
 
   useEffect(() => {
     onOpenRef.current = onOpen;
@@ -74,7 +75,9 @@ export function SettingsPanel({
     if (focusTrigger) {
       restoringFocus.current = true;
       buttonRef.current?.focus();
-      restoringFocus.current = false;
+      queueMicrotask(() => {
+        restoringFocus.current = false;
+      });
     }
   }
 
@@ -84,6 +87,8 @@ export function SettingsPanel({
     commit(step.model, step.focusTrigger);
     if (!wasOpen && step.model.open) onOpenRef.current();
   }
+
+  dispatchRef.current = dispatch;
 
   useEffect(() => {
     commit({ open: false, deadline: null }, false);
@@ -96,18 +101,16 @@ export function SettingsPanel({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || !modelRef.current.open) return;
       event.preventDefault();
       event.stopPropagation();
-      dispatch({ type: "escape" });
+      dispatchRef.current({ type: "escape" });
     }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-    // dispatch closes over the latest refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    // Capture so a later bubble listener cannot swallow the second Escape.
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, []);
 
   useLayoutEffect(() => {
     if (!open) return;
