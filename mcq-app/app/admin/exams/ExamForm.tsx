@@ -69,8 +69,7 @@ export function ExamForm({ action }: ExamFormProps) {
           autoComplete="off"
         />
         <p className="text-sm text-muted-foreground">
-          This is the timer when the exam has no sections. Each section can
-          set its own duration later.
+          <T id="shell.copy.timerHelp" />
         </p>
       </div>
 

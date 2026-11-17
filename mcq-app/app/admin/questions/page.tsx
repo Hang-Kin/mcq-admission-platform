@@ -8,6 +8,8 @@ import {
   readQuestionSubject,
 } from "@/components/mathText";
 import { Button } from "@/components/ui/button";
+import { formatHongKongStamp } from "@/lib/hongKongTime";
+import { readServerPreferences } from "@/lib/preferences/server";
 import { createClient } from "@/lib/supabase/server";
 
 import { deleteQuestion } from "./actions";
@@ -31,6 +33,7 @@ export default async function AdminQuestionsPage({
 }: {
   searchParams: Promise<{ set?: string; unset?: string }>;
 }) {
+  const prefs = await readServerPreferences();
   const { set: setFilter, unset } = await searchParams;
   const filteringUnset = unset === "1";
   const filteringNamed = !filteringUnset && Boolean(setFilter?.trim());
@@ -84,7 +87,7 @@ export default async function AdminQuestionsPage({
         <div className="space-y-2">
           <h1 className="text-2xl"><T id="shell.account.olderQuestions" /></h1>
           <p className="text-sm text-muted-foreground">
-            Group questions into sets, then edit or import more.
+            <T id="shell.copy.groupQuestions" />
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -108,7 +111,7 @@ export default async function AdminQuestionsPage({
         <>
           <h2 className="text-lg"><T id="shell.copy.questionSets" /></h2>
           <p className="text-sm text-muted-foreground">
-            A set is every question that shares the same question_set tag.
+            <T id="shell.copy.setTag" />
           </p>
           {summaries.length === 0 ? (
             <p className="text-sm text-muted-foreground"><T id="shell.copy.noQuestionsYet" /></p>
@@ -130,13 +133,13 @@ export default async function AdminQuestionsPage({
                   return (
                     <tr key={summary.name ?? "__none__"}>
                       <td className="border-b py-3 pr-4">
-                        {summary.name ?? "No set"}
+                        {summary.name ?? <T id="shell.copy.noSet" />}
                       </td>
                       <td className="border-b py-3 pr-4">{summary.count}</td>
                       <td className="border-b py-3">
                         {selected ? (
                           <Link href="/admin/questions" className="hover:underline">
-                            Show all
+                            <T id="shell.copy.showAll" />
                           </Link>
                         ) : (
                           <Link href={setHref(summary.name)} className="hover:underline"><T id="shell.copy.view" /></Link>
@@ -151,11 +154,13 @@ export default async function AdminQuestionsPage({
           )}
 
           <h2 className="text-lg">
-            {filteringUnset
-              ? "No set"
-              : activeSet
-                ? activeSet
-                : "All questions"}
+            {filteringUnset ? (
+              <T id="shell.copy.noSet" />
+            ) : activeSet ? (
+              activeSet
+            ) : (
+              <T id="shell.copy.allQuestions" />
+            )}
           </h2>
           {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground"><T id="shell.copy.noQuestionsView" /></p>
@@ -189,16 +194,16 @@ export default async function AdminQuestionsPage({
                       )}
                     </td>
                     <td className="border-b py-3 pr-4">
-                      {question.question_set?.trim() || "No set"}
+                      {question.question_set?.trim() || <T id="shell.copy.noSet" />}
                     </td>
                     <td className="border-b py-3 pr-4">{question.category}</td>
                     <td className="border-b py-3 pr-4">{question.type}</td>
                     <td className="border-b py-3 pr-4">
-                      {question.image_url ? "Yes" : ""}
+                      {question.image_url ? <T id="shell.copy.yes" /> : ""}
                     </td>
                     <td className="border-b py-3 pr-4">
                       {question.created_at
-                        ? new Date(question.created_at).toLocaleString()
+                        ? formatHongKongStamp(new Date(question.created_at).getTime(), prefs.locale)
                         : ""}
                     </td>
                     <td className="border-b py-3">

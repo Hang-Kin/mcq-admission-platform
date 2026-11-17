@@ -133,7 +133,14 @@ export function ImportRosterForm() {
           onChange={(event) => void handleFile(event)}
         />
         <p className="text-sm text-muted-foreground">
-          Columns used: {CODE_HEADER}, {ENGLISH_NAME_HEADER}, and {CHINESE_NAME_HEADER}. ID and 參考編號 are ignored.
+          <T
+            id="students.page.columns"
+            values={{
+              code: CODE_HEADER,
+              english: ENGLISH_NAME_HEADER,
+              chinese: CHINESE_NAME_HEADER,
+            }}
+          />
         </p>
       </div>
 

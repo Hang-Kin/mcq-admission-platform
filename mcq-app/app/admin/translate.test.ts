@@ -32,6 +32,21 @@ test("dynamic admin sentences round-trip in English and change in Chinese", () =
     assert.equal(phrase(sample, "en"), sample, sample);
     assert.notEqual(phrase(sample, "zh-Hant"), sample, sample);
   }
+  assert.equal(
+    phrase(
+      "1 student has already answered this question. Changing the correct answer will not change their results until you choose Regrade.",
+      "zh-Hant",
+    ),
+    "已有 1 名學生回答這題。 更改正確答案不會改變他們的成績，直至你選擇重新評分。",
+  );
+  assert.equal(
+    phrase("Slot 5 overlaps Slot 6 (time clash). Slot 6 (time clash) overlaps Slot 6.", "zh-Hant"),
+    "Slot 5 與 Slot 6 (time clash) 重疊。 Slot 6 (time clash) 與 Slot 6 重疊。",
+  );
+  assert.equal(
+    phrase("Locked because students have started. Frozen at 7 and 8.", "zh-Hant"),
+    "已有學生開始，因此已鎖定。 已凍結為 7 and 8。",
+  );
   assert.equal(phrase("Home", "zh-Hant"), "主頁");
   assert.equal(phrase("提交編號", "zh-Hant"), "提交編號");
   assert.match(phrase("Morning starts tomorrow at 9:00 and the questions are not prepared.", "zh-Hant"), /明日/);

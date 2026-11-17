@@ -76,7 +76,11 @@ async function QuestionsTab() {
                   </CardDescription>
                   {count != null ? (
                     <p className="text-sm text-muted-foreground">
-                      {count === 1 ? "1 question" : `${count} questions`}
+                      {count === 1 ? (
+                        <T id="shell.copy.oneQuestion" />
+                      ) : (
+                        <T id="shell.copy.nQuestions" values={{ count }} />
+                      )}
                     </p>
                   ) : null}
                 </CardHeader>

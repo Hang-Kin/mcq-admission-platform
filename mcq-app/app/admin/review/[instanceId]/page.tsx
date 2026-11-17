@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { formatHongKongDateTime } from "@/lib/hongKongTime";
+import { readServerPreferences } from "@/lib/preferences/server";
 import { isStaffRole } from "@/lib/staffRole";
 
 import { isGradeStale, scoreResponses } from "../../exams/gradeScore";
@@ -71,7 +72,8 @@ export default async function ReviewSittingPage({
   const unanswered = Math.max(0, score.total - answered.length);
   const stale =
     sitting.finalizedPercent != null && isGradeStale(sitting.finalizedPercent, score);
-  const finalizedWhen = formatHongKongDateTime(sitting.finalizedAt);
+  const prefs = await readServerPreferences();
+  const finalizedWhen = formatHongKongDateTime(sitting.finalizedAt, prefs.locale);
 
   const header = (
     <>
@@ -128,6 +130,7 @@ export default async function ReviewSittingPage({
         instanceId={sitting.instanceId}
         markingReady={sitting.markingReady}
         header={header}
+        locale={prefs.locale}
       />
     </main>
   );

@@ -107,7 +107,13 @@ export function parseHongKongDateTime(value: string): number | null {
   return utc;
 }
 
-function dayLabel(utcMs: number): string {
+export type ClockLocale = "en" | "zh-Hant";
+
+function dayLabel(utcMs: number, locale: ClockLocale = "en"): string {
+  if (locale === "zh-Hant") {
+    const parts = hongKongParts(utcMs);
+    return `${parts.year}年${parts.month}月${parts.day}日`;
+  }
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: HONG_KONG_TIME_ZONE,
     day: "numeric",
@@ -116,20 +122,32 @@ function dayLabel(utcMs: number): string {
   }).format(new Date(utcMs));
 }
 
+/** Hour and minute in Hong Kong, with a Chinese date when the UI language asks for it. */
+export function formatHongKongStamp(utcMs: number, locale: ClockLocale = "en"): string {
+  const parts = hongKongParts(utcMs);
+  const time = `${pad(parts.hour)}:${pad(parts.minute)}`;
+  if (locale === "zh-Hant") return `${parts.year}年${parts.month}月${parts.day}日 ${time}`;
+  return `${dayLabel(utcMs, "en")}, ${time}`;
+}
+
 function clock(parts: HongKongParts): string {
   return `${pad(parts.hour)}:${pad(parts.minute)}`;
 }
 
-export function formatHongKongDateTime(value: string | null | undefined): string {
+export function formatHongKongDateTime(
+  value: string | null | undefined,
+  locale: ClockLocale = "en",
+): string {
   if (!value) return "";
   const ms = parseHongKongDateTime(value);
   if (ms == null) return "";
-  return `${dayLabel(ms)}, ${clock(hongKongParts(ms))} HKT`;
+  return `${dayLabel(ms, locale)}, ${clock(hongKongParts(ms))} HKT`;
 }
 
 export function formatHongKongRange(
   starts: string | null | undefined,
   ends: string | null | undefined,
+  locale: ClockLocale = "en",
 ): string {
   if (!starts || !ends) return "";
   const startMs = parseHongKongDateTime(starts);
@@ -138,7 +156,7 @@ export function formatHongKongRange(
   const start = hongKongParts(startMs);
   const end = hongKongParts(endMs);
   if (start.year === end.year && start.month === end.month && start.day === end.day) {
-    return `${dayLabel(startMs)}, ${clock(start)}–${clock(end)} HKT`;
+    return `${dayLabel(startMs, locale)}, ${clock(start)}–${clock(end)} HKT`;
   }
-  return `${dayLabel(startMs)}, ${clock(start)} HKT – ${dayLabel(endMs)}, ${clock(end)} HKT`;
+  return `${dayLabel(startMs, locale)}, ${clock(start)} HKT – ${dayLabel(endMs, locale)}, ${clock(end)} HKT`;
 }

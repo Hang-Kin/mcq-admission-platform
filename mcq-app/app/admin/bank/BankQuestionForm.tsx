@@ -1,7 +1,7 @@
 "use client";
 
 import { T, TText } from "@/app/admin/T";
-import { OptionText } from "@/app/admin/usePhrase";
+import { OptionText, usePhrase } from "@/app/admin/usePhrase";
 
 import { useRef, useState, type FormEvent } from "react";
 
@@ -63,6 +63,7 @@ export function BankQuestionForm({
   question,
   action,
 }: BankQuestionFormProps) {
+  const tx = usePhrase();
   const fileRef = useRef<HTMLInputElement>(null);
   const initialOptions = choiceValues(question?.options);
   const initialFraction = splitFraction(
@@ -195,12 +196,11 @@ export function BankQuestionForm({
             id="topic"
             value={topicName}
             onChange={(event) => setTopicName(event.target.value)}
-            placeholder="Fractions"
+            placeholder={tx("Fractions")}
             className="h-12 text-base md:text-base"
           />
           <p className="text-sm text-muted-foreground">
-            Leave this blank to keep the question out of a topic, or type a topic
-            to file it.
+            <T id="shell.copy.topicBlank" />
           </p>
         </div>
       ) : null}
@@ -229,7 +229,7 @@ export function BankQuestionForm({
           className="block w-full text-base"
         />
         <p className="text-sm text-muted-foreground">
-          Optional. PNG, JPEG, WEBP, GIF, or PDF, up to 5 MB.
+          <T id="shell.copy.fileTypes" />
         </p>
         {existingAttachment ? (
           <label className="flex min-h-11 items-center gap-3 text-base">
@@ -262,7 +262,7 @@ export function BankQuestionForm({
         <fieldset className="flex flex-col gap-3">
           <legend className="text-sm font-medium"><T id="shell.copy.choices" /></legend>
           <p className="text-sm text-muted-foreground">
-            Enter at least two choices and mark the correct one.
+            <T id="shell.copy.markChoices" />
           </p>
           {options.map((option, index) => (
             <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -277,7 +277,7 @@ export function BankQuestionForm({
               <Input
                 value={option}
                 onChange={(event) => updateOption(index, event.target.value)}
-                placeholder={`Choice ${index + 1}`}
+                placeholder={tx(`Choice ${index + 1}`)}
                 className="h-12 min-w-0 flex-1 text-base md:text-base"
               />
               <Button
@@ -287,7 +287,7 @@ export function BankQuestionForm({
                 disabled={options.length <= 2}
                 onClick={() => removeOption(index)}
               >
-                Remove choice
+                <T id="shell.copy.removeChoice" />
               </Button>
             </div>
           ))}
@@ -298,7 +298,7 @@ export function BankQuestionForm({
               className="h-12 px-4 text-base"
               onClick={addOption}
             >
-              Add a choice
+              <T id="shell.copy.addChoice" />
             </Button>
           ) : null}
         </fieldset>

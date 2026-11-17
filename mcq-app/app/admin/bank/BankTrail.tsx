@@ -9,14 +9,14 @@ export function BankTrail({
   return (
     <p className="text-sm text-muted-foreground">
       {items.map((item, index) => (
-        <span key={`$<TText text={item.label} />-${index}`}>
+        <span key={`${item.label}-${index}`}>
           {index > 0 ? " · " : null}
           {item.href ? (
             <Link href={item.href} className="hover:underline">
               <TText text={item.label} />
             </Link>
           ) : (
-            item.label
+            <TText text={item.label} />
           )}
         </span>
       ))}

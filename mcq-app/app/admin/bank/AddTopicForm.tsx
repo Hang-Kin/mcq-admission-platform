@@ -1,6 +1,7 @@
 "use client";
 
 import { T, TText } from "@/app/admin/T";
+import { usePhrase } from "@/app/admin/usePhrase";
 
 import { useState, type FormEvent } from "react";
 
@@ -12,6 +13,7 @@ import { openTopic } from "./actions";
 import type { SubjectId } from "./subjects";
 
 export function AddTopicForm({ subject }: { subject: SubjectId }) {
+  const tx = usePhrase();
   const [topic, setTopic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +40,7 @@ export function AddTopicForm({ subject }: { subject: SubjectId }) {
           id="topic-name"
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
-          placeholder="Fractions"
+          placeholder={tx("Fractions")}
           className="h-12 text-base md:text-base"
         />
         <Button type="submit" className="h-12 px-5 text-base" disabled={isSubmitting}>

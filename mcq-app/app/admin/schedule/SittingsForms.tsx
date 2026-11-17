@@ -1,6 +1,7 @@
 "use client";
 
 import { T, TText } from "@/app/admin/T";
+import { usePhrase } from "@/app/admin/usePhrase";
 
 import { useState, type FormEvent } from "react";
 
@@ -123,6 +124,7 @@ export function AddTimeForm({
   onDraftChange?: (draft: { startsAt: string; endsAt: string }) => void;
   action?: Action;
 }) {
+  const tx = usePhrase();
   const [label, setLabel] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -174,7 +176,7 @@ export function AddTimeForm({
           value={label}
           onChange={(event) => setLabel(event.target.value)}
           autoComplete="off"
-          placeholder="Morning"
+          placeholder={tx("Morning")}
           required
         />
       </div>
@@ -210,7 +212,9 @@ export function AddTimeForm({
       </div>
       <p className="text-sm text-muted-foreground"><T id="schedule.page.hkt" /></p>
       {examNeedsLabel(examMinutes) ? (
-        <p className="text-sm text-muted-foreground">{examNeedsLabel(examMinutes)}</p>
+        <p className="text-sm text-muted-foreground">
+          <TText text={examNeedsLabel(examMinutes) ?? ""} />
+        </p>
       ) : null}
       {liveOverlap ? <p className="text-sm text-destructive"><TText text={liveOverlap} /></p> : null}
       {error ? <p className="text-sm text-destructive"><TText text={error} /></p> : null}

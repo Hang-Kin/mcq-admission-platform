@@ -2,7 +2,7 @@ import { TText } from "@/app/admin/T";
 import type { ReactNode } from "react";
 
 import { MathText } from "@/components/MathText";
-import { formatHongKongDateTime } from "@/lib/hongKongTime";
+import { formatHongKongDateTime, type ClockLocale } from "@/lib/hongKongTime";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmAllButton, QuestionMarkControls } from "@/app/admin/review/MarkControls";
 
@@ -40,11 +40,13 @@ export function ReviewPaper({
   instanceId,
   markingReady,
   header,
+  locale = "en",
 }: {
   questions: ReviewQuestion[];
   instanceId: string;
   markingReady: boolean;
   header: ReactNode;
+  locale?: ClockLocale;
 }) {
   const confirmCount = confirmAllCount(
     questions.map((question) => ({
@@ -173,7 +175,7 @@ export function ReviewPaper({
                           text={teacherStateLabel({
                             state: question.teacherState,
                             who: question.markedByLabel,
-                            when: formatHongKongDateTime(question.markedAt),
+                            when: formatHongKongDateTime(question.markedAt, locale),
                           })}
                         />
                       </p>

@@ -1,4 +1,5 @@
-import { T } from "@/app/admin/T";
+import { T, TText } from "@/app/admin/T";
+import { readServerPreferences } from "@/lib/preferences/server";
 import { createClient } from "@/lib/supabase/server";
 
 import { formatAddedAt } from "./addedAt";
@@ -25,6 +26,7 @@ export default async function AdminStudentsPage({
 }: {
   searchParams: Promise<{ intake?: string }>;
 }) {
+  const prefs = await readServerPreferences();
   const { intake: intakeParam } = await searchParams;
   const selectedIntake = intakeParam && INTAKE_RE.test(intakeParam) ? intakeParam : "";
   const supabase = await createClient();
@@ -104,7 +106,11 @@ export default async function AdminStudentsPage({
                 <tr key={student.id}>
                   {intakeReady ? (
                     <td className="border-b py-3 pr-4">
-                      {student.intake ? formatIntakeLabel(student.intake) ?? student.intake : ""}
+                      {student.intake ? (
+                        <TText text={formatIntakeLabel(student.intake) ?? student.intake} />
+                      ) : (
+                        ""
+                      )}
                     </td>
                   ) : null}
                   <td className="border-b py-3 pr-4">{student.name ?? ""}</td>
@@ -113,7 +119,7 @@ export default async function AdminStudentsPage({
                   ) : null}
                   <td className="border-b py-3 pr-4">{student.application_number}</td>
                   <td className="border-b py-3">
-                    {student.created_at ? formatAddedAt(student.created_at) : ""}
+                    {student.created_at ? formatAddedAt(student.created_at, prefs.locale) : ""}
                   </td>
                 </tr>
               ))}

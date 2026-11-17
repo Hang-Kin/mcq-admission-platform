@@ -47,7 +47,12 @@ export function QuestionList({
               <TText text={answerKindLabel(question.type)} />
               {" · "}
               <TText text={preview(question)} />
-              {question.image_url ? " · File attached" : ""}
+              {question.image_url ? (
+                <>
+                  {" · "}
+                  <T id="shell.copy.fileAttached" />
+                </>
+              ) : null}
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">

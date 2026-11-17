@@ -60,11 +60,6 @@ function isPendingForExam(student: QrStudent) {
   return student.instanceStatus === "none" || student.instanceStatus === "pending";
 }
 
-function intakeIdentity(student: QrStudent) {
-  const label = student.intake ? formatIntakeLabel(student.intake) : null;
-  return [label, student.application_number].filter(Boolean).join(" · ");
-}
-
 export function QrGeneratorClient({
   examId,
   students,
@@ -224,10 +219,7 @@ export function QrGeneratorClient({
         <CardHeader>
           <CardTitle><T id="shell.nav.students" /></CardTitle>
           <CardDescription>
-            Create QR codes downloads a PDF for this intake. Students who already
-            started are skipped. A student who has not started gets a new code,
-            and any earlier code for them stops working. Download PDF uses the
-            current codes and does not replace them.
+            <T id="shell.copy.qrHelp" />
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -249,7 +241,7 @@ export function QrGeneratorClient({
             </div>
           ) : null}
           <Button type="button" variant="outline" onClick={selectAllPending}>
-            Select all pending for this intake
+            <T id="shell.copy.selectPending" />
           </Button>
           {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground"><T id="schedule.page.noStudentsIntake" /></p>
@@ -268,7 +260,11 @@ export function QrGeneratorClient({
                     <Label htmlFor={id} className="font-normal leading-snug">
                       <span className="block">{studentLabel(student)}</span>
                       <span className="block text-sm text-muted-foreground">
-                        {intakeIdentity(student)}
+                        {student.intake ? (
+                          <TText text={formatIntakeLabel(student.intake) ?? student.intake} />
+                        ) : null}
+                        {student.intake && student.application_number ? " · " : null}
+                        {student.application_number}
                         {" · "}
                         <TText text={statusLabel(student.instanceStatus, plainLanguage)} />
                         {blocked ? (
@@ -294,9 +290,9 @@ export function QrGeneratorClient({
               <p><T id="schedule.page.plainCodes" /></p>
             ) : (
               <p>
-                This exam uses sections — question sets are configured on the{" "}
+                <T id="shell.copy.sectionsConfigured" />{" "}
                 <Link href={`/admin/exams/${examId}/sections`} className="hover:underline">
-                  Sections page
+                  <T id="shell.copy.sectionsPage" />
                 </Link>
                 .
               </p>

@@ -217,6 +217,18 @@ const phrases: PhraseMap = {
   "page.notFinalized": ["Not finalized", "未確定"],
   "page.changedSince": ["Changed since finalize", "確定後有更改"],
   "page.application": ["Application number", "提交編號"],
+  "page.lengthUnread": [
+    "Could not read Subject settings, so the length check uses the saved section minutes.",
+    "未能讀取科目設定，因此時限檢查使用已儲存的部分分鐘數。",
+  ],
+  "page.minutesShown": [
+    "Could not load Subject settings, so the saved section minutes are shown.",
+    "未能載入科目設定，因此顯示已儲存的部分分鐘數。",
+  ],
+  "page.minutesCannot": [
+    "Could not check whether a student has started, so the minutes cannot be changed.",
+    "未能檢查是否已有學生開始，因此不能更改分鐘數。",
+  ],
 };
 
 export const schedule: Record<Locale, Record<string, unknown>> = {

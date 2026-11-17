@@ -1,7 +1,7 @@
 "use client";
 
 import { TText } from "@/app/admin/T";
-import { usePhrase } from "@/app/admin/usePhrase";
+import { useLiveLocale, usePhrase } from "@/app/admin/usePhrase";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -50,6 +50,7 @@ export function SittingDayGrid({
 
   const timeline = buildDayTimeline({ day, slots, clashSlots, draft });
   const tx = usePhrase();
+  const locale = useLiveLocale();
 
   return (
     <section className="space-y-3" aria-label={tx(labels.dayView)}>
@@ -58,7 +59,7 @@ export function SittingDayGrid({
         <Button type="button" variant="outline" size="sm" onClick={() => setDay((current) => shiftDayKey(current, -1))}>
           <TText text={labels.previousDay} />
         </Button>
-        <p className="text-sm">{formatDayKey(day)}</p>
+        <p className="text-sm">{formatDayKey(day, locale)}</p>
         <Button type="button" variant="outline" size="sm" onClick={() => setDay((current) => shiftDayKey(current, 1))}>
           <TText text={labels.nextDay} />
         </Button>

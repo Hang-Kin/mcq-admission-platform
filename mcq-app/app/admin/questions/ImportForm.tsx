@@ -228,11 +228,13 @@ export function ImportForm() {
       ) : null}
 
       <Button type="button" disabled={!canImport || isImporting} onClick={handleImport}>
-        {isImporting
-          ? "Importing…"
-          : canImport
-            ? `Import ${preview.length} questions`
-            : "Import questions"}
+        {isImporting ? (
+          <T id="shell.copy.importing" />
+        ) : canImport ? (
+          <T id="shell.copy.importN" values={{ count: preview.length }} />
+        ) : (
+          <T id="shell.copy.importQuestions" />
+        )}
       </Button>
     </div>
   );

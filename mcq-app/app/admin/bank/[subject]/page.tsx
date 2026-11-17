@@ -47,7 +47,7 @@ export default async function SubjectTopicsPage({
         />
         <h1 className="text-2xl"><TText text={info.title} /></h1>
         <p className="text-sm text-muted-foreground">
-          Each topic should have at least {bank.perTopic} questions.
+          <T id="shell.copy.perTopicNeed" values={{ count: bank.perTopic }} />
         </p>
       </div>
 
@@ -101,8 +101,8 @@ export default async function SubjectTopicsPage({
                 <CardHeader>
                   <CardTitle className="text-xl"><T id="shell.copy.noTopicYet" /></CardTitle>
                   <CardDescription className="text-base">
-                    {unfiled === 1 ? "1 older question" : `${unfiled} older questions`}{" "}
-                    will not be used when a sitting is prepared.
+                    {unfiled === 1 ? <T id="shell.copy.oneOlder" /> : <T id="shell.copy.nOlder" values={{ count: unfiled }} />}{" "}
+                    <T id="shell.copy.olderUnused" />
                   </CardDescription>
                   <Badge variant="destructive"><T id="shell.copy.needsATopic" /></Badge>
                 </CardHeader>
