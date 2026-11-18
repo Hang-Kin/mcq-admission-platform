@@ -69,7 +69,7 @@ export function BankQuestionForm({
   const initialFraction = splitFraction(
     question?.type === "fraction" ? question.correct_answer : "",
   );
-  const allowWritten = question?.type === "text";
+  const allowWritten = true;
   const [questionText, setQuestionText] = useState(question?.question_text ?? "");
   const [topicName, setTopicName] = useState(filing ? "" : topic);
   const [kind, setKind] = useState<AnswerKind>(
