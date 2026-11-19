@@ -463,7 +463,11 @@ begin
    and b.oid > a.oid
    and a.polpermissive
    and b.polpermissive
-   and a.polroles && b.polroles
+   and (
+     a.polroles && b.polroles
+     or 0 = any(a.polroles)
+     or 0 = any(b.polroles)
+   )
   join pg_class c on c.oid = a.polrelid
   join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public'
