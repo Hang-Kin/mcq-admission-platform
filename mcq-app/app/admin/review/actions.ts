@@ -32,6 +32,7 @@ function markError(result: MarkRpcResult): string | null {
   if (result.code === "not_found") return labels.responseMissing;
   if (result.code === "bad_verdict") return labels.chooseVerdict;
   if (result.code === "mismatch") return labels.regradeMismatch;
+  if (result.code === "ungraded") return labels.ungradedConfirm;
   return labels.couldNotSaveMark;
 }
 

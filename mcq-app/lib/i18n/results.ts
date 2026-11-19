@@ -109,6 +109,10 @@ const phrases: PhraseMap = {
   "page.noQuestionsGrade": ["This student has no questions to grade.", "這名學生沒有可評分的題目。"],
   "page.couldNotSaveGrade": ["Could not save the final grade. You may not have permission.", "未能儲存最終等級。你可能沒有權限。"],
   "page.couldNotSaveMark": ["Could not save this mark. You may not have permission.", "未能儲存這個分數。你可能沒有權限。"],
+  "page.ungradedConfirm": [
+    "This answer has no mark yet. Mark it correct or incorrect first.",
+    "此答案尚未有評分。請先選擇正確或不正確。",
+  ],
   "page.responseMissing": ["This response was not found.", "找不到這份答案。"],
   "page.chooseVerdict": ["Choose correct or incorrect.", "請選擇正確或不正確。"],
   "page.notWaiting": ["This response is no longer waiting for review.", "這份答案已不再等待覆核。"],

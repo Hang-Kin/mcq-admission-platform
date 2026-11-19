@@ -116,6 +116,8 @@ export const labels = {
   noQuestionsToGrade: "This student has no questions to grade.",
   couldNotSaveGrade: "Could not save the final grade. You may not have permission.",
   couldNotSaveMark: "Could not save this mark. You may not have permission.",
+  ungradedConfirm:
+    "This answer has no mark yet. Mark it correct or incorrect first.",
   responseMissing: "This response was not found.",
   chooseVerdict: "Choose correct or incorrect.",
   notWaiting: "This response is no longer waiting for review.",

@@ -241,7 +241,7 @@ export async function deleteQuestion(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return { error: "Missing question." };
 
-  const auth = await requireRole(["admin"]);
+  const auth = await requireRole(STAFF_ROLES);
   if ("error" in auth) return { error: auth.error };
 
   const { data: existing } = await auth.supabase
@@ -255,7 +255,7 @@ export async function deleteQuestion(formData: FormData) {
   if (error) {
     return {
       error:
-        "Could not delete this question. Only an admin can delete questions, and questions already used in a sitting cannot be removed.",
+        "Could not delete this question. You may not have permission, or a sitting is already using it.",
     };
   }
 

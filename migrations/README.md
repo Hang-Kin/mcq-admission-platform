@@ -5,7 +5,8 @@ batch, and do not re-apply a file that is already live.
 
 Applied live: 001 to 003 (as the phase_b and role migrations) and 006 to
 026 and 028, except 010, which has no file. 004 is a snapshot only. Do not
-apply it. 027, 029, and 030 are in this repository and are not applied.
+apply it. 027, 029, 030, and 031 are applied on staging, NOT applied on
+live. Do not apply them to live until reviewed.
 
 There is no migration 010. 005 was committed and then removed; it was
 never applied.
@@ -48,14 +49,15 @@ from those headers.
 | 024 | Yes. The file header still says "Not applied"; that line is stale. | Revokes anon `SELECT` on `questions.correct_answer`. Does not replace `submit_answer`. | Not superseded. Later than the 004 snapshot. |
 | 025 | Yes. Already applied. Do not re-apply. | Archive column, archived sittings are skipped by `resolve_exam_timeslot`, and `delete_sitting_test_data`. `start_session` matches live SQL: both "does this exam have timeslots" checks do not filter `archived_at`. Archived filtering stays in the picker (`resolve_exam_timeslot`, and the schedule list). | `start_session` by 030 when 030 is applied. 030 is not applied, so this file is still the live `start_session`. The archive column, `resolve_exam_timeslot`, and `delete_sitting_test_data` stay. |
 | 026 | Yes. The file header still says "Not applied"; that line is stale. | Teacher confirm, override, and regrade tables and functions. Does not replace `submit_answer`. | Not superseded. |
-| 027 | No. UNAPPLIED. Do not apply until reviewed. HIGH RISK. | Refuses confirming an ungraded answer. Revokes direct writes on `response_marks` and `regrade_log`. Regrade recomputes the mark on the server. | Not applied. 026 remains the live marking functions until this is reviewed. |
+| 027 | Applied on staging, NOT applied on live. Do not apply to live until reviewed. HIGH RISK. | Refuses confirming an ungraded answer. Revokes direct writes on `response_marks` and `regrade_log`. Regrade recomputes the mark on the server. | Not applied on live. 026 remains the live marking functions until this is reviewed. |
 | 028 | Yes. Already applied live on 5 Nov 2026. Do not run it again. | Drops policy "Allow public read on test_instances". | Not superseded. |
-| 029 | No. UNAPPLIED. Do not apply until reviewed. HIGH RISK. | Indexes for unindexed foreign keys. Wraps `auth.uid()` in the flagged policies. Removes duplicate permissive policies on `questions`, `exams`, and `profiles`. | Not applied. |
-| 030 | No. UNAPPLIED. Do not apply until reviewed. HIGH RISK. | `start_session` also returns `saved_answers` for that token and session. Does not read or return the answer key. Grants restated, not widened. | Not applied. 025 remains the live `start_session` until this is reviewed. |
+| 029 | Applied on staging, NOT applied on live. Do not apply to live until reviewed. HIGH RISK. | Indexes for unindexed foreign keys. Wraps `auth.uid()` in the flagged policies. Removes duplicate permissive policies on `questions`, `exams`, and `profiles`. Final overlap check counts a pair only when role sets intersect (`&&`). | Not applied on live. |
+| 030 | Applied on staging, NOT applied on live. Do not apply to live until reviewed. HIGH RISK. | `start_session` also returns `saved_answers` for that token and session. Does not read or return the answer key. Grants restated, not widened. | Not applied on live. 025 remains the live `start_session` until this is reviewed. |
+| 031 | Applied on staging, NOT applied on live. Do not apply to live until reviewed. HIGH RISK. | Teachers may delete questions (`questions_delete_staff`). Recreates the staging policy set on `questions`, `exams`, and `profiles`. File only in this repo; do not run it here. | Not applied on live. |
 
 ## Do not apply
 
 - 004. Historical snapshot. Superseded. Do not apply.
 - 005. Never applied. 011 already added those columns.
 - 025 and 028. Already live. The files match that history. Running them again is not this record.
-- 027, 029, and 030. Drafts only. Not applied. Do not run them until they are reviewed.
+- 027, 029, 030, and 031. Applied on staging, NOT applied on live. Do not run them against live until they are reviewed. Do not run 031 from a cloud agent.
