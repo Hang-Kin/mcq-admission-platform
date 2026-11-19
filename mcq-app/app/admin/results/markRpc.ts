@@ -8,7 +8,14 @@ export type MarkRpcResult =
   | { ok: true; confirmed: number; changed: number; preserved: number; skipped: number }
   | {
       ok: false;
-      code: "waiting" | "not_staff" | "not_found" | "bad_verdict" | "mismatch" | "failed";
+      code:
+        | "waiting"
+        | "not_staff"
+        | "not_found"
+        | "bad_verdict"
+        | "mismatch"
+        | "ungraded"
+        | "failed";
     };
 
 function asRecord(data: unknown): Record<string, unknown> | null {
@@ -29,7 +36,8 @@ export function readRpc(data: unknown): MarkRpcResult {
       code === "not_staff" ||
       code === "not_found" ||
       code === "bad_verdict" ||
-      code === "mismatch"
+      code === "mismatch" ||
+      code === "ungraded"
     ) {
       return { ok: false, code };
     }

@@ -36,3 +36,15 @@ test("the confirm-all result keeps a skipped count, including zero when the data
   const omitted = readRpc({ ok: true, confirmed: 1 });
   assert.equal(omitted.ok && omitted.skipped, 0);
 });
+
+test("confirm on an ungraded answer maps to a clear mark-first message", () => {
+  const result = readRpc({ ok: false, error: "ungraded" });
+  assert.deepEqual(result, { ok: false, code: "ungraded" });
+  assert.equal(
+    labels.ungradedConfirm,
+    "This answer has no mark yet. Mark it correct or incorrect first.",
+  );
+  const chinese = phrase(labels.ungradedConfirm, "zh-Hant");
+  assert.equal(chinese, "此答案尚未有評分。請先選擇正確或不正確。");
+  assert.equal(chinese.includes("permission"), false);
+});

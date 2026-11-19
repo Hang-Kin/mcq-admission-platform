@@ -7,3 +7,11 @@ import { isStaffRole } from "@/lib/staffRole";
 export function olderQuestionDeleteVisible(role: string | null | undefined): boolean {
   return isStaffRole(role);
 }
+
+/**
+ * Role gate for deleteQuestion (Option B). Same staff set as deleteBankQuestion
+ * and requireRole(["admin", "teacher"]).
+ */
+export function questionDeleteAllowed(role: string | null | undefined): boolean {
+  return isStaffRole(role);
+}
