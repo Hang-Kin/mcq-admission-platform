@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { formatHongKongDateTime } from "../../../lib/hongKongTime.ts";
+import { phrase } from "../translate.ts";
 import { scoreResponses } from "../exams/gradeScore.ts";
 import { orderByAssigned } from "../exams/gradeScore.ts";
 import { buildResultRow } from "./columns.ts";
-import { teacherStateLabel } from "./labels.ts";
+import { labels, teacherStateLabel } from "./labels.ts";
 import {
   assembleReview,
   confirmAllCount,
@@ -238,4 +239,12 @@ test("a legacy override with no saved system mark does not pretend the system ma
     teacherStateLabel({ state: "unconfirmed", who: null, when: "" }),
     "Unconfirmed",
   );
+});
+
+test("a saved edit can show the override line before the page is reloaded", () => {
+  const line = labels.overriddenByNoTime(labels.aTeacher);
+  assert.equal(line, "Overridden by a teacher");
+  const chinese = phrase(line, "zh-Hant");
+  assert.match(chinese, /改分/);
+  assert.equal(chinese.includes("Overridden"), false);
 });

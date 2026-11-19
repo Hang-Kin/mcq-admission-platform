@@ -1,4 +1,9 @@
-import { hongKongParts, parseHongKongDateTime } from "../../../lib/hongKongTime";
+import {
+  hongKongEnglishDate,
+  hongKongParts,
+  hongKongWeekdayShort,
+  parseHongKongDateTime,
+} from "../../../lib/hongKongTime";
 
 import {
   DELETE_CONFIRMATION,
@@ -199,22 +204,13 @@ const WEEKDAY_ZH: Record<string, string> = {
 export function formatDayKey(dayKey: string, locale: "en" | "zh-Hant" = "en"): string {
   const ms = parseHongKongDateTime(`${dayKey}T12:00:00`);
   if (ms == null) return dayKey;
+  const parts = hongKongParts(ms);
+  const weekday = hongKongWeekdayShort(ms);
   if (locale === "zh-Hant") {
-    const parts = hongKongParts(ms);
-    const weekday = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Hong_Kong",
-      weekday: "short",
-    }).format(new Date(ms));
     const name = WEEKDAY_ZH[weekday] ?? weekday;
     return `${name}，${parts.year}年${parts.month}月${parts.day}日`;
   }
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Hong_Kong",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(ms));
+  return `${weekday}, ${hongKongEnglishDate(ms)}`;
 }
 
 export function hourLabel(hour: number): string {

@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { deleteQuestion } from "./actions";
 import { DeleteQuestionButton } from "./DeleteQuestionButton";
+import { olderQuestionDeleteVisible } from "./questionAccess";
 import { summarizeQuestionSets } from "./questionSets";
 
 export const instant = false;
@@ -46,7 +47,7 @@ export default async function AdminQuestionsPage({
   const { data: profile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null };
-  const isAdmin = profile?.role === "admin";
+  const showDelete = olderQuestionDeleteVisible(profile?.role);
 
   const withSubject = await supabase
     .from("questions")
@@ -165,8 +166,8 @@ export default async function AdminQuestionsPage({
           {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground"><T id="shell.copy.noQuestionsView" /></p>
           ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr>
                   <th className="border-b py-3 pr-4"><T id="shell.copy.question" /></th>
@@ -212,7 +213,7 @@ export default async function AdminQuestionsPage({
                           href={`/admin/questions/${question.id}/edit`}
                           className="hover:underline"
                         ><T id="shell.copy.edit" /></Link>
-                        {isAdmin ? (
+                        {showDelete ? (
                           <DeleteQuestionButton
                             id={question.id}
                             action={deleteQuestion}

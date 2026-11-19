@@ -4,9 +4,9 @@ import path from "node:path";
 
 import type { Page, TestInfo } from "@playwright/test";
 
-export const MEDIA_DIR =
-  process.env.STAGING_E2E_MEDIA ??
-  "/cursor/stores/bc-92314f63-d670-4644-be86-ba5aeb6af75c/media/staging-e2e";
+import { stagingMediaDir } from "./mediaDir";
+
+export const MEDIA_DIR = stagingMediaDir(process.env.STAGING_E2E_MEDIA);
 
 export const OUTPUT_DIR = path.resolve(__dirname, "../output");
 export const STATE_PATH = path.join(OUTPUT_DIR, "state.json");
@@ -71,11 +71,25 @@ export async function shot(page: Page, name: string) {
     (window as unknown as { __e2eRedact?: typeof saved }).__e2eRedact = saved;
   });
   const tall = await page.evaluate(() => document.documentElement.scrollHeight > 6000);
-  try {
-    await page.screenshot({ path: file, fullPage: !tall });
-  } catch {
-    await page.screenshot({ path: file, fullPage: false });
+  let saved = false;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3 && !saved; attempt += 1) {
+    await mkdir(path.dirname(file), { recursive: true });
+    try {
+      await page.screenshot({ path: file, fullPage: !tall });
+      saved = true;
+    } catch (error) {
+      lastError = error;
+      try {
+        await page.screenshot({ path: file, fullPage: false });
+        saved = true;
+      } catch (retryError) {
+        lastError = retryError;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
   }
+  if (!saved) throw lastError;
   await page.evaluate(() => {
     const saved = (window as unknown as { __e2eRedact?: Array<{ node: Text; value: string }> })
       .__e2eRedact;

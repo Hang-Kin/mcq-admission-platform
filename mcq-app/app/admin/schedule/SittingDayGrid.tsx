@@ -71,9 +71,9 @@ export function SittingDayGrid({
       {timeline.rows.length === 0 ? (
         <p className="text-sm text-muted-foreground"><TText text={labels.noSittingsThisDay} /></p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="w-full min-w-0 max-w-full overflow-x-auto">
           <div
-            className="grid min-w-[40rem] items-center gap-y-2"
+            className="grid w-full items-center gap-y-2"
             style={{ gridTemplateColumns: `8rem repeat(${timeline.hours.length}, minmax(3rem, 1fr))` }}
           >
             <div />

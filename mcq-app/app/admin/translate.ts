@@ -14,6 +14,8 @@ const NUMBER_NAMES = new Set([
   "coded",
   "kept",
   "changed",
+  "confirmed",
+  "skipped",
   "minutes",
   "correct",
   "need",

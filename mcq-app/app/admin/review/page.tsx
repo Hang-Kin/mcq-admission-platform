@@ -287,8 +287,8 @@ export default async function ReviewQueuePage() {
           grades.groups.map((group) => (
             <div key={group.examId} className="space-y-3">
               <h3 className="text-base">{group.examName}</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+              <div className="w-full min-w-0 max-w-full overflow-x-auto">
+                <table className="w-full border-collapse text-left text-sm">
                   <thead>
                     <tr>
                       <th className="border-b py-3 pr-4"><T id="shell.copy.student" /></th>

@@ -9,6 +9,7 @@ import { countStudents } from "@/app/admin/results/regrade";
 
 import { deleteQuestion, updateQuestion } from "../../actions";
 import { DeleteQuestionButton } from "../../DeleteQuestionButton";
+import { olderQuestionDeleteVisible } from "../../questionAccess";
 import { QuestionForm } from "../../QuestionForm";
 import { questionSetNames } from "../../questionSets";
 
@@ -86,7 +87,7 @@ export default async function EditQuestionPage({
               (rows ?? []).map((row) => row.question_set),
             )}
           />
-          {profile?.role === "admin" ? (
+          {olderQuestionDeleteVisible(profile?.role) ? (
             <div className="mt-8">
               <DeleteQuestionButton id={question.id} action={deleteQuestion} />
             </div>

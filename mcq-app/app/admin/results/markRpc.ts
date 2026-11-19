@@ -5,7 +5,7 @@ import { isMissingMarking } from "./markSchema";
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 export type MarkRpcResult =
-  | { ok: true; confirmed: number; changed: number; preserved: number }
+  | { ok: true; confirmed: number; changed: number; preserved: number; skipped: number }
   | {
       ok: false;
       code: "waiting" | "not_staff" | "not_found" | "bad_verdict" | "mismatch" | "failed";
@@ -40,6 +40,7 @@ export function readRpc(data: unknown): MarkRpcResult {
     confirmed: numberField(record, "confirmed"),
     changed: numberField(record, "changed"),
     preserved: numberField(record, "preserved"),
+    skipped: numberField(record, "skipped"),
   };
 }
 

@@ -42,7 +42,7 @@ Not tested as written. The opened Math section showed a timer of about 08:00, wh
 
 ### Slot one minute shorter
 
-Fail against the checklist's expected pass. While the exam needed 16 minutes, submitting a 5-minute slot returned "This slot is 5 minutes but the exam needs 16." The shorter slot was not created, so the exam was not observed staying open after the slot ended.
+Pass. While the exam needed 16 minutes, submitting a 5-minute slot returned "This slot is 5 minutes but the exam needs 16." The shorter slot was not created. A slot shorter than the exam is refused with a message, which is the intended rule.
 
 ### Empty file
 

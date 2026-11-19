@@ -67,6 +67,10 @@ const phrases: PhraseMap = {
   "page.confirmAllNone": ["Every stored answer is already confirmed or overridden.", "所有已儲存的答案都已確認或已改分。"],
   "page.confirmAllOne": ["1 unconfirmed answer will be confirmed.", "將會確認 1 份未確認的答案。"],
   "page.confirmAllMany": ["{count} unconfirmed answers will be confirmed.", "將會確認 {count} 份未確認的答案。"],
+  "page.confirmAllResult": [
+    "{confirmed} confirmed, {skipped} skipped because they have no mark. A person must mark those.",
+    "已確認 {confirmed} 項，略過 {skipped} 項，因為沒有分數。必須由人手評分。",
+  ],
   "page.regradeTitle": ["Regrade affected students", "為受影響的學生重新評分"],
   "page.regradeApply": ["Regrade affected students", "為受影響的學生重新評分"],
   "page.applying": ["Regrading…", "重新評分中…"],

@@ -36,8 +36,8 @@ export default async function ExamsPage() {
       ) : !exams || exams.length === 0 ? (
         <p className="text-sm text-muted-foreground"><T id="shell.copy.noExams" /></p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
+        <div className="w-full min-w-0 max-w-full overflow-x-auto">
+          <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr>
                 <th className="border-b py-3 pr-4"><T id="shell.copy.exam" /></th>

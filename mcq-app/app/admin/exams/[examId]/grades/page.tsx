@@ -120,8 +120,8 @@ export default async function ExamGradesPage({
               <T id="shell.copy.noSubmissions" />
             </p>
           ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr>
                   <th className="border-b py-3 pr-4"><T id="shell.copy.student" /></th>

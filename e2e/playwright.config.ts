@@ -1,12 +1,11 @@
 import { defineConfig } from "@playwright/test";
 
 import { assertStagingHost } from "./src/guard";
+import { stagingMediaDir } from "./src/mediaDir";
 
 assertStagingHost();
 
-const mediaDir =
-  process.env.STAGING_E2E_MEDIA ??
-  "/cursor/stores/bc-92314f63-d670-4644-be86-ba5aeb6af75c/media/staging-e2e";
+const mediaDir = stagingMediaDir(process.env.STAGING_E2E_MEDIA);
 
 export default defineConfig({
   testDir: "./tests",

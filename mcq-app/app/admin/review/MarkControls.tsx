@@ -2,7 +2,8 @@
 
 import { TText } from "@/app/admin/T";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { labels } from "@/app/admin/results/labels";
@@ -24,10 +25,18 @@ export function ConfirmAllButton({
   count: number;
   markingReady: boolean;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState<ReviewActionState, FormData>(
     confirmAllResponses,
     null,
   );
+  const refreshed = useRef<ReviewActionState>(null);
+
+  useEffect(() => {
+    if (!state?.notice || state === refreshed.current) return;
+    refreshed.current = state;
+    router.refresh();
+  }, [router, state]);
 
   return (
     <form action={action} className="space-y-2">
@@ -36,6 +45,11 @@ export function ConfirmAllButton({
         {pending ? <TText text={labels.saving} /> : <TText text={labels.confirmAll(count)} />}
       </Button>
       <p className="text-sm text-muted-foreground"><TText text={labels.confirmAllDetail(count)} /></p>
+      {state?.notice ? (
+        <p className="text-sm text-foreground" role="status">
+          <TText text={state.notice} />
+        </p>
+      ) : null}
       {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
     </form>
   );
@@ -61,7 +75,15 @@ export function QuestionMarkControls({
     overrideResponse,
     null,
   );
+  const router = useRouter();
+  const refreshedEdit = useRef<ReviewActionState>(null);
   const pending = confirmPending || editPending;
+
+  useEffect(() => {
+    if (!editState?.notice || editState === refreshedEdit.current) return;
+    refreshedEdit.current = editState;
+    router.refresh();
+  }, [editState, router]);
 
   return (
     <div className="space-y-3">
@@ -113,6 +135,12 @@ export function QuestionMarkControls({
             {editPending ? <TText text={labels.saving} /> : <TText text={labels.saveEdit} />}
           </Button>
         </form>
+      ) : null}
+      {editState?.notice && !overridden ? (
+        <p className="text-sm"><TText text={editState.notice} /></p>
+      ) : null}
+      {editState?.note && !overridden ? (
+        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{editState.note}</p>
       ) : null}
       {confirmState?.error ? <p className="text-sm text-destructive">{confirmState.error}</p> : null}
       {editState?.error ? <p className="text-sm text-destructive">{editState.error}</p> : null}

@@ -18,7 +18,7 @@ import {
 import { regradeUpdates } from "../results/regrade";
 import { requireStaff } from "../results/staffGate";
 
-export type ReviewActionState = { error?: string } | null;
+export type ReviewActionState = { error?: string; notice?: string; note?: string } | null;
 
 function staffError(error: string): string {
   if (error === "Sign in required.") return labels.signIn;
@@ -75,11 +75,10 @@ export async function overrideResponse(
   if (!staff.ok) return { error: staffError(staff.error) };
 
   const result = await rpcOverride(staff.supabase, id, verdict === "correct", note);
-  const error = markError(result);
-  if (error) return { error };
+  if (!result.ok) return { error: markError(result) ?? labels.couldNotSaveMark };
 
   revalidateReview(instanceId);
-  return null;
+  return { notice: labels.overriddenByNoTime(labels.aTeacher), note };
 }
 
 export async function confirmAllResponses(
@@ -93,11 +92,10 @@ export async function confirmAllResponses(
   if (!staff.ok) return { error: staffError(staff.error) };
 
   const result = await rpcConfirmAll(staff.supabase, instanceId);
-  const error = markError(result);
-  if (error) return { error };
+  if (!result.ok) return { error: markError(result) ?? labels.couldNotSaveMark };
 
   revalidateReview(instanceId);
-  return null;
+  return { notice: labels.confirmAllResult(result.confirmed, result.skipped) };
 }
 
 export async function applyRegrade(
