@@ -15,11 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const adminToolLinks = [
-  { href: "/admin/exams/new", labelKey: "shell.account.createExam" },
-  { href: "/admin/exams", labelKey: "shell.account.examList" },
   { href: "/admin/questions", labelKey: "shell.account.olderQuestions" },
   { href: "/admin/questions/import", labelKey: "shell.account.importQuestions" },
-  { href: "/admin/advanced", labelKey: "shell.account.advanced" },
   { href: "/protected", labelKey: "shell.account.details" },
 ] as const;
 

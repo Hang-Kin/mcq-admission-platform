@@ -394,8 +394,6 @@ export default async function SchedulePage({
       ) : (
         <p className="text-sm">
           <Link href={`/admin/schedule?exam=${selectedId ?? ""}&new=1`} className="hover:underline"><T id="schedule.page.createAnother" /></Link>
-          {" · "}
-          <Link href="/admin/exams" className="hover:underline"><T id="shell.item.examList" /></Link>
         </p>
       )}
 
