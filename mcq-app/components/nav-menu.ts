@@ -34,6 +34,8 @@ export type NavSection = {
  * - Review of one sitting (/admin/review/[instanceId])
  * Subject settings uses /admin/settings. The same form also sits on
  * /admin/bank?tab=settings.
+ * Advanced, the exam list, Create exam, and the older per-exam QR and
+ * grades screens are hidden in app/admin/hiddenRoutes.ts.
  */
 export const staffNavMenu: NavSection[] = [
   {
@@ -114,15 +116,6 @@ export const staffNavMenu: NavSection[] = [
             label: "QR codes",
             labelKey: "shell.item.sittingCodes",
           },
-        ],
-      },
-      {
-        id: "exams",
-        label: "Exams",
-        labelKey: "shell.group.exams",
-        items: [
-          { href: "/admin/exams", label: "Exam list", labelKey: "shell.item.examList" },
-          { href: "/admin/exams/new", label: "Create exam", labelKey: "shell.item.createExam" },
         ],
       },
     ],

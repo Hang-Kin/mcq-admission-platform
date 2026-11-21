@@ -1,16 +1,20 @@
 import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { formatHongKongStamp } from "@/lib/hongKongTime";
 import { readServerPreferences } from "@/lib/preferences/server";
 import { createClient } from "@/lib/supabase/server";
 
+import { isHiddenAdminRoute } from "../hiddenRoutes";
 import { labels } from "../schedule/labels";
 
 export const instant = false;
 
 export default async function ExamsPage() {
+  if (isHiddenAdminRoute("/admin/exams")) redirect("/admin");
+
   const prefs = await readServerPreferences();
   const supabase = await createClient();
   const { data: exams, error } = await supabase

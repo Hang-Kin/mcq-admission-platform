@@ -1,14 +1,17 @@
 import { T } from "@/app/admin/T";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { connection } from "next/server";
 
+import { isHiddenAdminRoute } from "../../hiddenRoutes";
 import { createExam } from "../actions";
 import { ExamForm } from "../ExamForm";
 
 export const instant = false;
 
 export default async function NewExamPage() {
+  if (isHiddenAdminRoute("/admin/exams/new")) redirect("/admin");
   await connection();
 
   return (

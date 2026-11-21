@@ -1,5 +1,8 @@
 import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { isHiddenAdminRoute } from "../hiddenRoutes";
 
 import {
   Card,
@@ -34,6 +37,8 @@ const links = [
 ];
 
 export default function AdvancedPage() {
+  if (isHiddenAdminRoute("/admin/advanced")) redirect("/admin");
+
   return (
     <main className="space-y-8">
       <div className="max-w-2xl space-y-2">

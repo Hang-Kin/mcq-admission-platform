@@ -1,6 +1,8 @@
 import { T } from "@/app/admin/T";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { isHiddenAdminRoute } from "@/app/admin/hiddenRoutes";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,6 +29,7 @@ export default async function ExamGradesPage({
   params: Promise<{ examId: string }>;
 }) {
   const { examId } = await params;
+  if (isHiddenAdminRoute(`/admin/exams/${examId}/grades`)) redirect("/admin");
   const supabase = await createClient();
 
   const { data: exam, error: examError } = await supabase

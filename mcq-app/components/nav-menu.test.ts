@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { isHiddenAdminRoute } from "../app/admin/hiddenRoutes.ts";
 import { t } from "../lib/i18n/index.ts";
 import { renderMenuOutline, staffNavMenu } from "./nav-menu.ts";
 
@@ -12,8 +13,6 @@ const REAL_PAGES = new Set([
   "/admin/settings",
   "/admin/schedule",
   "/admin/schedule#codes",
-  "/admin/exams",
-  "/admin/exams/new",
   "/admin/students",
   "/admin/students/import",
   "/admin/review",
@@ -52,12 +51,17 @@ test("every menu entry links to a real page and an English shell string", () => 
     assert.equal(t(section.labelKey, "en"), section.label);
     assert.notEqual(t(section.labelKey, "zh-Hant"), "");
     assert.ok(REAL_PAGES.has(section.href), section.href);
+    assert.equal(isHiddenAdminRoute(section.href), false, section.href);
     for (const group of section.groups) {
       assert.equal(t(group.labelKey, "en"), group.label);
-      if (group.href) assert.ok(REAL_PAGES.has(group.href), group.href);
+      if (group.href) {
+        assert.ok(REAL_PAGES.has(group.href), group.href);
+        assert.equal(isHiddenAdminRoute(group.href), false, group.href);
+      }
       for (const item of group.items) {
         assert.equal(t(item.labelKey, "en"), item.label);
         assert.ok(REAL_PAGES.has(item.href), item.href);
+        assert.equal(isHiddenAdminRoute(item.href), false, item.href);
       }
     }
   }
