@@ -2,6 +2,7 @@ import { T } from "@/app/admin/T";
 import Link from "next/link";
 
 import { MathText } from "@/components/MathText";
+import { textToPlain } from "@/lib/mathText";
 import {
   isMathQuestion,
   isMissingSubjectColumn,
@@ -191,7 +192,7 @@ export default async function AdminQuestionsPage({
                           className="max-w-xl"
                         />
                       ) : (
-                        truncate(question.question_text, 60)
+                        truncate(textToPlain(question.question_text), 60)
                       )}
                     </td>
                     <td className="border-b py-3 pr-4">

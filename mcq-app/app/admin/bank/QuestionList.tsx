@@ -1,6 +1,8 @@
 import { T, TText } from "@/app/admin/T";
 import Link from "next/link";
 
+import { MathText } from "@/components/MathText";
+import { textToPlain } from "@/lib/mathText";
 import { Button } from "@/components/ui/button";
 
 import { deleteBankQuestion } from "./actions";
@@ -10,7 +12,7 @@ import type { BankQuestionRow } from "./loadBank";
 import type { SubjectId } from "./subjects";
 
 function preview(question: BankQuestionRow): string {
-  const answer = question.correct_answer?.trim() ?? "";
+  const answer = textToPlain(question.correct_answer?.trim() ?? "");
   if (question.type === "radio") return answer ? `Correct: ${answer}` : "No correct choice yet";
   if (question.type === "numeric" || question.type === "fraction") {
     return answer ? `Answer: ${answer}` : "No answer yet";
@@ -42,7 +44,13 @@ export function QuestionList({
           className="flex flex-col gap-4 py-5 sm:flex-row sm:items-start sm:justify-between"
         >
           <div className="min-w-0 space-y-1">
-            <p className="text-base text-foreground">{question.question_text}</p>
+            <p className="text-base text-foreground">
+              <MathText
+                text={question.question_text}
+                subject={question.subject}
+                category={question.category}
+              />
+            </p>
             <p className="text-sm text-muted-foreground">
               <TText text={answerKindLabel(question.type)} />
               {" · "}

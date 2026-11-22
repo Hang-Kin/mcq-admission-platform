@@ -5,6 +5,7 @@ import { OptionText, usePhrase } from "@/app/admin/usePhrase";
 
 import { useRef, useState, type FormEvent } from "react";
 
+import { MathQuestionField } from "@/components/formula/MathQuestionField";
 import { MathText } from "@/components/MathText";
 import { isMathQuestion } from "@/components/mathText";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,17 @@ function normalizeOptions(options: unknown): string[] {
     values.push("");
   }
   return values.slice(0, MAX_OPTIONS);
+}
+
+function showFormulaEditor(
+  question: QuestionFormValues | undefined,
+  category: string,
+): boolean {
+  const subject = question?.subject?.trim().toLowerCase() ?? "";
+  if (subject === "chinese") return false;
+  if (subject === "math") return true;
+  if (!question) return true;
+  return isMathQuestion({ subject: question.subject, category });
 }
 
 function initialCorrectOptionIndex(
@@ -101,6 +113,7 @@ export function QuestionForm({
     question?.image_url && publicQuestionImagePath(question.image_url)
       ? question.image_url
       : null;
+  const formulaEditor = showFormulaEditor(question, category);
 
   function updateOption(index: number, value: string) {
     setOptions((current) =>
@@ -232,14 +245,27 @@ export function QuestionForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="question_text"><T id="shell.copy.question" /></Label>
-        <textarea
-          id="question_text"
-          name="question_text"
-          required
-          value={questionText}
-          onChange={(event) => setQuestionText(event.target.value)}
-          className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
-        />
+        {formulaEditor ? (
+          <MathQuestionField
+            id="question_text"
+            name="question_text"
+            required
+            value={questionText}
+            onChange={setQuestionText}
+            subject={question?.subject}
+            category={category}
+            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          />
+        ) : (
+          <textarea
+            id="question_text"
+            name="question_text"
+            required
+            value={questionText}
+            onChange={(event) => setQuestionText(event.target.value)}
+            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
+          />
+        )}
         <p className="text-sm text-muted-foreground">
           <T id="shell.copy.imageCaption" />
         </p>
@@ -287,7 +313,8 @@ export function QuestionForm({
         />
       </div>
 
-      {isMathQuestion({ subject: question?.subject, category }) &&
+      {!formulaEditor &&
+      isMathQuestion({ subject: question?.subject, category }) &&
       questionText.trim() ? (
         <div className="rounded-md border border-border bg-background px-3 py-3">
           <p className="mb-2 text-sm text-muted-foreground"><T id="shell.copy.preview" /></p>

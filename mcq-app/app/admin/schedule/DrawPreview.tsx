@@ -1,4 +1,7 @@
 import { TText } from "@/app/admin/T";
+
+import { MathText } from "@/components/MathText";
+
 import type { PreviewGroup } from "./scheduleModel";
 
 export function DrawPreview({ groups }: { groups: PreviewGroup[] }) {
@@ -14,7 +17,9 @@ export function DrawPreview({ groups }: { groups: PreviewGroup[] }) {
               <h3 className="text-base">{topic.name}</h3>
               <ol className="list-decimal space-y-2 pl-5 text-base text-foreground">
                 {topic.questions.map((question, index) => (
-                  <li key={`${topic.name}-${index}`}>{question}</li>
+                  <li key={`${topic.name}-${index}`}>
+                    <MathText text={question} subject={group.subject} category={topic.name} />
+                  </li>
                 ))}
               </ol>
             </div>
