@@ -27,6 +27,13 @@ test("dynamic admin sentences round-trip in English and change in Chinese", () =
     "2 topics x 2 = 4 questions",
     "Questions per topic must be a whole number greater than 0.",
     "Filled colour is correct. Red is incorrect. Plain is not graded. A ring means confirmed. A bar on the left means overridden.",
+    "Insert formula",
+    "Edit formula",
+    "Formula preview",
+    "Some symbols did not paste correctly. Use Insert formula to type the question.",
+    "Symbols",
+    "Insert",
+    "Cancel",
   ];
   for (const sample of samples) {
     assert.equal(phrase(sample, "en"), sample, sample);
@@ -47,6 +54,17 @@ test("dynamic admin sentences round-trip in English and change in Chinese", () =
     phrase("Locked because students have started. Frozen at 7 and 8.", "zh-Hant"),
     "已有學生開始，因此已鎖定。 已凍結為 7 and 8。",
   );
+  assert.equal(phrase("Insert formula", "zh-Hant"), "插入算式");
+  assert.equal(phrase("Edit formula", "zh-Hant"), "編輯算式");
+  assert.equal(phrase("Formula preview", "zh-Hant"), "算式預覽");
+  assert.equal(
+    phrase("Some symbols did not paste correctly. Use Insert formula to type the question.", "zh-Hant"),
+    "部分符號未能正確貼上。請用「插入算式」輸入題目。",
+  );
+  assert.equal(phrase("Symbols", "zh-Hant"), "符號");
+  assert.equal(phrase("123", "zh-Hant"), "123");
+  assert.equal(phrase("f(x)", "zh-Hant"), "f(x)");
+  assert.equal(phrase("ABC", "zh-Hant"), "ABC");
   assert.equal(phrase("Home", "zh-Hant"), "主頁");
   assert.equal(phrase("提交編號", "zh-Hant"), "提交編號");
   assert.match(phrase("Morning starts tomorrow at 9:00 and the questions are not prepared.", "zh-Hant"), /明日/);

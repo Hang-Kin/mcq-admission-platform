@@ -5,6 +5,7 @@ import { OptionText, usePhrase } from "@/app/admin/usePhrase";
 
 import { useRef, useState, type FormEvent } from "react";
 
+import { MathQuestionField } from "@/components/formula/MathQuestionField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -207,13 +208,25 @@ export function BankQuestionForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="question_text"><T id="shell.copy.question" /></Label>
-        <textarea
-          id="question_text"
-          required
-          value={questionText}
-          onChange={(event) => setQuestionText(event.target.value)}
-          className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        />
+        {subject === "Math" ? (
+          <MathQuestionField
+            id="question_text"
+            required
+            value={questionText}
+            onChange={setQuestionText}
+            subject={subject}
+            category={topic}
+            className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        ) : (
+          <textarea
+            id="question_text"
+            required
+            value={questionText}
+            onChange={(event) => setQuestionText(event.target.value)}
+            className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-3 text-base text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

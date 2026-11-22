@@ -352,4 +352,17 @@ export const shellCopy: PhraseMap = {
   "copy.generateQr": ["Generate QR", "產生二維碼"],
   "copy.failedSubmitted": ["Failed to load submitted exams.", "未能載入已提交的考試。"],
   "copy.noSubmissions": ["No students have submitted this exam yet.", "尚未有學生提交這個考試。"],
+  "copy.insertFormula": ["Insert formula", "插入算式"],
+  "copy.editFormula": ["Edit formula", "編輯算式"],
+  "copy.formulaPreview": ["Formula preview", "算式預覽"],
+  "copy.pasteSymbols": [
+    "Some symbols did not paste correctly. Use Insert formula to type the question.",
+    "部分符號未能正確貼上。請用「插入算式」輸入題目。",
+  ],
+  "copy.keyboard123": ["123", "123"],
+  "copy.keyboardFx": ["f(x)", "f(x)"],
+  "copy.keyboardAbc": ["ABC", "ABC"],
+  "copy.keyboardSymbols": ["Symbols", "符號"],
+  "copy.insert": ["Insert", "插入"],
+  "copy.cancel": ["Cancel", "取消"],
 };

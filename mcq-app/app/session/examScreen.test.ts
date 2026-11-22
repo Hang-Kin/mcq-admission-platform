@@ -116,6 +116,7 @@ function loadSource(filename: string): Record<string, unknown> {
     },
   }).outputText;
   const localRequire = (spec: string) => {
+    if (spec.endsWith(".css")) return {};
     const resolved = resolveSource(filename, spec);
     return resolved ? loadSource(resolved) : require(spec);
   };

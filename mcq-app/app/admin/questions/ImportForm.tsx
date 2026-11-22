@@ -7,6 +7,7 @@ import Papa from "papaparse";
 
 import { MathText } from "@/components/MathText";
 import { isMathQuestion } from "@/components/mathText";
+import { textToPlain } from "@/lib/mathText";
 import { Button } from "@/components/ui/button";
 
 import { bulkImportQuestions } from "./actions";
@@ -212,7 +213,7 @@ export function ImportForm() {
                   {isMathQuestion({ category: row.category }) ? (
                     <MathText text={row.question_text} category={row.category} />
                   ) : (
-                    truncate(row.question_text, 60)
+                    truncate(textToPlain(row.question_text), 60)
                   )}
                 </td>
                 <td className="border-b py-3 pr-4">{row.category}</td>

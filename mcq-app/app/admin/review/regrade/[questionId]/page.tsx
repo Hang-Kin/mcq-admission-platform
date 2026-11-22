@@ -1,6 +1,8 @@
 import { TText } from "@/app/admin/T";
 import Link from "next/link";
 
+import { MathText } from "@/components/MathText";
+
 import { labels, markWord } from "@/app/admin/results/labels";
 import { UUID_RE } from "@/app/admin/results/ids";
 import { loadRegrade } from "@/app/admin/results/loadRegrade";
@@ -80,7 +82,9 @@ export default async function RegradeQuestionPage({
           </Link>
         </p>
         <h1 className="text-2xl"><TText text={labels.regradeTitle} /></h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">{loaded.question.text}</p>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          <MathText text={loaded.question.text} />
+        </p>
       </header>
 
       {done && Number.isFinite(changed) && Number.isFinite(kept) ? (
